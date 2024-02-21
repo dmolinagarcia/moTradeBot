@@ -1,4 +1,10 @@
 ## Cleanup
+export MOTRADE_ID=$1
+
+echo $MOTRADE_ID
+
+exit 0
+
 echo Cleaning up moTrade devBox Infrastructure...
 export COMPARTMENT_NAME='moTrade'
 export COMPARTMENT_ID=$(oci iam compartment list --query "data[?name=='${COMPARTMENT_NAME}'].id | [0]" --raw-output)
