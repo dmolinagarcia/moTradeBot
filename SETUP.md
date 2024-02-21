@@ -6,12 +6,14 @@ Sign up for an oracle free account if you don't already have one.
 
 To deploy the infrastructure, open cloud shell on your OCI account and run
 
-/bin/bash -c "$(curl -fsSL -H "Cache-Control: no-cache, no-store" https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/deploy.sh)"
+    /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/deploy.sh)"
 
+Write down your public ip.    
 
 ## Obtain mooo.com subdomain
 https://freedns.afraid.org/
 
+Assign the public ip to your subdomain and write down your subdomain.
     
 ## Software    
 Login as user ubuntu (ssh ubuntu@$PUBLIC_IP)
@@ -202,8 +204,7 @@ Warning! This procedure will completely erase your moTrade installation. Any ope
 
 First, find your MOTRADE_ID. It's the 6 letter identifier at the end of the container name
 
-    curl -fsSL -H "Cache-Control: no-cache, no-store" \
-    https://raw.githubusercontent.com/dmolinagarcia/moTradeBot/main/setup/cleanup.sh | bash -s -- <YOUR_MOTRADE_ID>
+    curl -fsSL https://raw.githubusercontent.com/dmolinagarcia/moTradeBot/main/setup/cleanup.sh | bash -s -- <YOUR_MOTRADE_ID>
 
 
     
