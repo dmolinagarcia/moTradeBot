@@ -12,13 +12,17 @@ export IG_ID=$(oci network internet-gateway list --compartment-id $COMPARTMENT_I
 export SUBNET_ID=$(oci network subnet list --compartment-id $COMPARTMENT_ID --vcn-id $VCN_ID --query "data[0].id" --raw-output)
 export COMPUTE_OCID=$(oci compute instance list --compartment-id $COMPARTMENT_ID --query "data[0].id" --raw-output)
 export PUBLIC_IP_ID=$(oci network public-ip list --compartment-id $COMPARTMENT_ID --scope REGION --all --query "data[0].id" --raw-output)
+export USER_HOME=$(eval echo ~)
 
 if [ ! -z $COMPUTE_OCID ]
 then
     echo Cleaning up Compute Node... $COMPUTE_OCID
     oci compute instance terminate --instance-id $COMPUTE_OCID --force --wait-for-state TERMINATED >> /dev/null 2>> /dev/null
     sleep 15
+    rm -rf ${USER_HOME}/.ssh/id_rsa_${MOTRADE_ID}*
 fi
+
+
 
 if [ ! -z $PUBLIC_IP_ID ]
 then
