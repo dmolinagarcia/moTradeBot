@@ -1,8 +1,9 @@
 #!/bin/bash 
 ## Generating RSA Keys
 export MOTRADE_ID=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6 ; echo '')
+echo MOTRADE ID: $MOTRADE_ID
 
-mkdir .ssh
+mkdir .ssh 2>/dev/null >/dev/null
 ssh-keygen -b 2048 -t rsa -f .ssh/id_rsa_${MOTRADE_ID} -q -N ""
 chmod 700 .ssh
 chmod 600 .ssh/id_rsa_${MOTRADE_ID}
@@ -15,8 +16,6 @@ export COMPUTE_NAME='moTrade_${MOTRADE_ID}_probox'
 export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
 export USER_HOME=$(eval echo ~)
 
-exit 0
-
 echo "Search for available availability domains ..."
 for AD in 1 2 3
 do
@@ -27,20 +26,22 @@ do
     export AVAILABILITY_DOMAIN=$(oci iam availability-domain list --query "(data[?ends_with(name, '-$AD')] | [0].name) || data[0].name" --raw-output)
   fi
 done
-export AVAILABILITY_DOMAIN=$(oci iam availability-domain list --query "(data[?ends_with(name, '-3')] | [0].name) || data[0].name" --raw-output)
 
-# Search for ubunto 20.04 image
+# Search for ubuntu 22.04 image
 
-oci compute image list -c $OCI_TENANCY --query "(data[?contains('display-name', 'Canonical-Ubuntu-20.04')])"
+oci compute image list -c $OCI_TENANCY --query "reverse(sort_by(data[?contains(\"display-name\",'Canonical-Ubuntu')],&\"time-created\")) |[0:1].{ImageName:\"display-name\", OCID:id, OS:\"operating-system\", Size:\"size-in-mbs\",time:\"time-created\"}" --output table --all
 
 export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaevqvpysi6itvzw2wks7zlopyroyfe5vvm5pfspk433tax452vhoq'     ## ARM instances not supported yet
-export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaose3uwyt7kyumj35pdjj7ww4xumzpittbo3g5mezmmicvms2aqwq'
+export IMAGE_ID=$(oci compute image list -c $OCI_TENANCY --query "data[?contains(\"display-name\",'Canonical-Ubuntu-22.04-Minimal-2')].id | [0]" --all --raw-output)
 
 echo moTradeID: $MOTRADE_ID
 echo Compartment Name: $COMPARTMENT_NAME
 echo Compute Node Name: $COMPUTE_NAME
 echo Compute Shape: $COMPUTE_SHAPE
 echo Availability Domain: $AVAILABILITY_DOMAIN
+echo Image ID: $IMAGE_ID
+
+exit 0
 
 ## COMPARTMENT
 echo Checking if compartment $COMPARTMENT_NAME exists...
