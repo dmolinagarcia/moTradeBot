@@ -13,10 +13,6 @@ export SUBNET_ID=$(oci network subnet list --compartment-id $COMPARTMENT_ID --vc
 export COMPUTE_OCID=$(oci compute instance list --compartment-id $COMPARTMENT_ID --query "data[0].id" --raw-output)
 export PUBLIC_IP_ID=$(oci network public-ip list --compartment-id $COMPARTMENT_ID --scope REGION --all --query "data[0].id" --raw-output)
 
-exit 0
-
-
-
 if [ ! -z $COMPUTE_OCID ]
 then
     echo Cleaning up Compute Node... $COMPUTE_OCID
