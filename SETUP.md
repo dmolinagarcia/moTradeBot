@@ -4,27 +4,10 @@
 
 Sign up for an oracle free account if you don't already have one.
 
-Open Cloud Shell and generate your public/private keys
-
-    ssh-keygen
-    chmod 700 .ssh
-    chmod 600 .ssh/id_rsa.pub
-
-Deploy infrastructure
+To deploy the infrastructure, open cloud shell on your OCI account and run
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dmolinagarcia/moTradeBot/main/setup/deploy.sh)"
 
-
-Open OCI Cloud Shell and clone moTrade git
-
-    git clone git@github.com:dmolinagarcia/moTrade.git
-
-Deploy infrastructure
-
-    cd moTrade/setup
-    . ./deploy.sh
-
-(Obtener IP. Si el deploy no la pinta, modificarlo para que la pinte)
 
 ## Obtain mooo.com subdomain
 https://freedns.afraid.org/
