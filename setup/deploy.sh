@@ -16,7 +16,7 @@ export COMPUTE_NAME="moTrade_${MOTRADE_ID}_probox"
 export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
 export USER_HOME=$(eval echo ~)
 
-echo "Search for available availability domains ..."
+echo "Search for available availability domains ... "
 for AD in 1 2 3
 do
   ad=$(oci iam availability-domain list --query "(data[?ends_with(name, '-$AD')] | [0].name) || data[0].name" --raw-output)
