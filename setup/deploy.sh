@@ -2,14 +2,30 @@
 ## OCI_TENANCY contains the current tenancy
 echo Creating moTrade proBox infrastructure ...
 export MOTRADE_ID=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6 ; echo '')
-export COMPARTMENT_NAME='moTrade'
-export COMPUTE_NAME='moTrade-probox'
-export COMPUTE_SHAPE='VM.Standard.A1.Flex'      ## ARM instances not supported yet
+export COMPARTMENT_NAME='moTrade_${MOTRADE_ID}'
+export COMPUTE_NAME='moTrade_${MOTRADE_ID}_probox'
+## export COMPUTE_SHAPE='VM.Standard.A1.Flex'          ## ARM instances not supported yet
 export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
 export USER_HOME=$(eval echo ~)
+
+echo "Search for available availability domains ..."
+for AD in 1 2 3
+do
+  ad=$(oci iam availability-domain list --query "(data[?ends_with(name, '-$AD')] | [0].name) || data[0].name" --raw-output)
+  oci compute shape list -c $OCI_TENANCY --availability-domain $ad | grep $COMPUTE_SHAPE >> /dev/null
+  if [ $? -eq 0 ]
+  then
+    export AVAILABILITY_DOMAIN=$(oci iam availability-domain list --query "(data[?ends_with(name, '-$AD')] | [0].name) || data[0].name" --raw-output)
+  fi
+done
+export AVAILABILITY_DOMAIN=$(oci iam availability-domain list --query "(data[?ends_with(name, '-3')] | [0].name) || data[0].name" --raw-output)
+
+# Search for ubunto 20.04 image
+
+oci compute image list -c $OCI_TENANCY --query "(data[?contains('display-name', 'Canonical-Ubuntu-20.04')])"
+
 export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaevqvpysi6itvzw2wks7zlopyroyfe5vvm5pfspk433tax452vhoq'     ## ARM instances not supported yet
 export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaose3uwyt7kyumj35pdjj7ww4xumzpittbo3g5mezmmicvms2aqwq'
-export AVAILABILITY_DOMAIN=$(oci iam availability-domain list --query "(data[?ends_with(name, '-3')] | [0].name) || data[0].name" --raw-output)
 
 echo moTradeID: $MOTRADE_ID
 echo Compartment Name: $COMPARTMENT_NAME
