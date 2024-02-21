@@ -1,7 +1,6 @@
 #!/bin/bash 
 ## Generating RSA Keys
 export MOTRADE_ID=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6 ; echo '')
-echo MOTRADE ID: $MOTRADE_ID
 
 mkdir .ssh 2>/dev/null >/dev/null
 ssh-keygen -b 2048 -t rsa -f .ssh/id_rsa_${MOTRADE_ID} -q -N ""
@@ -11,7 +10,7 @@ chmod 600 .ssh/id_rsa_${MOTRADE_ID}
 ## OCI_TENANCY contains the current tenancy
 echo Creating moTrade proBox infrastructure ...
 export COMPARTMENT_NAME="moTrade_${MOTRADE_ID}"
-export COMPUTE_NAME="moTrade_${MOTRADE_ID}_probox"
+export COMPUTE_NAME="moTrade-${MOTRADE_ID}-probox"
 ## export COMPUTE_SHAPE='VM.Standard.A1.Flex'          ## ARM instances not supported yet
 export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
 export USER_HOME=$(eval echo ~)
