@@ -3,10 +3,8 @@ export MOTRADE_ID=$1
 
 echo $MOTRADE_ID
 
-exit 0
-
 echo Cleaning up moTrade devBox Infrastructure...
-export COMPARTMENT_NAME='moTrade'
+export COMPARTMENT_NAME="moTrade_${MOTRADE_ID}"
 export COMPARTMENT_ID=$(oci iam compartment list --query "data[?name=='${COMPARTMENT_NAME}'].id | [0]" --raw-output)
 export VCN_ID=$(oci network vcn list -c $COMPARTMENT_ID --query "data[0].id" --raw-output)
 export RT_ID=$(oci network route-table list --compartment-id $COMPARTMENT_ID --vcn-id $VCN_ID --query "data[0].id" --raw-output)
@@ -14,6 +12,9 @@ export IG_ID=$(oci network internet-gateway list --compartment-id $COMPARTMENT_I
 export SUBNET_ID=$(oci network subnet list --compartment-id $COMPARTMENT_ID --vcn-id $VCN_ID --query "data[0].id" --raw-output)
 export COMPUTE_OCID=$(oci compute instance list --compartment-id $COMPARTMENT_ID --query "data[0].id" --raw-output)
 export PUBLIC_IP_ID=$(oci network public-ip list --compartment-id $COMPARTMENT_ID --scope REGION --all --query "data[0].id" --raw-output)
+
+exit 0
+
 
 
 if [ ! -z $COMPUTE_OCID ]

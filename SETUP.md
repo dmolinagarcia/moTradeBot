@@ -196,6 +196,13 @@ As ubuntu user
     sudo systemctl restart BINGX.service
     
     
-    
+## Cleanup
+
+Warning! This procedure will completely erase your moTrade installation. Any open positions on BINGX will remain Open and not under control of your moTrade bot.
+
+First, find your MOTRADE_ID. It's the 6 letter identifier at the end of the container name
+
+    curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/cleanup.sh | bash -s -- <YOUR_MOTRADE_ID>
+
 
     
