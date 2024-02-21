@@ -81,7 +81,7 @@ export COMPUTE_OCID=$(oci compute instance launch \
  --shape "${COMPUTE_SHAPE}" \
  --display-name "${COMPUTE_NAME}" \
  --image-id "${IMAGE_ID}" \
- --ssh-authorized-keys-file "${USER_HOME}/.ssh/id_rsa.pub" \
+ --ssh-authorized-keys-file "${USER_HOME}/.ssh/id_rsa_${MOTRADE_ID}.pub" \
  --subnet-id ${SUBNET_ID} \
  --availability-domain "${AVAILABILITY_DOMAIN}" \
  --assign-public-ip FALSE \
@@ -105,3 +105,10 @@ echo Compute Node Public IP: $PUBLIC_IP
 echo Write down your PUBLIC IP!
 
 echo moTrade ${MOTRADE_ID} proBox infrastructure created!
+
+## Add moSSH alias
+echo "alias moSSH_${MOTRADE_ID}=\"ssh -i ${USER_HOME}/.ssh/id_rsa_${MOTRADE_ID} ubuntu@${PUBLIC_IP}\"" >> ~/.bash_profile
+alias moSSH_${MOTRADE_ID}="ssh -i ${USER_HOME}/.ssh/id_rsa_${MOTRADE_ID} ubuntu@${PUBLIC_IP}"
+
+echo Added alias moSSH_${MOTRADE_ID} to log on to moTradeBot.
+
