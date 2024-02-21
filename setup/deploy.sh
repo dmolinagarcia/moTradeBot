@@ -29,9 +29,6 @@ done
 
 # Search for ubuntu 22.04 image
 
-oci compute image list -c $OCI_TENANCY --query "reverse(sort_by(data[?contains(\"display-name\",'Canonical-Ubuntu')],&\"time-created\")) |[0:1].{ImageName:\"display-name\", OCID:id, OS:\"operating-system\", Size:\"size-in-mbs\",time:\"time-created\"}" --output table --all
-
-export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaevqvpysi6itvzw2wks7zlopyroyfe5vvm5pfspk433tax452vhoq'     ## ARM instances not supported yet
 export IMAGE_ID=$(oci compute image list -c $OCI_TENANCY --query "data[?contains(\"display-name\",'Canonical-Ubuntu-22.04-Minimal-2')].id | [0]" --all --raw-output)
 
 echo moTradeID: $MOTRADE_ID
@@ -40,8 +37,6 @@ echo Compute Node Name: $COMPUTE_NAME
 echo Compute Shape: $COMPUTE_SHAPE
 echo Availability Domain: $AVAILABILITY_DOMAIN
 echo Image ID: $IMAGE_ID
-
-exit 0
 
 ## COMPARTMENT
 echo Checking if compartment $COMPARTMENT_NAME exists...
@@ -107,5 +102,6 @@ sleep 15
 
 export PUBLIC_IP=$(oci network vnic get --vnic-id $VNIC_ID --query 'data."public-ip"' --raw-output)
 echo Compute Node Public IP: $PUBLIC_IP
+echo Write down your PUBLIC IP!
 
-echo moTrade devBox infrastructure created!
+echo moTrade ${MOTRADE_ID} proBox infrastructure created!
