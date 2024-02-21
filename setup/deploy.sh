@@ -1,4 +1,10 @@
 #!/bin/bash
+## Generating RSA Keys
+
+ssh-keygen
+chmod 700 .ssh
+chmod 600 .ssh/id_rsa.pub
+
 ## OCI_TENANCY contains the current tenancy
 echo Creating moTrade proBox infrastructure ...
 export MOTRADE_ID=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6 ; echo '')
@@ -7,6 +13,8 @@ export COMPUTE_NAME='moTrade_${MOTRADE_ID}_probox'
 ## export COMPUTE_SHAPE='VM.Standard.A1.Flex'          ## ARM instances not supported yet
 export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
 export USER_HOME=$(eval echo ~)
+
+exit 0
 
 echo "Search for available availability domains ..."
 for AD in 1 2 3

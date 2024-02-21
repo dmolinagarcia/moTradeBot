@@ -4,8 +4,6 @@
 
 Sign up for an oracle free account if you don't already have one.
 
-Select FRANKFURT as default region. OS images are expected in Frankfurt.
-
 Open Cloud Shell and generate your public/private keys
 
     ssh-keygen
