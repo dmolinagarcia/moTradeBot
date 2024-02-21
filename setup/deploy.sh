@@ -36,7 +36,7 @@ echo Compartment Name: $COMPARTMENT_NAME
 echo Compute Node Name: $COMPUTE_NAME
 echo Compute Shape: $COMPUTE_SHAPE
 echo Availability Domain: $AVAILABILITY_DOMAIN
-echo Image ID: $IMAGE_ID
+echo Image ID: $IMAGE_ID 
 
 ## COMPARTMENT
 echo Checking if compartment $COMPARTMENT_NAME exists...
