@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 ## Generating RSA Keys
 export MOTRADE_ID=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6 ; echo '')
 
