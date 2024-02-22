@@ -13,6 +13,23 @@ echo "Europe/Madrid" | sudo tee /etc/timezone
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 sudo timedatectl set-timezone "Europe/Madrid"
 git clone https://github.com/dmolinagarcia/moTradeBot.git
+##################################################
+##      AREA TO CONFIGURE SECRETS AND KEYS!
+##
+##
+##
+##
+
+
+
+
+
+
+##
+##
+##
+##
+##################################################
 sudo mkdir -p /home/moTrade
 sudo mv moTradeBot/* /home/moTrade
 sudo mv moTradeBot/.* /home/moTrade

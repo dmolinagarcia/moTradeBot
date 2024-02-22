@@ -1,0 +1,8 @@
+__pycache__
+./MoTrade/__pycache__
+./MT/migrations/__pycache__
+./MT/__pycache__
+.*.swp
+*.*log
+nohup.out
+BINGXCFG.py
