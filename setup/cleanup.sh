@@ -61,4 +61,6 @@ fi
 
 echo moTrade Infrastructure cleaned up!
 
-## TO-DO remove alias from bash_profile!
+# remove alias from bash_profile!
+
+grep -v $MOTRADE_ID ~/.bash_profile > tmpfile && mv tmpfile ~/.bash_profile
