@@ -7,7 +7,8 @@ I offer no guarantee on the outcome of this software. It's under heavy developme
 2. [Setup](#setup)
 3. [Objectives](#objectives)
 4. [Types of operation](#operation)
-5. [Uninstall](#uninstall)
+5. [Error Codes](#errorcodes)
+6. [Uninstall](#uninstall)
 
 <a name="introduction"></a>
 
@@ -66,8 +67,16 @@ Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 
 In protected trade mode, we rely on limits to close operations. A operation is opened if ADX > limitOpen, and the sign is determined by DiffDI. limitBuy and limitSell are also enforced. A trailing stop is set based on the stopLoss value. The operation is closed on DiffDI Crossover, or automatically by the stopLoss.
 
+Protected mode is not implemented for BINGX. 
+
 ### Normal Trade
 TO-DO
+
+<a name="errorcodes"></a>
+
+## Error Codes
+TO-DO
+
 
 <a name="uninstall"></a>
 
