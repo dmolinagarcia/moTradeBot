@@ -2,7 +2,7 @@ sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install software-properties-common
 sudo add-apt-repository --yes universe
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron whiptail
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 umask 027
 sudo ln -s -f /usr/bin/python3.8 /usr/bin/python
@@ -20,7 +20,13 @@ git clone https://github.com/dmolinagarcia/moTradeBot.git
 ##
 ##
 
-
+## Generate BINGXCFG.py
+cat > moTradeBot/BINGXCFG.py << EOF
+APIURL = "https://open-api-vst.bingx.com"
+o https://open-api.bingx.com
+APIKEY = "YOUR API KEY"
+SECRETKEY = "YOUR SECRET KEY"
+EOF
 
 
 
