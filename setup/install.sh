@@ -35,4 +35,6 @@ sudo mv moTradeBot/* /home/moTrade
 sudo mv moTradeBot/.* /home/moTrade
 sudo useradd moTrade -M -s /bin/bash
 sudo chown -R moTrade:moTrade /home/moTrade
+rm -rf /home/ubuntu/moTradeBot
+
 
