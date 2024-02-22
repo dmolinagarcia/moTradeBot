@@ -37,12 +37,15 @@ APIKEY = "$vAPIKEY"
 SECRETKEY = "$vSECRETKEY"
 EOF
 
-
 ##
 ##
 ##
 ##
 ##################################################
+
+## TO-DO
+## Should I rotate the database, so no pull will overwrite it?
+
 sudo mkdir -p /home/moTrade
 sudo mv moTradeBot/* /home/moTrade
 sudo mv moTradeBot/.* /home/moTrade
