@@ -40,6 +40,8 @@ Before installing the moTrade Bot, you will need to gather some information :
 
     PUBLIC_IP
     moTrade SUBDOMAIN NAME
+    Your BINGx APIKEY
+    Yout BINGx SECRETKEY
 
 Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 

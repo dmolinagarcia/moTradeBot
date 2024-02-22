@@ -21,14 +21,21 @@ git clone https://github.com/dmolinagarcia/moTradeBot.git
 ##
 
 ## Generate BINGXCFG.py
-cat > moTradeBot/BINGXCFG.py << EOF
-APIURL = "https://open-api-vst.bingx.com"
-o https://open-api.bingx.com
-APIKEY = "YOUR API KEY"
-SECRETKEY = "YOUR SECRET KEY"
+whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone" 8 80
+vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
+vSECRETKEY=$(whiptail --inputbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
+vACCOUNT=$(whiptail --radiolist --title "Use REAL or TEST account?" "Please select your preferred option" 8 80 2 "REAL" "Use your REAL account" OFF  "TEST" "Use your TEST account" ON  3>&1 1>&2 2>&3)
+
+case $vACCOUNT in
+    REAL ) vAPIURL="https://open-api.bingx.com"; break;;
+    TEST ) vAPIURL="https://open-api-vst.bingx.com";;
+esac
+
+cat > BINGXCFG.py << EOF
+APIURL = "$vAPIURL"
+APIKEY = "$vAPIKEY"
+SECRETKEY = "$vSECRETKEY"
 EOF
-
-
 
 
 ##
