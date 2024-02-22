@@ -22,7 +22,9 @@ Before installing the moTrade Bot, you will need to gather some information :
     PUBLIC_IP
     moTrade SUBDOMAIN NAME
 
-Login as user ubuntu (moSSH_<your_motrade_id>)
+Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
+
+    /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/install.sh)"
     
     sudo apt update
     sudo apt --assume-yes upgrade
