@@ -1,0 +1,11 @@
+<form action="" method="post" id="timezoneForm" onChange="submitTimezoneForm()">
+  {% csrf_token %}
+  <label> Select your Time Zone </label>
+  {{ form.timezone }}
+</form>
+
+<script language="javascript" type="text/javascript">
+    function submitTimezoneForm() {
+       $(this).load("/registration/timezone/", $('#timezoneForm').serializeArray());
+    }
+</script>

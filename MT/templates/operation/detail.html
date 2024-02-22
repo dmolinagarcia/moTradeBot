@@ -1,0 +1,65 @@
+<table summary="Strategies" id="strategies">
+	<tr>
+		<th>Strategy</th>
+		<th>isRunning</th>
+		<th>Unlock</th>
+		<th>ADX</th>
+		<th>+DI</th>
+		<th>-DI</th>
+		<th>currentRate</th>
+		<th>stopLoss</th>
+		<th>Placed</th>
+		<th>maxCurrentRate</th>
+		<th>nextUpdate</th>
+		<th>accion</th>
+		<th>operID</th>
+		<th>beneficioTotal</th>
+
+	</tr>
+	{% for strategy in strategy_list %}
+		<tr
+		   {% ifequal strategy.accion "VENDER" %}
+			style="background-color:aqua"
+		   {% endifequal %}
+		   {% ifequal strategy.accion "COMPRAR" %}
+            style="background-color:aqua"
+           {% endifequal %}
+		   {% ifequal strategy.accion "COOLDOWN" %}
+            style="background-color:yellow"
+           {% endifequal %}
+		>
+	        <td><a href="/strategy/{{ strategy.id }}">{{ strategy }}</a></td>
+			<td><a href="/toggle/{{ strategy.id }}">{{ strategy.isRunning }}</a></td>
+			<td><a href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
+			<td>{{ strategy.adx|floatformat:2}}</td>
+			<td>{{ strategy.plusDI|floatformat:2 }}</td>
+			<td>{{ strategy.minusDI|floatformat:2 }}</td>
+			<td>{{ strategy.currentRate|floatformat:4 }}</td>
+			<td>{{ strategy.stopLoss|floatformat:0 }}</td>
+			<td>{{ strategy.placedPrice|floatformat:4 }}</td>
+			<td>{{ strategy.maxCurrentRate|floatformat:4 }}</td>
+			<td>{{ strategy.nextUpdate|date:'Y-m-d H:i:s' }}</td>
+			<td>{{ strategy.accion }}</td>
+			<td>{{ strategy.operID }}</td>
+			<td>{{ strategy.beneficioTotal|floatformat:2 }}</td>
+			
+		</tr>
+	{% endfor %}
+
+	<td></td>
+	<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>{{ beneficio|floatformat:2 }} </td>
+<td></td>
+<td></td>
+
+</table>
+

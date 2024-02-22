@@ -1,0 +1,31 @@
+<table summary="Strategies" id="strategies">
+	<tr>
+		<th>Strategy</th>
+		<th>Order ID</th>
+		{% if request.user.is_staff %}
+			<th>Delete</th>
+		{% endif %}
+		<th>Tipo</th>
+		<th>Open</th>
+		<th>Close</th>
+		<th>Beneficio</th>
+		<th>Beneficio %</th>
+		<th>Reason</th>
+	</tr>
+	{% for operation in operations %}
+		<tr>
+	        <td><a href="/strategy/{{ operation.strategy.id }}">{{ operation.strategy }}</a></td>
+			<td><a href="/operation/{{ operation.operID }}">VIEW</td>
+            {% if request.user.is_staff %}
+  				<td><a onclick="return confirm('Eliminar {{ operation.operID }}?')" href="/operation/clear/{{ operation.operID }}">DELETE</td>
+  			{% endif %}
+			<td>{{ operation.type }}</td>
+			<td>{{ operation.timestampOpen|date:'Y-m-d H:i:s' }}</td>
+			<td>{{ operation.timestampClose|date:'Y-m-d H:i:s' }}</td>
+			<td>{{ operation.beneficio|floatformat:2 }}</td>
+			<td>{{ operation.profit|floatformat:2 }}</td>
+			<td>{{ operation.reasonClose }}</td>
+		</tr>
+	{% endfor %}
+</table>
+

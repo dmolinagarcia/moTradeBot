@@ -1,0 +1,58 @@
+{% include "header.html" %}
+
+
+
+<script>
+$(document).ready(function(){
+    $("#accountInfo").load("/account");
+    $("#box").load("/strategy/list");
+    $("#box2").load("/strategyOpen");
+    $("#box3").load("/strategyOperations");
+});
+setInterval(reloadStrategy, 60000);
+function reloadStrategy () {
+    $("#accountInfo").load("/account");
+    $("#box").load("/strategy/list");
+    $("#box2").load("/strategyOpen");
+    $("#box3").load("/strategyOperations");
+}
+</script>
+
+<div class="box">
+   <div id="accountInfo">
+   </div>
+</div>
+
+<div class="box">
+    <h1>Strategies</h1>
+    <div id="box">
+        <h2>Loading...</h2>
+    </div>
+</div>
+
+<div class="box">
+    <h1>Open Operations</h1>
+    <div id="box2">
+        <h2>Loading...</h2>
+    </div>
+</div>
+
+<div class="box">
+    <h1>Last Closed Operations</h1>
+    <div id="box3">
+        <h2>Loading...</h2>
+    </div>
+</div>    
+
+<div id="box4" class="panel">
+<!--
+    <a href="/clear/" class="button">CLEAR</a>
+    <a href="/start/" class="button">START</a> 
+-->
+	{% if request.user.is_staff %} 
+       <a href="/process/" class="button">PROCESS</a>
+       <a href="/balance/" class="button">BALANCE</a>
+    {% endif %}
+</div>
+
+{% include "footer.html" %}

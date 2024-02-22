@@ -1,0 +1,99 @@
+{% load static %}
+{% load tz %}
+
+<table summary="Strategies" id="strategies">
+	<tr>
+		<th>Strategy</th>
+		{% if request.user.is_staff %} 
+		    <th>Unlock</th>
+		    <th>ADX</th>
+		    <th>diff</th>
+		    <th>Limit B/S</th>		
+		{% endif %}
+		<th>Rates</th>
+                <th>PR/SL</th>
+		{% if request.user.is_staff %} 
+			<th>nextUpdate</th>
+			<th>View</th>
+			<th>xxView</th>
+		{% endif %}
+		<th>Profit</th>
+
+	</tr>
+	{% for strategy in strategy_list %}
+		<tr
+                  {% if strategy.inError %}
+                      class="rowError"
+                  {% else %}
+		   {% ifequal strategy.accion "VENDER" %}
+		       class="rowShort"	
+		   {% endifequal %}
+		   {% ifequal strategy.accion "COMPRAR" %}
+                       class="rowLong" 
+                   {% endifequal %}
+		   {% ifequal strategy.accion "COOLDOWN" %}
+                       class="rowCooldown" 
+                   {% endifequal %}
+                  {% endif %}
+                >
+	        <td>
+                          {% if request.user.is_staff %}  <a href="/toggle/{{ strategy.id }}">   {% endif %}
+                              {% if strategy.isRunning %}
+                                <img src="{% static 'icons/stop.png' %}" class="toggle"></img>
+                              {% else %}
+                                <img src="{% static 'icons/play.png' %}" class="toggle"></img>
+                              {% endif %}
+                          {% if request.user.is_staff %}  </a>   {% endif %}
+
+
+	          <a href="/strategy/{{ strategy.id }}">{{ strategy }}</a>
+   <!--
+	          {% ifequal strategy.accion "VENDER" %}
+			    <img src="{% static 'icons/sell.png' %}" width="16" height="16" style="float:right"></img>
+                  {% endifequal %}
+                  {% ifequal strategy.accion "COMPRAR" %}
+			    <img src="{% static 'icons/buy.png' %}" width="16" height="16" style="float:right"></img>
+                  {% endifequal %}
+		  {% ifequal strategy.accion "COOLDOWN" %}
+			    <img src="{% static 'icons/pause.png' %}" width="16" height="16" style="float:right"></img>
+                  {% endifequal %}
+   --!>
+			</td>
+			{% if request.user.is_staff %} 
+				<td><a onclick="return confirm('Desbloquear {{ strategy}}?')" href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
+				<td>{{ strategy.adx|floatformat:2}} <br/> +{{ strategy.plusDI|floatformat:2 }} <br/> -{{ strategy.minusDI|floatformat:2 }}</td>
+				<td>{{ strategy.diffDI|floatformat:2 }}</td>
+				<td>{{ strategy.limitBuy|floatformat:0 }}/{{ strategy.limitSell|floatformat:0 }}</td>
+ 			{% endif %}				
+			<td> 
+                             C: {{ strategy.currentRate|floatformat:4 }} <br/>
+                             P: {{ strategy.placedPrice|floatformat:4 }} <br/>
+                             H: {{ strategy.maxCurrentRate|floatformat:4 }} <br/>
+                        </td>
+                        <td> {{ strategy.currentProfit|floatformat:2 }} <br/>
+                             {{ strategy.stopLossCurrent|floatformat:2 }} </td>
+			{% if request.user.is_staff %} 
+				<td>{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }} <br/>
+                                    {{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }} </td>
+				<td><a href="/operation/{{ strategy.operID }}">VIEW</a></td>
+				<td><a onclick="return confirm('Cierre manual {{ strategy}}?')" href="/manualClose/{{ strategy.id }}">CLOSE</a></td>
+			{% endif %}
+			<td>{{ strategy.beneficioTotal|floatformat:2 }}</td>
+		</tr>
+	{% endfor %}
+
+<td></td>
+			{% if request.user.is_staff %} 
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+			{% endif %}
+<td></td>
+<td></td>
+<td></td>
+<td>{{ beneficio|floatformat:2 }}</td>
+
+</table>

@@ -1,0 +1,26 @@
+{% include "header.html" %}
+
+<script>
+$(document).ready(function(){
+      $("#graph").load("/strategy/graph/{{ strategy_id }}/");
+      $("#list").load("/strategy/operations/{{ strategy_id }}/");
+      $("#comments").load("/strategy/comments/{{ strategy_id }}/");
+});
+</script>
+  <div id="graph" class="box">
+      <h2>Loading...</h2>
+  </div>
+  <div id="list" class="box">
+      <h2>Loading...</h2>
+  </div>
+	{% if request.user.is_staff %} 
+    <div id="comments" class="box">
+      <h2>Loading...</h2>
+    </div>    
+  <div id="actions" class="box">
+    <a class="button" onclick="return confirm('Reiniciar   {{ strategy_id}}?')" href="/strategy/clear/{{ strategy_id }}">CLEAR</a>  
+  </div>
+  {% endif %}
+  
+  
+{% include "footer.html" %}

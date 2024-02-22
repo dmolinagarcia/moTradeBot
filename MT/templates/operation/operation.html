@@ -1,0 +1,18 @@
+{% include "header.html" %}
+  
+<script>
+$(document).ready(function(){
+      $("#graph").load("/operation/graph/{{ operation_id }}/");
+      $("#list").load("/operation/detail/{{ operation_id }}/");
+});
+</script>
+  <div id="graph" class="box">
+      <h2>Loading...</h2>
+  </div>
+	{% if request.user.is_staff %} 
+     <div id="list" class="box">
+         <h2>Loading...</h2>
+     </div>
+  {% endif %}
+
+{% include "footer.html" %}

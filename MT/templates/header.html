@@ -1,0 +1,202 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta name="vapid-key" content="{{ vapid_key }}" />
+<meta name="user_id" content="{{ user.id }}" />
+
+<!-- dyGraphs import -->
+<script src="{% static 'dygraph/dygraph.min.js' %}"></script>
+<script src="{% static 'dygraph/crosshair.js' %}"></script>
+<script src="{% static 'dygraph/synchronizer.js' %}"></script>
+<link rel="stylesheet" href="{% static 'dygraph/dygraph.css' %}" />
+
+<!-- end dyGraphs import -->
+
+<!-- Google Charts import -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<!-- end Google Charts import -->
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+        {% if user.is_authenticated %}
+
+
+
+        {% endif %}
+
+<link rel="stylesheet" href="{% static '/css/moTrade.css' %}" />
+
+
+<style>
+
+/* Login form */
+
+.centerDiv{
+  width: 800px;
+  border-radius: 5px;
+  background: #ccc;
+  padding: 10px;
+  position: absolute;
+  margin-top: -25px;
+  margin-left: -400px;
+  top: 20%;
+  left: 50%;
+}
+
+.field {
+  width: 500px;
+}
+
+div.field label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+
+div.field input {
+line-height: 28px;
+padding: 8px 16px;
+width: 100%;
+min-height: 44px;
+border: unset;
+border-radius: 4px;
+outline-color: rgb(84 175 93 / 0.5);
+}
+
+#graph {
+  background-color: #EEEEEE;
+}
+
+#chart {
+  min-height: 600px; 
+  width:100%;
+}
+
+#chart1 {
+  min-height: 200px;
+  width:100%;
+}
+
+#chart2 {
+  min-height: 200px;
+  width:100%;
+}
+
+#chart3 {
+  min-height: 200px;
+  width:100%;
+}
+
+#footer {
+  background: #777777;
+  padding-top: 20px;
+  padding-left: 8px;
+  padding-right: 8px;
+  min-height: 150px;
+  border-top: 8px;
+  border-color: #777777;
+  border-top-color: #4CAF50;
+  border-style: solid;
+  position: relative; 
+  height: 150px
+}
+
+#tzBox {
+  position: absolute; 
+  top: 50%; 
+  right:0px; 
+  transform: translate(-50%,-10%); 
+  float:right;
+}
+
+#tzBox2 {
+  top:25%; 
+  position: absolute; 
+  left: 50px;
+}
+
+.clock {
+    font-family: Orbitron;
+    letter-spacing: 7px;
+    display: block;
+    padding-bottom: 30px;
+    font-size: 25px;
+    width: 200px;
+}
+
+table {
+    font-family: monospace;
+}
+
+
+
+</style>
+</head>
+<body>
+        {% if user.is_authenticated %}
+          <div id="header" class="box" style="position: relative; height: 150px">
+            <div style="width: 25%; float: left"> 
+              <a href="/"> <img src="{% static 'logo/logo_small.png' %}" alt="moTrade Logo"> </a>
+            </div>
+            <div>
+              
+            </div>
+            <div style="position: absolute; top: 50%; right:50px; transform: translate(-50%,-50%); float:left;"> 
+              <div id="MyClockDisplay" class="clock" onload="showTime()"></div>
+              <a class="button" href="{% url 'logout'%}?next={{request.path}}">Logout</a>
+            </div>
+          </div>
+          
+      <script>
+
+function showTime(){
+    var date = new Date();
+    var h = date.getHours(); // 0 - 23
+    var m = date.getMinutes(); // 0 - 59
+    var s = date.getSeconds(); // 0 - 59
+    var session = "AM";
+    
+    h = (h < 10) ? "0" + h : h;
+    m = (m < 10) ? "0" + m : m;
+    s = (s < 10) ? "0" + s : s;
+    
+    var time = h + ":" + m + ":" + s + " ";
+    document.getElementById("MyClockDisplay").innerText = time;
+    document.getElementById("MyClockDisplay").textContent = time;
+    
+    setTimeout(showTime, 1000);
+    
+}
+
+showTime();
+
+</script>
+
+<script type="text/javascript">
+    var elems = document.getElementsByClassName('confirmationLink');
+    var confirmIt = function (e) {
+        if (!confirm('Are you sure?')) e.preventDefault();
+    };
+    for (var i = 0, l = elems.length; i < l; i++) {
+        elems[i].addEventListener('click', confirmIt, false);
+    }
+</script>
+
+        {% endif %}
+        
+<div id="content">        
+      
+
