@@ -1,7 +1,6 @@
 sudo apt --assume-yes update
-export DEBIAN_FRONTEND=noninteractive
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
-sudo apt-get --assume-yes install software-properties-common
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install software-properties-common
 sudo add-apt-repository --yes universe
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
@@ -13,3 +12,10 @@ sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2ht
 echo "Europe/Madrid" | sudo tee /etc/timezone
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 sudo timedatectl set-timezone "Europe/Madrid"
+git clone https://github.com/dmolinagarcia/moTradeBot.git
+sudo mkdir -p /home/moTrade
+sudo mv moTradeBot/* /home/moTrade
+sudo mv moTradeBot/.* /home/moTrade
+sudo useradd moTrade -M -s /bin/bash
+sudo chown -R moTrade:moTrade /home/moTrade
+

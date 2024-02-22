@@ -25,31 +25,9 @@ Before installing the moTrade Bot, you will need to gather some information :
 Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 
     /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/install.sh)"
-    
-    sudo apt update
-    sudo apt --assume-yes upgrade
-    sudo apt-get --assume-yes install software-properties-common
-    sudo add-apt-repository universe
-    sudo apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python cron 
-    sudo apt --assume-yes upgrade
-    umask 027
-    sudo ln -s -f /usr/bin/python3.8 /usr/bin/python
-    sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2html flask 
-    ## sudo pip3 install git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
-    ## IQOption no longer supported
-    echo "Europe/Madrid" | sudo tee /etc/timezone
-    sudo dpkg-reconfigure --frontend noninteractive tzdata
-    sudo timedatectl set-timezone "Europe/Madrid"
-    
-## Registro contra github    
- (Es esto necesario una vez que el repo es publico?)
 
-    sudo useradd moTrade -m -s /bin/bash
-    sudo su - moTrade
-   
-## moTrade
+## OK hasta aqui. Ahora, a por el despliegue de moTrade.
 
-    git clone git@github.com:dmolinagarcia/moTrade.git
     cd moTrade
     nohup ./manage.py runserver 8080 > django.log &
     curl http://localhost:8080/clear/

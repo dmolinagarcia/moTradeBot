@@ -84,7 +84,7 @@ export COMPUTE_OCID=$(oci compute instance launch \
  --subnet-id ${SUBNET_ID} \
  --availability-domain "${AVAILABILITY_DOMAIN}" \
  --assign-public-ip FALSE \
- --wait-for-state RUNNING \
+ --wait-for-state RUNNING \ssh -T git@github.com
  --query "data.id" \
  --raw-output)
  
