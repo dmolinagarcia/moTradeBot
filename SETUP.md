@@ -20,6 +20,8 @@ Assign the public ip to your subdomain and write down your subdomain.
 Before installing the moTrade Bot, you will need to gather some information :
 
     PUBLIC_IP
+    moTrade SUBDOMAIN NAME
+
 Login as user ubuntu (moSSH_<your_motrade_id>)
     
     sudo apt update
@@ -30,7 +32,9 @@ Login as user ubuntu (moSSH_<your_motrade_id>)
     sudo apt --assume-yes upgrade
     umask 027
     sudo ln -s -f /usr/bin/python3.8 /usr/bin/python
-    sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2html flask git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
+    sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2html flask 
+    ## sudo pip3 install git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
+    ## IQOption no longer supported
     echo "Europe/Madrid" | sudo tee /etc/timezone
     sudo dpkg-reconfigure --frontend noninteractive tzdata
     sudo timedatectl set-timezone "Europe/Madrid"
