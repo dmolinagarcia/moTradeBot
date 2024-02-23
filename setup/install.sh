@@ -1,9 +1,12 @@
+# Disable Kernel Upgrade notifications
+sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
+
+# Prepare OS
 sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install software-properties-common
 sudo add-apt-repository --yes universe
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron whiptail
-sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron 
 umask 027
 sudo ln -s -f /usr/bin/python3.8 /usr/bin/python
 sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2html flask 
@@ -13,8 +16,11 @@ echo "Europe/Madrid" | sudo tee /etc/timezone
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 sudo timedatectl set-timezone "Europe/Madrid"
 git clone https://github.com/dmolinagarcia/moTradeBot.git
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
+sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
+
 ##################################################
-##      AREA TO CONFIGURE SECRETS AND KEYS!
+##            CONFIGURE SECRETS AND KEYS!
 ##
 ##
 ##

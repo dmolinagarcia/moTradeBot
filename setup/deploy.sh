@@ -56,6 +56,7 @@ echo Compartment ID: $COMPARTMENT_ID
 ## VCN
 echo Creating VCN...
 export VCN_ID=$(oci network vcn create -c $COMPARTMENT_ID --cidr-block "10.0.0.0/16" --query "data.id" --raw-output)
+echo VCN created. Status $? VCN_ID $VCN_ID
 until oci network vcn get --vcn-id $VCN_ID >> /dev/null 2> /dev/null
 do
     echo Waiting for VCN to become AVAILABLE...

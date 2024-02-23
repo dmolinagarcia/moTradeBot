@@ -1,7 +1,7 @@
 ## Cleanup
 export MOTRADE_ID=$1
 
-echo Cleaning up moTrade devBox Infrastructure $MOTRADE_ID ...
+echo Cleaning up moTrade proBox Infrastructure $MOTRADE_ID ...
 export COMPARTMENT_NAME="moTrade_${MOTRADE_ID}"
 export COMPARTMENT_ID=$(oci iam compartment list --query "data[?name=='${COMPARTMENT_NAME}'].id | [0]" --raw-output)
 export VCN_ID=$(oci network vcn list -c $COMPARTMENT_ID --query "data[0].id" --raw-output)
