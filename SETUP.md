@@ -3,24 +3,12 @@
 
 ## OK hasta aqui. Ahora, a por el despliegue de moTrade.
 
-    # La BD ha sido compactada y commiteada asi. todo esto no es necesario.
-    cd moTrade
-    nohup ./manage.py runserver 8080 > django.log &
-    curl http://localhost:8080/clear/
-    sqlite3 db.sqlite3
-    vacuum;
-    .quit
-
-(Aqui tengo que obtener una BD lista para arrancar desde el repo)
-
 ## install.ksh
 
 Esto debe configurar.
 
 Secret KEY en MoTrade/settings.py
 allowed hosts en MoTrade/settings.py
-BINGX keys en BINGXCFG.py
-Cuenta real o demo en BINGXCFG.py
     
 ## Deploy under HTTPS server
 (Todo esto, se debe desplegar tambien con el install.ksh, los ficheros al menos!)
