@@ -49,9 +49,8 @@ EOF
 ##
 ##################################################
 
-## TO-DO
-## Should I rotate the database, so no pull will overwrite it?
-
+## Rotate the database
+mv /home/ubuntu/moTradeBot/db.sqlite3.source /home/ubuntu/moTradeBot/db.sqlite3
 sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade
 sudo mv moTradeBot/* /home/moTrade
