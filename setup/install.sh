@@ -1,3 +1,8 @@
+# PreCreate moTrade user
+sudo mkdir -p /home/moTrade
+sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
+sudo useradd moTrade -M -s /bin/bash
+
 # Disable Kernel Upgrade notifications
 sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
 
@@ -51,11 +56,8 @@ EOF
 
 ## Rotate the database
 mv /home/ubuntu/moTradeBot/db.sqlite3.source /home/ubuntu/moTradeBot/db.sqlite3
-sudo mkdir -p /home/moTrade
-sudo cp /etc/skel/.* /home/moTrade
-sudo mv moTradeBot/* /home/moTrade
-sudo mv moTradeBot/.* /home/moTrade
-sudo useradd moTrade -M -s /bin/bash
+sudo mv moTradeBot/* /home/moTrade 2>/dev/null
+sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
 rm -rf /home/ubuntu/moTradeBot
 
