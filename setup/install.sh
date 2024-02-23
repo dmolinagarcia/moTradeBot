@@ -9,7 +9,7 @@ sudo add-apt-repository --yes universe
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron 
 umask 027
 sudo ln -s -f /usr/bin/python3.8 /usr/bin/python
-sudo pip3 install --target /lib/python3.8 --upgrade testresources Django json2html flask 
+sudo pip3 install --target /lib/python3 --upgrade testresources Django json2html flask 
 ## sudo pip3 install git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
 ## IQOption no longer supported
 echo "Europe/Madrid" | sudo tee /etc/timezone
@@ -37,7 +37,7 @@ case $vACCOUNT in
     TEST ) vAPIURL="https://open-api-vst.bingx.com";;
 esac
 
-cat > BINGXCFG.py << EOF
+cat > /home/ubuntu/moTradeBot/BINGXCFG.py << EOF
 APIURL = "$vAPIURL"
 APIKEY = "$vAPIKEY"
 SECRETKEY = "$vSECRETKEY"
@@ -53,6 +53,7 @@ EOF
 ## Should I rotate the database, so no pull will overwrite it?
 
 sudo mkdir -p /home/moTrade
+sudo cp /etc/skel/.* /home/moTrade
 sudo mv moTradeBot/* /home/moTrade
 sudo mv moTradeBot/.* /home/moTrade
 sudo useradd moTrade -M -s /bin/bash
