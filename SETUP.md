@@ -3,6 +3,7 @@
 
 ## OK hasta aqui. Ahora, a por el despliegue de moTrade.
 
+    # La BD ha sido compactada y commiteada asi. todo esto no es necesario.
     cd moTrade
     nohup ./manage.py runserver 8080 > django.log &
     curl http://localhost:8080/clear/
