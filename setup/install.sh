@@ -1,4 +1,4 @@
-:wq# PreCreate moTrade user
+# PreCreate moTrade user
 sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
 sudo useradd moTrade -M -s /bin/bash
@@ -214,7 +214,6 @@ DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 LOGIN_REDIRECT_URL = '/'
 
 EOF
-
 
 ##
 ##
