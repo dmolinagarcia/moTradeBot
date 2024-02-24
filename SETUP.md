@@ -1,90 +1,3 @@
-## Deploy under HTTPS server
-
-Connectivity
-
-    sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-    sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-    sudo netfilter-persistent save
-
-Install apache
-
-    sudo apt-get install apache2
-    sudo systemctl restart apache2
-
-(Todo esto, se debe desplegar tambien con el install.ksh, los ficheros al menos!)
-
-mkdir /var/log/moTrade
-chown www-data:www-data /var/log/moTrade
-
-
-Set up VirtualHost
-
-    sudo mkdir /var/www/<your domain>
-    sudo chown -R moTrade:moTrade <your domain>
-    sudo chmod -R 755 <your domain>
-    sudo vi /var/www/<your domain>/index.html
-    <html>
-    <head>
-        <title>Welcome to Your_domain!</title>
-    </head>
-    <body>
-        <h1>Success!  The your_domain virtual host is working!</h1>
-    </body>
-    </html>
-    sudo vi /etc/apache2/sites-available/<your domain>.conf
-    <VirtualHost *:80>
-        ServerAdmin webmaster@localhost
-        ServerName <your domain>
-        DocumentRoot /var/www/<your domain>
-        ErrorLog ${APACHE_LOG_DIR}/<your domain>_error.log
-        CustomLog ${APACHE_LOG_DIR}&<your domain>_access.log combined
-        Alias /static/ /home/moTrade/moTrade/MT/static
-        
-        WSGIDaemonProcess www-motrade processes=2 threads=12 python-path=/home/moTrade/moTrade
-        WSGIApplicationGroup %{GLOBAL}
-        WSGIProcessGroup www-motrade
-        WSGIScriptAlias / /home/moTrade/moTrade/MoTrade/wsgi.py
-
-        <Directory /home/moTrade/moTrade/MoTrade >
-            Require all granted
-        </Directory>
-
-        <Directory /home/moTrade/moTrade/MT/static >
-            Require all granted
-        </Directory>
-    </VirtualHost>
-
-    Añadir al virtualhost 000-default.conf
-    y al default-ssl
-
-    Redirect 404 /
-    ErrorDocument 404 "  "
-
-    Añadir al apache2.conf
-
-    WSGIRestrictEmbedded On
-    WSGILazyInitialization On    
-
-    sudo a2ensite <your domain>.conf
-    sudo a2ensite 000-default.conf
-    sudo a2ensite default-ssl.conf
-    sudo a2enmod wsgi
-
-    Añadir usuario apache al grupo de motrade
-    sudo usermod www-data -G www-data,moTrade
-
-    Restart apache
-    sudo systemctl restart apache2
-
-Certificado SSL
-
-    sudo apt install certbot python3-certbot-apache
-    comentar las lineas wsgi del <your domain>.conf
-    sudo certbot --apache
-    sudo systemctl status certbot.timer
-    sudo certbot renew --dry-run
-    descomentar del <your domain>-le
-    
 BINGX as a service
     
     sudo vi /lib/systemd/system/BINGX.service
@@ -112,13 +25,10 @@ WantedBy=multi-user.target
 
 ## Initialize system
 ```
-Edit BINGXCFG.py to set APIKEY and APYSECRET
-Edit APIURL to set demo or real account
 Set admin password
     python manage.py changepassword admin
 ./manage.py makemigrations
 ./manage.py migrate
-invoke clear (<domaing>/clear)
 In main page, stop all unwanted strategies
 Call for balance
 In main page, unlock all wanted strategies
@@ -133,6 +43,7 @@ All set!
 As moTrade user
     cd ~/moTrade
     git pull
+
 
 As ubuntu user
     sudo systemctl restart apache2

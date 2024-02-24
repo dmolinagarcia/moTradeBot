@@ -228,4 +228,91 @@ sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
 rm -rf /home/ubuntu/moTradeBot
 
+## Install and configure HTTP Server
+
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo netfilter-persistent save
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install apache2 libapache2-mod-wsgi-py3
+sudo systemctl restart apache2
+sudo mkdir /var/log/moTrade
+sudo chown www-data:www-data /var/log/moTrade
+
+# vSITEURL containts the site URL
+# Setup virtualhost in APACHE
+
+sudo mkdir /var/www/${vSITEURL}
+sudo chown -R moTrade:moTrade /var/www/${vSITEURL}
+sudo chmod -R 755 /var/www/${vSITEURL}
+
+cat <<EOF | sudo tee -a /var/www/${vSITEURL}/index.html > /dev/null
+<html>
+<head>
+    <title>Welcome to ${vSITEURL}</title>
+</head>
+<body>
+    <h1>Success!  The ${vSITEURL} virtual host is working!</h1>
+</body>
+</html>
+EOF
+
+cat <<EOF | sudo tee -a /etc/apache2/sites-available/${vSITEURL}.conf > /dev/null
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    ServerName ${vSITEURL}
+    DocumentRoot /var/www/${vSITEURL}
+    ErrorLog \${APACHE_LOG_DIR}/${vSITEURL}_error.log
+    CustomLog \${APACHE_LOG_DIR}&${vSITEURL}_access.log combined
+    Alias /static/ /home/moTrade/MT/static
+    
+    WSGIDaemonProcess www-motrade processes=2 threads=12 python-path=/home/moTrade
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIProcessGroup www-motrade
+    WSGIScriptAlias / /home/moTrade/MoTrade/wsgi.py
+    <Directory /home/moTrade/MoTrade >
+        Require all granted
+    </Directory>
+    <Directory /home/moTrade/MT/static >
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+
+cat <<EOF | sudo tee -a /etc/apache2/sites-available/000-default.conf > /dev/null
+    Redirect 404 /
+    ErrorDocument 404 "  "
+EOF
+
+cat <<EOF | sudo tee -a /etc/apache2/sites-available/default-ssl.conf > /dev/null
+    Redirect 404 /
+    ErrorDocument 404 "  "
+EOF
+
+cat <<EOF | sudo tee -a /etc/apache2/apache2.conf > /dev/null
+    WSGIRestrictEmbedded On
+    WSGILazyInitialization On   
+EOF
+
+sudo a2ensite ${vSITEURL}.conf
+sudo a2ensite 000-default.conf
+sudo a2ensite default-ssl.conf
+sudo a2enmod wsgi
+# Add apache user to motrade group
+sudo usermod www-data -G www-data,moTrade
+
+# Restart apache
+sudo systemctl restart apache2
+
+# SSL Certificate
+
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install certbot python3-certbot-apache
+sudo grep -v WSGI /etc/apache2/sites-available/${vSITEURL}.conf > /tmp/virtualhost
+sudo chown root:root /tmp/virtualhost
+sudo mv /tmp/virtualhost /etc/apache2/sites-available/${vSITEURL}.conf
+sudo certbot --apache --non-interactive --agree-tos -m dmolina@gmail.com --domains ${vSITEURL}
+sudo systemctl status certbot.timer
+sudo certbot renew --dry-run
+
+# Restart apache
+sudo systemctl restart apache2
 
