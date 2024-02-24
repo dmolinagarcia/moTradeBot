@@ -2,6 +2,7 @@
 sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
 
 # Get user information
+sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
 whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
 vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
@@ -18,7 +19,6 @@ sudo useradd moTrade -M -s /bin/bash
 
 
 # Prepare OS
-sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install software-properties-common
 sudo add-apt-repository --yes universe
