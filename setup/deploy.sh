@@ -94,7 +94,12 @@ export COMPUTE_OCID=$(oci compute instance launch \
 sleep 15
 echo Compute Node ID: $COMPUTE_OCID
 
-echo Adding Public IP...
+echo Adding Ingress Rules...
+export SECURITY_LIST_ID=$(oci network security-list list --compartment-id $COMPARTMENT_ID --query "data[0].id" --raw-output)
+
+
+
+echo Adding Public IP...  
 export VNIC_ID=$(oci compute instance list-vnics --instance-id $COMPUTE_OCID --query "data[0].id" --raw-output)
 export PRIV_IP_ID=$(oci network private-ip list --vnic-id $VNIC_ID --query "data[0].id" --raw-output)
 oci network public-ip create --compartment-id $COMPARTMENT_ID --lifetime RESERVED --private-ip-id $PRIV_IP_ID  --wait-for-state ASSIGNED >> /dev/null 2> /dev/null

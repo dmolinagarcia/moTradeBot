@@ -3,18 +3,7 @@
 
 ## OK hasta aqui. Ahora, a por el despliegue de moTrade.
 
-## install.ksh
-
-Esto debe configurar.
-
-Secret KEY en MoTrade/settings.py
-allowed hosts en MoTrade/settings.py
-    
 ## Deploy under HTTPS server
-(Todo esto, se debe desplegar tambien con el install.ksh, los ficheros al menos!)
-
-mkdir /var/log/moTrade
-chown www-data:www-data /var/log/moTrade
 
 Connectivity
 
@@ -27,7 +16,13 @@ Install apache
 
     sudo apt-get install apache2
     sudo systemctl restart apache2
-    
+
+(Todo esto, se debe desplegar tambien con el install.ksh, los ficheros al menos!)
+
+mkdir /var/log/moTrade
+chown www-data:www-data /var/log/moTrade
+
+
 Set up VirtualHost
 
     sudo mkdir /var/www/<your domain>
