@@ -1,4 +1,8 @@
+# Disable Kernel Upgrade notifications
+sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
+
 # Get user information
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
 whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
 vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
 vSECRETKEY=$(whiptail --inputbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
@@ -12,8 +16,6 @@ sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
 sudo useradd moTrade -M -s /bin/bash
 
-# Disable Kernel Upgrade notifications
-sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
 
 # Prepare OS
 sudo apt --assume-yes update
@@ -30,7 +32,6 @@ echo "Europe/Madrid" | sudo tee /etc/timezone
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 sudo timedatectl set-timezone "Europe/Madrid"
 git clone https://github.com/dmolinagarcia/moTradeBot.git
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 
 ##################################################
