@@ -96,8 +96,9 @@ echo Compute Node ID: $COMPUTE_OCID
 
 echo Adding Ingress Rules...
 export SECURITY_LIST_ID=$(oci network security-list list --compartment-id $COMPARTMENT_ID --query "data[0].id" --raw-output)
-
-
+curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/ingress-rules.json > ./ingress-rules.json
+oci network security-list update --security-list-id $SECURITY_LIST_ID --ingress-security-rules  file://./ingress-rules.json --force >> /dev/null 2> /dev/null
+rm -rf ./ingress-rules.json
 
 echo Adding Public IP...  
 export VNIC_ID=$(oci compute instance list-vnics --instance-id $COMPUTE_OCID --query "data[0].id" --raw-output)

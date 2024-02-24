@@ -1,13 +1,7 @@
-# How to Install MoTrade
-
-
-## OK hasta aqui. Ahora, a por el despliegue de moTrade.
-
 ## Deploy under HTTPS server
 
 Connectivity
 
-    Add ingress rule (pending cmd. add to setup.md) (80 y 443)
     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
     sudo netfilter-persistent save
