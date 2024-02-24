@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import Max,Min
 ## DISABLE WEBPUSH from webpush import send_user_notification, send_group_notification 
-import telegram
+## DISABLE TELEGRAM import telegram
 from django.conf import settings
 
 import pytz

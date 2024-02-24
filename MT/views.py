@@ -23,7 +23,7 @@ import json
 from django.conf import settings
 
 ## Notificaciones Telegram
-import telegram
+## DISABLE TELEGRAM import telegram
 
 logger = logging.getLogger(__name__)
 
