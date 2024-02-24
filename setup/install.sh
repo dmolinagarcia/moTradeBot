@@ -1,3 +1,12 @@
+# Get user information
+whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
+vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
+vSECRETKEY=$(whiptail --inputbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
+vACCOUNT=$(whiptail --radiolist --title "Use REAL or TEST account?" "Please select your preferred option" 8 80 2 "REAL" "Use your REAL account" OFF  "TEST" "Use your TEST account" ON  3>&1 1>&2 2>&3)
+vPUBLICIP=$(whiptail --inputbox "Enter your OCI Public IP" 8  80 3>&1 1>&2 2>&3)
+vSITEURL=$(whiptail --inputbox "Enter your DNS subdomain (xxxxxx.mooo.com)" 8  80 3>&1 1>&2 2>&3)
+vEMAIL=$(whiptail --inputbox --title "Enter a valid email" "This is used to get a SSL certificate for your site" 12  80 3>&1 1>&2 2>&3)
+
 # PreCreate moTrade user
 sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
@@ -32,10 +41,6 @@ sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
 ##
 
 ## Generate BINGXCFG.py
-whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
-vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
-vSECRETKEY=$(whiptail --inputbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
-vACCOUNT=$(whiptail --radiolist --title "Use REAL or TEST account?" "Please select your preferred option" 8 80 2 "REAL" "Use your REAL account" OFF  "TEST" "Use your TEST account" ON  3>&1 1>&2 2>&3)
 
 case $vACCOUNT in
     REAL ) vAPIURL="https://open-api.bingx.com"; break;;
@@ -49,8 +54,6 @@ SECRETKEY = "$vSECRETKEY"
 EOF
 
 ## Generate settings.py
-vPUBLICIP=$(whiptail --inputbox "Enter your OCI Public IP" 8  80 3>&1 1>&2 2>&3)
-vSITEURL=$(whiptail --inputbox "Enter your DNS subdomain (xxxxxx.mooo.com)" 8  80 3>&1 1>&2 2>&3)
 vDJANGOSECRET=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 50 ; echo '')
 
 cat > /home/ubuntu/moTradeBot/MoTrade/settings.py << EOF
