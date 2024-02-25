@@ -249,9 +249,7 @@ sudo mkdir /var/www/${vSITEURL}
 sudo chown -R moTrade:moTrade /var/www/${vSITEURL}
 sudo chmod -R 755 /var/www/${vSITEURL}
 
-exit 0
-
-cat <<EOF | sudo tee -a /var/www/${vSITEURL}/index.html > /dev/null
+cat <<EOF | sudo tee /var/www/${vSITEURL}/index.html > /dev/null
 <html>
 <head>
     <title>Welcome to ${vSITEURL}</title>
@@ -262,13 +260,13 @@ cat <<EOF | sudo tee -a /var/www/${vSITEURL}/index.html > /dev/null
 </html>
 EOF
 
-cat <<EOF | sudo tee -a /etc/apache2/sites-available/${vSITEURL}.conf > /dev/null
+cat <<EOF | sudo tee /etc/apache2/sites-available/${vSITEURL}.conf > /dev/null
 <VirtualHost *:80>
     ServerAdmin webmaster@localhost
     ServerName ${vSITEURL}
     DocumentRoot /var/www/${vSITEURL}
     ErrorLog \${APACHE_LOG_DIR}/${vSITEURL}_error.log
-    CustomLog \${APACHE_LOG_DIR}&${vSITEURL}_access.log combined
+    CustomLog \${APACHE_LOG_DIR}/${vSITEURL}_access.log combined
     Alias /static/ /home/moTrade/MT/static
     
     WSGIDaemonProcess www-motrade processes=2 threads=12 python-path=/home/moTrade
@@ -284,14 +282,38 @@ cat <<EOF | sudo tee -a /etc/apache2/sites-available/${vSITEURL}.conf > /dev/nul
 </VirtualHost>
 EOF
 
-cat <<EOF | sudo tee -a /etc/apache2/sites-available/000-default.conf > /dev/null
-    Redirect 404 /
-    ErrorDocument 404 "  "
+cat <<EOF | sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null
+<VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+        Redirect 404 /
+        ErrorDocument 404 "  "
+</VirtualHost>
 EOF
 
-cat <<EOF | sudo tee -a /etc/apache2/sites-available/default-ssl.conf > /dev/null
-    Redirect 404 /
-    ErrorDocument 404 "  "
+cat <<EOF | sudo tee /etc/apache2/sites-available/default-ssl.conf > /dev/null
+<IfModule mod_ssl.c>
+        <VirtualHost _default_:443>
+                ServerAdmin webmaster@localhost
+                DocumentRoot /var/www/html
+                ErrorLog ${APACHE_LOG_DIR}/error.log
+                CustomLog ${APACHE_LOG_DIR}/access.log combined
+                Redirect 404 /
+                ErrorDocument 404 "  "                
+                SSLEngine on
+                SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+                SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+                <FilesMatch "\.(cgi|shtml|phtml|php)$">
+                                SSLOptions +StdEnvVars
+                </FilesMatch>
+                <Directory /usr/lib/cgi-bin>
+                                SSLOptions +StdEnvVars
+                </Directory>
+        </VirtualHost>
+</IfModule>
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 EOF
 
 cat <<EOF | sudo tee -a /etc/apache2/apache2.conf > /dev/null
@@ -303,7 +325,6 @@ sudo a2ensite ${vSITEURL}.conf
 sudo a2ensite 000-default.conf
 sudo a2ensite default-ssl.conf
 sudo a2enmod wsgi
-# Add apache user to motrade group
 sudo usermod www-data -G www-data,moTrade
 
 # Restart apache
@@ -319,6 +340,36 @@ sudo certbot --apache --non-interactive --agree-tos -m dmolina@gmail.com --domai
 sudo systemctl status certbot.timer
 sudo certbot renew --dry-run
 
+cat <<EOF | sudo tee /etc/apache2/sites-available/${vSITEURL}-le-ssl.conf > /dev/null
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerAdmin webmaster@localhost
+    ServerName motest1.mooo.com
+    DocumentRoot /var/www/motest1.mooo.com
+    ErrorLog ${APACHE_LOG_DIR}/motest1.mooo.com_error.log
+    CustomLog ${APACHE_LOG_DIR}/motest1.mooo.com_access.log combined
+    Alias /static/ /home/moTrade/MT/static/
+
+    WSGIDaemonProcess www-motrade processes=2 threads=12 python-path=/home/moTrade
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIProcessGroup www-motrade
+    WSGIScriptAlias / /home/moTrade/MoTrade/wsgi.py
+    
+    <Directory /home/moTrade/MoTrade >
+        Require all granted
+    </Directory>
+    <Directory /home/moTrade/MT/static >
+        Require all granted
+    </Directory>
+
+SSLCertificateFile /etc/letsencrypt/live/motest1.mooo.com/fullchain.pem
+SSLCertificateKeyFile /etc/letsencrypt/live/motest1.mooo.com/privkey.pem
+Include /etc/letsencrypt/options-ssl-apache.conf
+</VirtualHost>
+</IfModule>
+EOF
+
 # Restart apache
+sudo chmod 777 /var/log/moTrade/moTrade.log
 sudo systemctl restart apache2
 
