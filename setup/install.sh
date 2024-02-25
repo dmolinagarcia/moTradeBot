@@ -249,6 +249,8 @@ sudo mkdir /var/www/${vSITEURL}
 sudo chown -R moTrade:moTrade /var/www/${vSITEURL}
 sudo chmod -R 755 /var/www/${vSITEURL}
 
+exit 0
+
 cat <<EOF | sudo tee -a /var/www/${vSITEURL}/index.html > /dev/null
 <html>
 <head>
