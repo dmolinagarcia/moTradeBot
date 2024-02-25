@@ -1,27 +1,3 @@
-BINGX as a service
-    
-    sudo vi /lib/systemd/system/BINGX.service
-    
-[Unit]
-Description=BINGX API service
-After=multi-user.target
-Conflicts=getty@tty1.service
-
-[Service]
-User=moTrade
-Group=moTrade
-Type=simple
-ExecStart=/usr/bin/python3 /home/moTrade/moTrade/BINGX.py
-StandardInput=tty-force
-StandardOutput=append:/home/moTrade/moTrade/BINGX.log
-StandardError=append:/home/moTrade/moTrade/BINGX.error.log
-
-[Install]
-WantedBy=multi-user.target
-    
-    sudo systemctl daemon-reload
-    sudo systemctl enable BINGX.service
-    sudo systemctl start BINGX.service
 
 ## Initialize system
 ```

@@ -370,6 +370,33 @@ Include /etc/letsencrypt/options-ssl-apache.conf
 EOF
 
 # Restart apache
+sudo touch /var/log/moTrade/moTrade.log
 sudo chmod 777 /var/log/moTrade/moTrade.log
 sudo systemctl restart apache2
+
+# Deploy BaaS (Bingxapi As A Service)
+cat <<EOF | sudo tee /lib/systemd/system/BINGX.service > /dev/null
+[Unit]
+Description=BINGX API service
+After=multi-user.target
+Conflicts=getty@tty1.service
+
+[Service]
+User=moTrade
+Group=moTrade
+Type=simple
+ExecStart=/usr/bin/python3 /home/moTrade/BINGX.py
+StandardInput=tty-force
+StandardOutput=append:/home/moTrade/BINGX.log
+StandardError=append:/home/moTrade/BINGX.error.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable BINGX.service
+sudo systemctl start BINGX.service
+
+
 
