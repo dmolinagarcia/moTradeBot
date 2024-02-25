@@ -426,3 +426,5 @@ reset_password('admin','$vDJANGOPASS')
 EOF
 
 whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
+
+sudo reboot
