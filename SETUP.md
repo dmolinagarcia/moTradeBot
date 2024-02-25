@@ -1,8 +1,6 @@
 
 ## Initialize system
 ```
-Set admin password
-    python manage.py changepassword admin
 ./manage.py makemigrations
 ./manage.py migrate
 In main page, stop all unwanted strategies

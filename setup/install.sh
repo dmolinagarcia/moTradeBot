@@ -5,13 +5,21 @@ sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/
 sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
 whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
-vAPIKEY=$(whiptail --inputbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
-vSECRETKEY=$(whiptail --inputbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
+vAPIKEY=$(whiptail --passwordbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
+vSECRETKEY=$(whiptail --passwordbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
 vACCOUNT=$(whiptail --radiolist --title "Use REAL or TEST account?" "Please select your preferred option" 8 80 2 "REAL" "Use your REAL account" OFF  "TEST" "Use your TEST account" ON  3>&1 1>&2 2>&3)
 vPUBLICIP=$(whiptail --inputbox "Enter your OCI Public IP" 8  80 3>&1 1>&2 2>&3)
 vSITEURL=$(whiptail --inputbox "Enter your DNS subdomain (xxxxxx.mooo.com)" 8  80 3>&1 1>&2 2>&3)
 vEMAIL=$(whiptail --inputbox --title "Enter a valid email" "This is used to get a SSL certificate for your site" 12  80 3>&1 1>&2 2>&3)
 
+while true; do
+  vDJANGOPASS=$(whiptail --passwordbox "Enter your ADMIN password" 8  80 3>&1 1>&2 2>&3)
+  vDJANGOPASS2=$(whiptail --passwordbox "Confirm your ADMIN password" 8  80 3>&1 1>&2 2>&3)
+  [ "$vDJANGOPASS" = "$vDJANGOPASS2" ] && break
+  whiptail --msgbox "Passwords do not match" 8 80
+done
+
+$vDJANGOPASS
 # PreCreate moTrade user
 sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
@@ -227,6 +235,7 @@ EOF
 
 ## Rotate the database
 mv /home/ubuntu/moTradeBot/db.sqlite3.source /home/ubuntu/moTradeBot/db.sqlite3
+sudo chmod 660 /home/ubuntu/moTradeBot/db.sqlite3
 sudo mv moTradeBot/* /home/moTrade 2>/dev/null
 sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
@@ -398,5 +407,22 @@ sudo systemctl daemon-reload
 sudo systemctl enable BINGX.service
 sudo systemctl start BINGX.service
 
+## Reset django ADMIN password
+
+sudo -u moTrade python /home/moTrade/manage.py shell << EOF
+
+from django.contrib.auth import get_user_model
+def reset_password(u, password):
+    try:
+        user = get_user_model().objects.get(username=u)
+    except:
+        return "User could not be found"
+    user.set_password(password)
+    user.save()
+    return "Password has been changed successfully"
 
 
+reset_password('admin','$vDJANGOPASS')
+EOF
+
+whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
