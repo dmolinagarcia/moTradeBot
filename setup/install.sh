@@ -345,7 +345,7 @@ sudo NEEDRESTART_MODE=a apt-get --assume-yes install certbot python3-certbot-apa
 sudo grep -v WSGI /etc/apache2/sites-available/${vSITEURL}.conf > /tmp/virtualhost
 sudo chown root:root /tmp/virtualhost
 sudo mv /tmp/virtualhost /etc/apache2/sites-available/${vSITEURL}.conf
-sudo certbot --apache --non-interactive --agree-tos -m dmolina@gmail.com --domains ${vSITEURL}
+sudo certbot --apache --non-interactive --agree-tos -m dmolina@gmail.com --domains ${vSITEURL} --test-cert
 sudo systemctl status certbot.timer
 sudo certbot renew --dry-run
 

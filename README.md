@@ -45,6 +45,8 @@ Before installing the moTrade Bot, you will need to gather some information :
     Your BINGx SECRETKEY
     A valid EMAIL
 
+    Please make sure your Oracle Cloud Public IP is whitelisted on BINGX API.
+
 Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 
     /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/install.sh)"
