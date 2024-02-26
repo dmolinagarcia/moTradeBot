@@ -35,6 +35,10 @@ Write down your public ip.
 https://freedns.afraid.org/
 
 Assign the public ip to your subdomain and write down your subdomain.
+
+### Create your BINGX API
+
+Write down your APIKEY and SECRETKEY. Do not share this! Add your public IP to the whitelist.
     
 ### Software    
 Before installing the moTrade Bot, you will need to gather some information :

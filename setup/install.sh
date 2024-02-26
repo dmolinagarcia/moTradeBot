@@ -295,8 +295,8 @@ cat <<EOF | sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null
 <VirtualHost *:80>
         ServerAdmin webmaster@localhost
         DocumentRoot /var/www/html
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/access.log combined
+        ErrorLog \${APACHE_LOG_DIR}/error.log
+        CustomLog \${APACHE_LOG_DIR}/access.log combined
         Redirect 404 /
         ErrorDocument 404 "  "
 </VirtualHost>
@@ -307,8 +307,8 @@ cat <<EOF | sudo tee /etc/apache2/sites-available/default-ssl.conf > /dev/null
         <VirtualHost _default_:443>
                 ServerAdmin webmaster@localhost
                 DocumentRoot /var/www/html
-                ErrorLog ${APACHE_LOG_DIR}/error.log
-                CustomLog ${APACHE_LOG_DIR}/access.log combined
+                ErrorLog \${APACHE_LOG_DIR}/error.log
+                CustomLog \${APACHE_LOG_DIR}/access.log combined
                 Redirect 404 /
                 ErrorDocument 404 "  "                
                 SSLEngine on
@@ -353,10 +353,10 @@ cat <<EOF | sudo tee /etc/apache2/sites-available/${vSITEURL}-le-ssl.conf > /dev
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
     ServerAdmin webmaster@localhost
-    ServerName motest1.mooo.com
-    DocumentRoot /var/www/motest1.mooo.com
-    ErrorLog ${APACHE_LOG_DIR}/motest1.mooo.com_error.log
-    CustomLog ${APACHE_LOG_DIR}/motest1.mooo.com_access.log combined
+    ServerName ${vSITEURL}
+    DocumentRoot /var/www/${vSITEURL}
+    ErrorLog \${APACHE_LOG_DIR}/${vSITEURL}_error.log
+    CustomLog \${APACHE_LOG_DIR}/${vSITEURL}_access.log combined
     Alias /static/ /home/moTrade/MT/static/
 
     WSGIDaemonProcess www-motrade processes=2 threads=12 python-path=/home/moTrade
@@ -371,8 +371,8 @@ cat <<EOF | sudo tee /etc/apache2/sites-available/${vSITEURL}-le-ssl.conf > /dev
         Require all granted
     </Directory>
 
-SSLCertificateFile /etc/letsencrypt/live/motest1.mooo.com/fullchain.pem
-SSLCertificateKeyFile /etc/letsencrypt/live/motest1.mooo.com/privkey.pem
+SSLCertificateFile /etc/letsencrypt/live/${vSITEURL}/fullchain.pem
+SSLCertificateKeyFile /etc/letsencrypt/live/${vSITEURL}/privkey.pem
 Include /etc/letsencrypt/options-ssl-apache.conf
 </VirtualHost>
 </IfModule>
