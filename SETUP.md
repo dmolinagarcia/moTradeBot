@@ -14,6 +14,8 @@ All set!
 
 ## Update from GITHUB
 
+sudo --chdir /root pwd
+
 As moTrade user
     cd ~/moTrade
     git pull

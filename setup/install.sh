@@ -47,10 +47,9 @@ sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
 sudo useradd moTrade -M -s /bin/bash
 
 # Prepare OS
-sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install software-properties-common
-sudo add-apt-repository --yes universe
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron 
+executeStep "Upgrading host Kernel" "sudo apt-get dist-upgrade --yes"
+executeStep "Adding moTrade repository" "sudo add-apt-repository --yes universe"
+executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron"
 umask 027
 sudo ln -s -f /usr/bin/python3 /usr/bin/python
 sudo pip3 install testresources Django json2html flask
