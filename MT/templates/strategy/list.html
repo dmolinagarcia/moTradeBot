@@ -22,20 +22,20 @@
 	</tr>
 	{% for strategy in strategy_list %}
 		<tr
-                  {% if strategy.inError %}
-                      class="rowError"
-                  {% else %}
-		   {% if strategy.accion == "VENDER" %}
-		       class="rowShort"	
-		   {% endif %}
-		   {% ifequal strategy.accion "COMPRAR" %}
-                       class="rowLong" 
-                   {% endifequal %}
-		   {% ifequal strategy.accion "COOLDOWN" %}
-                       class="rowCooldown" 
-                   {% endifequal %}
-                  {% endif %}
-                >
+        	{% if strategy.inError %}
+            	class="rowError"
+            {% else %}
+		   		{% if strategy.accion == "VENDER" %}
+		       		class="rowShort"	
+		   		{% endif %}
+		   		{% if strategy.accion == "COMPRAR" %}
+                	class="rowLong" 
+                {% endif%}
+		   		{% if strategy.accion == "COOLDOWN" %}
+                    class="rowCooldown" 
+                {% end %}
+        	{% endif %}
+            >
 	        <td>
                           {% if request.user.is_staff %}  <a href="/toggle/{{ strategy.id }}">   {% endif %}
                               {% if strategy.isRunning %}
