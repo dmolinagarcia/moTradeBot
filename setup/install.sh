@@ -256,6 +256,7 @@ EOF
 ## Rotate the database
 mv /home/ubuntu/moTradeBot/db.sqlite3.source /home/ubuntu/moTradeBot/db.sqlite3
 sudo chmod 660 /home/ubuntu/moTradeBot/db.sqlite3
+sudo chmod 775 /home/moTrade
 sudo mv moTradeBot/* /home/moTrade 2>/dev/null
 sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
