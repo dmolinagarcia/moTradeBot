@@ -48,15 +48,15 @@
 
 	          <a href="/strategy/{{ strategy.id }}">{{ strategy }}</a>
    <!--
-	          {% ifequal strategy.accion "VENDER" %}
+	          {% if strategy.accion == "VENDER" %}
 			    <img src="{% static 'icons/sell.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endifequal %}
-                  {% ifequal strategy.accion "COMPRAR" %}
+                  {% endif %}
+                  {% if strategy.accion == "COMPRAR" %}
 			    <img src="{% static 'icons/buy.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endifequal %}
-		  {% ifequal strategy.accion "COOLDOWN" %}
+                  {% endif %}
+		  {% if strategy.accion == "COOLDOWN" %}
 			    <img src="{% static 'icons/pause.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endifequal %}
+                  {% endif %}
    --!>
 			</td>
 			{% if request.user.is_staff %} 
