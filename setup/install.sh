@@ -1,9 +1,31 @@
+#!/bin/bash
+
+executeStep () {
+    ok () { printf "[  \e[1m\e[32m  OK  \e[0m  ]\n"; }
+    ko () { printf "[  \e[5m\e[41m FAIL \e[0m  ]\n"; }
+
+    export TERMCOLS=$(tput cols)
+    export STATUSCOL=$(($TERMCOLS-15))
+    export POSSTR="%-${STATUSCOL}s"
+
+    printf " • %-${STATUSCOL}s" "$1 ..."
+
+    if $2 > /dev/null 2> /dev/null        
+    then
+        ok
+    else
+        ko
+    fi
+}
+
 # Disable Kernel Upgrade notifications
 sudo sed -i "s/#\$nrconf{kernelhints} = -1;/\$nrconf{kernelhints} = -1;/g" /etc/needrestart/needrestart.conf
 
-# Get user information
+# Install Whiptail
 sudo apt --assume-yes update
 sudo NEEDRESTART_MODE=a apt-get --assume-yes install whiptail
+
+# Get user information
 whiptail --msgbox --title "Please enter your BINGX credentials" "This information won't ever be shared with anyone and will be kept secure withing your own server!" 8 80
 vAPIKEY=$(whiptail --passwordbox "Enter your BINGx APIKEY" 8  80 3>&1 1>&2 2>&3)
 vSECRETKEY=$(whiptail --passwordbox "Enter your BINGx SECRETKEY" 8  80 3>&1 1>&2 2>&3)
@@ -19,12 +41,10 @@ while true; do
   whiptail --msgbox "Passwords do not match" 8 80
 done
 
-$vDJANGOPASS
 # PreCreate moTrade user
 sudo mkdir -p /home/moTrade
 sudo cp /etc/skel/.* /home/moTrade 2>/dev/null
 sudo useradd moTrade -M -s /bin/bash
-
 
 # Prepare OS
 sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
