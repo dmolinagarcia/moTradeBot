@@ -344,11 +344,26 @@ def userAccountView(request) :
             else :
                 totalWins=totalWins+1
                 averageWins=averageWins+operation.profit
+    
+    try :
+        averageProfit=(averageLoss+averageWins)/(totalLoss+totalWins)
+    except :
+        averageProfit = 0
 
-    averageProfit=(averageLoss+averageWins)/(totalLoss+totalWins)
-    averageWins=averageWins/totalWins
-    averageLoss=averageLoss/totalLoss
-    winsLossRatio=totalWins*100/(totalLoss+totalWins)
+    try :
+        averageWins=averageWins/totalWins
+    except :
+        averageWins = 0
+
+    try :
+        averageLoss=averageLoss/totalLoss
+    except :
+        averageLoss = 0
+
+    try :
+        winsLossRatio=totalWins*100/(totalLoss+totalWins)
+    except : 
+        winsLossRatio = 0
     
     try :
         context = {
