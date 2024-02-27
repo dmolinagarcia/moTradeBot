@@ -49,7 +49,7 @@ sudo useradd moTrade -M -s /bin/bash
 # Prepare OS
 executeStep "Upgrading host Kernel" "sudo apt-get dist-upgrade --yes"
 executeStep "Adding moTrade repository" "sudo add-apt-repository --yes universe"
-executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron"
+executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron apache2 libapache2-mod-wsgi-py3"
 umask 027
 sudo ln -s -f /usr/bin/python3 /usr/bin/python
 sudo pip3 install testresources Django json2html flask
@@ -266,7 +266,7 @@ rm -rf /home/ubuntu/moTradeBot
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
-sudo NEEDRESTART_MODE=a apt-get --assume-yes install apache2 libapache2-mod-wsgi-py3
+sudo NEEDRESTART_MODE=a apt-get --assume-yes install 
 sudo systemctl restart apache2
 sudo mkdir /var/log/moTrade
 sudo chown www-data:www-data /var/log/moTrade
