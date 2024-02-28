@@ -1,3 +1,8 @@
+# Eliminar REPO VIEJO
+El repo nuevo ya esta integrado en el entorno de test. Eliminar el viejo cuando hayamos volcado todos los issues
+Crear todo esto como issues en el nuevo
+
+
 # Finalizar install.sh
 
 In main page, stop all unwanted strategies
@@ -13,17 +18,7 @@ https://stackoverflow.com/questions/4880290/how-do-i-create-a-crontab-through-a-
 y enable updates on ubuntu crontab 
 
 
-# mover entorno de test a repo nuevo. Liquidar el repo viejo llegado el momento.
-- parar procesos crontab
-- parar apache y servicio
-- guardar copia del directorio actual (ojo a la BD!)
-- subir claves a motradebot
-- clonar repo desde motradebot
-- enchufar la BD en su sitio
-- arrancar apache y BINGX
-- probar procesos cron
-- habilitar procesos cron
-- si todo funciona, ese ya es el repo nuevo
+
 
 # mejoras antes de salir
 user profile page - bet limit
@@ -38,5 +33,4 @@ real vs test account - change from web?
 # Documentacion. 
 manual de uso. explicación de todo
 
-# Mover Esto a issues.
 

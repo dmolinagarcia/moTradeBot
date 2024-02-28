@@ -22,7 +22,10 @@ else
         cd /home/ubuntu
         rm -rf /home/ubuntu/moTradeBot
         echo Updated
-        sudo systemctl restart apache2
+        sudo systemctl stop apache2
+        sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py makemigrations" >> /dev/null 2>&1
+        sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py migrate"  >> /dev/null 2>&1
+        sudo systemctl start apache2
         sudo systemctl restart BINGX.service
         vCURRENTTAG=$(sudo -u moTrade sh -c "cd /home/moTrade; git tag | tail -1")
         echo Current: $vCURRENTTAG Latest: $vLATESTTAG
