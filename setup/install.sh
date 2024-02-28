@@ -443,6 +443,10 @@ def reset_password(u, password):
 reset_password('admin','$vDJANGOPASS')
 EOF
 
+sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py makemigrations"
+sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py migrate"
+
+
 whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
 
 sudo reboot

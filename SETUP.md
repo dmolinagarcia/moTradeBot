@@ -1,8 +1,7 @@
 
 ## Initialize system
 ```
-./manage.py makemigrations
-./manage.py migrate
+
 In main page, stop all unwanted strategies
 Call for balance
 In main page, unlock all wanted strategies
