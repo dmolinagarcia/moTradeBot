@@ -372,7 +372,7 @@ sudo systemctl restart apache2
 sudo grep -v WSGI /etc/apache2/sites-available/${vSITEURL}.conf > /tmp/virtualhost
 sudo chown root:root /tmp/virtualhost
 sudo mv /tmp/virtualhost /etc/apache2/sites-available/${vSITEURL}.conf
-executeStep "Obtaining SSL certificate" "sudo certbot --apache --non-interactive --agree-tos -m ${vEMAIL} --domains ${vSITEURL} --test-cert"
+executeStep "Obtaining SSL certificate" "sudo certbot --apache --non-interactive --agree-tos -m ${vEMAIL} --domains ${vSITEURL}"
 # sudo systemctl status certbot.timer
 executeStep "Simulating SSL certificate renewal" "sudo certbot renew --dry-run"
 
