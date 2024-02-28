@@ -271,6 +271,7 @@ sudo chmod 775 /home/moTrade
 sudo mv moTradeBot/* /home/moTrade 2>/dev/null
 sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
+cd /home/ubuntu
 rm -rf /home/ubuntu/moTradeBot
 
 ## Install and configure HTTP Server
