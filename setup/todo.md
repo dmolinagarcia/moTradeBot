@@ -34,3 +34,6 @@ real vs test account - change from web?
 manual de uso. explicación de todo
 
 
+# Protección anti liquidaciones
+
+necesito una especie de killswitch. menos criptos, check posición más a menudo, cerrar todo si el beneficio es muy alto, mayor al 5% del balance.
