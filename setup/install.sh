@@ -268,8 +268,8 @@ EOF
 mv /home/ubuntu/moTradeBot/db.sqlite3.source /home/ubuntu/moTradeBot/db.sqlite3
 sudo chmod 660 /home/ubuntu/moTradeBot/db.sqlite3
 sudo chmod 775 /home/moTrade
-sudo mv moTradeBot/* /home/moTrade 2>/dev/null
-sudo mv moTradeBot/.* /home/moTrade 2>/dev/null
+sudo mv /home/ubuntu/moTradeBot/* /home/moTrade 2>/dev/null
+sudo mv /home/ubuntu/moTradeBot/.* /home/moTrade 2>/dev/null
 sudo chown -R moTrade:moTrade /home/moTrade
 cd /home/ubuntu
 rm -rf /home/ubuntu/moTradeBot
@@ -376,7 +376,7 @@ sudo systemctl restart apache2
 sudo grep -v WSGI /etc/apache2/sites-available/${vSITEURL}.conf > /tmp/virtualhost
 sudo chown root:root /tmp/virtualhost
 sudo mv /tmp/virtualhost /etc/apache2/sites-available/${vSITEURL}.conf
-executeStep "Obtaining SSL certificate" "sudo certbot --apache --non-interactive --agree-tos -m ${vEMAIL} --domains ${vSITEURL}"
+executeStep "Obtaining SSL certificate" "sudo certbot --apache --non-interactive --agree-tos -m ${vEMAIL} --domains ${vSITEURL} --test-cert"
 # sudo systemctl status certbot.timer
 executeStep "Simulating SSL certificate renewal" "sudo certbot renew --dry-run"
 
