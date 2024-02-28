@@ -55,7 +55,7 @@ sudo useradd moTrade -M -s /bin/bash
 executeStep "Upgrading OS Kernel" "sudo apt-get dist-upgrade --yes"
 # executeStep "Adding moTrade repository" "sudo add-apt-repository --yes universe"
 # Not needed in Ubuntu 22.04
-executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron apache2 libapache2-mod-wsgi-py3 certbot python3-certbot-apache"
+executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron apache2 libapache2-mod-wsgi-py3 certbot python3-certbot-apache rsync"
 umask 027
 sudo ln -s -f /usr/bin/python3 /usr/bin/python
 executeStep "Installing python packages" "sudo pip3 install testresources Django json2html flask"
