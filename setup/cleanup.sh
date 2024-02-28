@@ -56,7 +56,7 @@ fi
 if [ ! -z $COMPARTMENT_ID ]
 then
     echo Cleaning up Compartment... $COMPARTMENT_ID
-    oci iam compartment delete --compartment-id $COMPARTMENT_ID --force --wait-for-state SUCCEEDED >> /dev/null 2>> /dev/null
+    oci iam compartment delete --compartment-id $COMPARTMENT_ID --force >> /dev/null 2>> /dev/null
 fi
 
 echo moTrade Infrastructure cleaned up!
