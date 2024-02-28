@@ -8,7 +8,7 @@ Add the following into moTrade crontab
 All set!
 
 how to: crontab -l | { cat; echo "0 0 0 0 0 some entry"; } | crontab -
-
+https://stackoverflow.com/questions/4880290/how-do-i-create-a-crontab-through-a-script
 
 y enable updates on ubuntu crontab 
 
