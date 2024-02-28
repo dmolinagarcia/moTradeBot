@@ -1,6 +1,9 @@
 #!/bin/bash
 
 executeStep () {
+
+    echo "Installation Step : $1" >> install.log
+
     ok () { printf "[  \e[1m\e[32m  OK  \e[0m  ]\n"; }
     ko () { printf "[  \e[5m\e[41m FAIL \e[0m  ]\n"; }
 
@@ -10,11 +13,13 @@ executeStep () {
 
     printf " • %-${STATUSCOL}s" "$1 ..."
 
-    if $2 > /dev/null 2> /dev/null        
+    if $2 >> install.log 2>&1        
     then
         ok
+        echo "Installation Step : $1 [ OK ]" >> install.log
     else
         ko
+        echo "Installation Step : $1 [FAIL]" >> install.log
     fi
 }
 
@@ -48,18 +53,22 @@ sudo useradd moTrade -M -s /bin/bash
 
 # Prepare OS
 executeStep "Upgrading OS Kernel" "sudo apt-get dist-upgrade --yes"
-executeStep "Adding moTrade repository" "sudo add-apt-repository --yes universe"
+# executeStep "Adding moTrade repository" "sudo add-apt-repository --yes universe"
+# Not needed in Ubuntu 22.04
 executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron apache2 libapache2-mod-wsgi-py3 certbot python3-certbot-apache"
 umask 027
 sudo ln -s -f /usr/bin/python3 /usr/bin/python
-sudo pip3 install testresources Django json2html flask
+executeStep "Installing python packages" "sudo pip3 install testresources Django json2html flask"
 ## sudo pip3 install git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
 ## IQOption no longer supported
-echo "Europe/Madrid" | sudo tee /etc/timezone
-sudo dpkg-reconfigure --frontend noninteractive tzdata
+# Set Timezone
+cat <<EOF | sudo tee /etc/timezone > /dev/null
+Europe/Madrid
+EOF
+executeStep "Setting Europe/Madrid Timezone" "sudo dpkg-reconfigure --frontend noninteractive tzdata"
 sudo timedatectl set-timezone "Europe/Madrid"
-git clone https://github.com/dmolinagarcia/moTradeBot.git
-sudo NEEDRESTART_MODE=a apt-get dist-upgrade --yes
+executeStep "Unpacking moTrade binaries" "git clone https://github.com/dmolinagarcia/moTradeBot.git"
+executeStep "Commiting kernel changes" "sudo apt-get dist-upgrade --yes"
 
 ##################################################
 ##            CONFIGURE SECRETS AND KEYS!
@@ -265,7 +274,7 @@ rm -rf /home/ubuntu/moTradeBot
 
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save
+executeStep "Opening firewall rules" "sudo netfilter-persistent save"
 sudo systemctl restart apache2
 sudo mkdir /var/log/moTrade
 sudo chown www-data:www-data /var/log/moTrade
@@ -349,10 +358,10 @@ cat <<EOF | sudo tee -a /etc/apache2/apache2.conf > /dev/null
     WSGILazyInitialization On   
 EOF
 
-sudo a2ensite ${vSITEURL}.conf
-sudo a2ensite 000-default.conf
-sudo a2ensite default-ssl.conf
-sudo a2enmod wsgi
+executeStep "Enabling Secure HTTP" "sudo a2ensite ${vSITEURL}.conf"
+# sudo a2ensite 000-default.conf
+executeStep "Redirecting HTTP to HTTPS" "sudo a2ensite default-ssl.conf"
+# sudo a2enmod wsgi
 sudo usermod www-data -G www-data,moTrade
 
 # Restart apache
@@ -363,9 +372,9 @@ sudo systemctl restart apache2
 sudo grep -v WSGI /etc/apache2/sites-available/${vSITEURL}.conf > /tmp/virtualhost
 sudo chown root:root /tmp/virtualhost
 sudo mv /tmp/virtualhost /etc/apache2/sites-available/${vSITEURL}.conf
-sudo certbot --apache --non-interactive --agree-tos -m dmolina@gmail.com --domains ${vSITEURL} --test-cert
-sudo systemctl status certbot.timer
-sudo certbot renew --dry-run
+executeStep "Obtaining SSL certificate" "sudo certbot --apache --non-interactive --agree-tos -m ${vEMAIL} --domains ${vSITEURL} --test-cert"
+# sudo systemctl status certbot.timer
+executeStep "Simulating SSL certificate renewal" "sudo certbot renew --dry-run"
 
 cat <<EOF | sudo tee /etc/apache2/sites-available/${vSITEURL}-le-ssl.conf > /dev/null
 <IfModule mod_ssl.c>
@@ -422,8 +431,8 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable BINGX.service
-sudo systemctl start BINGX.service
+executeStep "Configuring BINGX API" "sudo systemctl enable BINGX.service"
+executeStep "Starting BINGX API" "sudo systemctl start BINGX.service"
 
 ## Reset django ADMIN password
 
@@ -443,8 +452,8 @@ def reset_password(u, password):
 reset_password('admin','$vDJANGOPASS')
 EOF
 
-sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py makemigrations"
-sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py migrate"
+sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py makemigrations" >> /dev/null 2>&1
+sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py migrate"  >> /dev/null 2>&1
 
 
 whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
