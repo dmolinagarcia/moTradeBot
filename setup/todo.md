@@ -40,3 +40,6 @@ manual de uso. explicación de todo
 
 # Mover Esto a issues.
 
+# Protección anti liquidaciones
+
+necesito una especie de killswitch. menos criptos, check posición más a menudo, cerrar todo si el beneficio es muy alto, mayor al 5% del balance.
