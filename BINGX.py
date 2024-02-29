@@ -244,10 +244,35 @@ def get_position():
             currentProfit=-9999
             if (int)(request.json['order_id_close']) == 0 :
                 # Aqui entramos si la orden esta cerrada, pero moTrade no lo sabe
-                # Es decir, lo esperado es un cierre por liquidacion
+                # Es decir, lo esperado es un cierre por liquidacion / stopLoss
                 # Si el cierre es por moTrade, tenemos order_id_close y no entramos en este trozo de log
                 # Si realmente es un notOpen, lo veremos en BINGX por que la orden seguirá existiendo
                 # Si no es un notOpen... investigaremos.
+                # en real trade. Si pido las ordenes, la ultima sera la de cierre!
+# el siguiente codigo obtiene las ordenes para un activo
+# usarlo para obtener la ultima en este caso
+# si el tipo es correcto, es la orden de cierre
+# necesito devolversela a moTrade para que registre el order id, con el notOpen
+# def demo():
+#     payload = {}
+#     path = '/openApi/swap/v2/server/time'
+#     method = "GET"
+#     paramsMap = { }
+#     paramsStr = parseParam(paramsMap)
+#     currentTS=json.loads(send_request(method, path, paramsStr, payload))['data']['serverTime']
+# 
+#     payload = {}
+#     path = '/openApi/swap/v2/trade/allOrders'
+#     method = "GET"
+#     paramsMap = {
+#     "limit": "500",
+#     "symbol": "BTC-USDT",
+#     "timestamp": currentTS
+# }
+#     paramsStr = parseParam(paramsMap)
+#     return send_request(method, path, paramsStr, payload)
+                
+
                 app.logger.error(request.json['instrument_id_bingx'] )
                 app.logger.error(request.json)
                 app.logger.error("En ocasiones me entrado por aqui cuando no estaba cerrada")
