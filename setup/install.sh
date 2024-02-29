@@ -418,17 +418,16 @@ sudo systemctl restart apache2
 cat <<EOF | sudo tee /lib/systemd/system/BINGX.service > /dev/null
 [Unit]
 Description=BINGX API service
-After=multi-user.target
-Conflicts=getty@tty1.service
+After=network.target
 
 [Service]
 User=moTrade
 Group=moTrade
-Type=simple
 ExecStart=/usr/bin/python3 /home/moTrade/BINGX.py
 StandardInput=tty-force
 StandardOutput=append:/home/moTrade/BINGX.log
 StandardError=append:/home/moTrade/BINGX.error.log
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
