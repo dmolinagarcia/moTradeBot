@@ -32,8 +32,10 @@ To deploy the infrastructure, open cloud shell on your OCI account and run
 
 Write down your public ip.    
 
-### Obtain mooo.com subdomain
+### Obtain bot.nu subdomain
 https://freedns.afraid.org/
+
+bot.nu is recommended, as it is less demanded and it is easier to get a valid SSL Certificate.
 
 Assign the public ip to your subdomain and write down your subdomain.
 
