@@ -83,7 +83,7 @@ executeStep "Commiting kernel changes" "sudo apt-get dist-upgrade --yes"
 ## Generate BINGXCFG.py
 
 case $vACCOUNT in
-    REAL ) vAPIURL="https://open-api.bingx.com"; break;;
+    REAL ) vAPIURL="https://open-api.bingx.com";;
     TEST ) vAPIURL="https://open-api-vst.bingx.com";;
 esac
 
