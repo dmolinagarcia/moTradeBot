@@ -1,5 +1,6 @@
 __pycache__
 ./MoTrade/__pycache__
+MoTrade/settings.py
 ./MT/migrations/__pycache__
 ./MT/__pycache__
 .*.swp
