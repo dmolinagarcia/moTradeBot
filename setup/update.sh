@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd /home/ubuntu
+date
 rm -rf moTradeBot
 git clone https://github.com/dmolinagarcia/moTradeBot.git >> /dev/null 2>&1
 cd moTradeBot

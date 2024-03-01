@@ -435,7 +435,7 @@ def startView(request):
 
 def processView(request):
     strategyList=Strategy.objects.filter(nextUpdate__lte=timezone.now())
-    logger.info("Starting Process")
+    logger.info("Starting Process of " + (str)(strategyList.count()) + " strategies")
     start = time.time()
     visMarketOpen = isMarketOpen()
     # Check if market is open, pass as parameter to operation
