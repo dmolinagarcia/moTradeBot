@@ -458,6 +458,7 @@ EOF
 sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py makemigrations" >> /dev/null 2>&1
 sudo -u moTrade sh -c "cd /home/moTrade; python ./manage.py migrate"  >> /dev/null 2>&1
 
+crontab -l | { cat; echo "0 2 * * * /bin/bash -c \"\$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/update.sh)\" >> /home/ubuntu/update.log"; } | crontab -
 
 whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
 
