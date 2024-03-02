@@ -406,6 +406,33 @@ def userTimezoneFormView(request) :
         'timezone': TZ,
     }
     return HttpResponse(template.render(context, request))      
+
+
+@login_required
+def configFormView(request) :
+    configMaxBet=request.user.profile.configMaxBet
+    configProcessEnabled=request.user.profile.configProcessEnabled
+
+    ## SI se ha posteado el formulario
+    if request.method == 'POST' :
+        form = configForm(request.POST)
+        if form.is_valid() :
+            request.user.profile.configMaxBet=form.cleaned_data['configMaxBet']
+            request.user.profile.configProcessEnabled=form.cleaned_data['configProcessEnabled']
+            request.user.save()
+
+    ## No se ha posteado
+    else :
+        form = configForm(initial={'configMaxBet': configMaxBet, 'configProcessEnabled': configProcessEnabled})
+
+    template = loader.get_template('user/config.html')
+    context = {
+        'form' : form,
+        'configMaxBet': configMaxBet,
+        'configProcessEnabled': configProcessEnabled        
+    }
+    return HttpResponse(template.render(context, request))
+
     
 # Global Commands
 @login_required
@@ -435,14 +462,25 @@ def startView(request):
 
 def processView(request):
     strategyList=Strategy.objects.filter(nextUpdate__lte=timezone.now())
-    logger.info("Starting Process of " + (str)(strategyList.count()) + " strategies")
-    start = time.time()
-    visMarketOpen = isMarketOpen()
-    # Check if market is open, pass as parameter to operation
-    for strategy in strategyList :
-        strategy.operation(visMarketOpen)
-    end = time.time()
-    logger.info("Ending Process in "+(str)(end-start)+" secs.")
+    adminUser=User.objects.filter(username='admin')
+    for user in adminUser :
+        adminId=user.id
+        adminProfile=Profile.objects.filter(user=adminId)
+        for profile in adminProfile :
+            isProcessEnabled = profile.configProcessEnabled
+
+    if isProcessEnabled :       
+        logger.info("Starting Process of " + (str)(strategyList.count()) + " strategies")
+        start = time.time()
+        visMarketOpen = isMarketOpen()
+        # Check if market is open, pass as parameter to operation
+        for strategy in strategyList :
+            strategy.operation(visMarketOpen)
+        end = time.time()
+        logger.info("Ending Process in "+(str)(end-start)+" secs.")
+    else :
+        logger.info("Skipping Process due to configProcessEnabled setting to false")
+
     if request.META.get('HTTP_REFERER') :
         return redirect(request.META.get('HTTP_REFERER'))
     else :

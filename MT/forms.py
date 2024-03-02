@@ -7,3 +7,7 @@ class strategyCommentsForm(forms.Form) :
     
 class userTimezoneForm(forms.Form):
     timezone = forms.ChoiceField(choices=[(x, x) for x in pytz.common_timezones])
+
+class configForm (forms.Form):
+    configMaxBet = forms.IntegerField(widget=forms.NumberInput)
+    configProcessEnabled = forms.BooleanField(widget=forms.CheckboxInput,required=False)

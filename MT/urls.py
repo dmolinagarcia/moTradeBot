@@ -27,6 +27,7 @@ urlpatterns = [
     path ('manualClose/<int:strategy_id>/', views.manualCloseView, name='manualCloseView'),
     
     path ('registration/timezone/', views.userTimezoneFormView, name='timezoneFormView'),
+    path ('user/config/', views.configFormView, name='configFormView'),
     path ('account/', views.userAccountView, name='userAccountView'),
 
     path ('clear/', views.clearView, name='clearView'),

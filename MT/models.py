@@ -853,12 +853,13 @@ from django.dispatch import receiver
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    proccessEnabled = models.BooleanField(default=False)
     timezoneChoices = [(x, x) for x in pytz.common_timezones]
     timezone = models.CharField(
         max_length=100,
         choices=timezoneChoices,
     )
+    configMaxBet = models.IntegerField(default=0)
+    configProcessEnabled = models.BooleanField(default=False)
     
     def __str__(self):
         return ( self.user.username )

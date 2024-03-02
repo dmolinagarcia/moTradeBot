@@ -1,3 +1,4 @@
+<div style="height: 45px">
 <ul>
   <li style="float: left; list-style: none; padding-right:25px;"> Balance: {{ account.data.balance.balance |floatformat:2  }} </li>
   <li style="float: left; list-style: none; padding-right:25px;"> Equity: {{ account.data.balance.equity |floatformat:2  }} </li>
@@ -8,4 +9,15 @@
   <li style="float: left; list-style: none; padding-right:25px;"> Loss PCT: {{ operations.averageLossPct |floatformat:2 }} </li>
   <li style="float: left; list-style: none; padding-right:25px;"> Average PCT: {{ operations.averageProfit |floatformat:2 }} </li>
 </ul>
+</div>
+
+
+<script>
+$(document).ready(function(){
+    $("#cfgBox").load("/user/config/");
+});
+</script>
+
+<div id="cfgBox" style=""> </div>
+
 
