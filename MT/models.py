@@ -594,7 +594,7 @@ class Strategy(models.Model):
         force=False
         check=self.cerrar(reason,force)
         if check :
-            payload = {"head": self.__str__(), "body": "Cerrar"}
+            #payload = {"head": self.__str__(), "body": "Cerrar"}
             #send_group_notification(group_name="notificame", payload=payload, ttl=100000)      
             #telegram_settings = settings.TELEGRAM
             #bot = telegram.Bot(token=telegram_settings['bot_token'])
