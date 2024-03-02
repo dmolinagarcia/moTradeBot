@@ -670,8 +670,6 @@ class Strategy(models.Model):
             Noperation=StrategyOperation(strategy=self,operID=order_id,type="buy")
             Noperation.save()
         self.save()
-        logger.info("INFO en comprar")
-        logger.info (check)
         return check
 
     def vender(self):
@@ -708,10 +706,6 @@ class Strategy(models.Model):
 
     def cerrar(self, reasonClose, forceClose):
 
-        logger.info ("Entrando en cerrar")
-        logger.info (self.operSymbolBingx)
-        logger.info (self.operID)
-        logger.info (self.operIDclose)
         checkClose,orderIDClose=self.close_position(self.operID)
         if checkClose or forceClose:
             time.sleep(2)
@@ -720,7 +714,6 @@ class Strategy(models.Model):
                 self.operIDclose=orderIDClose
             check,position=self.get_position(self.operID)
             beneficio=position['position']['sell_amount']-position['position']['buy_amount']
-            logger.info (beneficio)
             self.beneficioTotal=self.beneficioTotal+beneficio
             profit=beneficio*100/self.bet
             Noperation=StrategyOperation.objects.filter(operID__exact=self.operID)
