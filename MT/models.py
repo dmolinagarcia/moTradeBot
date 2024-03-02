@@ -456,9 +456,11 @@ class Strategy(models.Model):
                             # if position['position']['close_at'] > 0 :
                             # para IQoption, close_at is not None, pero nunca mas lo usaremos.
                             if position['position']['currentProfit'] == -9999 :
+                            # Esta fealdad la puedo sustituir por el retorno isPositionOpen
                                 ## la posicion está cerrada
                                 reason=reason+"notOpen "
                                 self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*2)
+                                self.operIDclose=position['position']['orderIDClose']
                                 cierre=True
                                 force=True
                             else :
@@ -538,7 +540,7 @@ class Strategy(models.Model):
                         if cierre :
                             check=self.cerrar(reason,force)
                             if check :
-                                payload = {"head": self.__str__(), "body": "Cerrar"}
+                                # payload = {"head": self.__str__(), "body": "Cerrar"}
                                 #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	
                                 #telegram_settings = settings.TELEGRAM
                                 #bot = telegram.Bot(token=telegram_settings['bot_token'])
@@ -705,16 +707,20 @@ class Strategy(models.Model):
         return check
 
     def cerrar(self, reasonClose, forceClose):
+
+        logger.info ("Entrando en cerrar")
+        logger.info (self.operSymbolBingx)
+        logger.info (self.operID)
+        logger.info (self.operIDclose)
         checkClose,orderIDClose=self.close_position(self.operID)
         if checkClose or forceClose:
             time.sleep(2)
             self.placedPrice=0
-            self.operIDclose=orderIDClose
+            if not forceClose :
+                self.operIDclose=orderIDClose
             check,position=self.get_position(self.operID)
-            if forceClose :
-                beneficio = -self.bet
-            else :
-                beneficio=position['position']['sell_amount']-position['position']['buy_amount']
+            beneficio=position['position']['sell_amount']-position['position']['buy_amount']
+            logger.info (beneficio)
             self.beneficioTotal=self.beneficioTotal+beneficio
             profit=beneficio*100/self.bet
             Noperation=StrategyOperation.objects.filter(operID__exact=self.operID)
