@@ -201,22 +201,8 @@ def get_markets():
 @app.route("/get_position", methods=['POST'])
 def get_position():
 
-    # Me falta....
-    # Si el cierre no es por el bot.... como conozco el order id de cierre???? Como compruebo si la posicion está abierta???
-    # Creo que de verdad esto me imposibilita diferentes estrategias.... ggrrrrrr
-    # tengo que ir a las posiciones.... pero claro... si es una posicion por pair de trading????
-    # A no ser... que NUNCA haga nada en BINGX, y fije los stops a nivel de estrategias
-    # Darle una buena pensada... que hoy ya no veo :(
-    
-    # Efectivamente, en Perpetual Futures, es una posicion por pair. Adios a varias estrategias si quiero poder cerrar desde BINGX
-    # Si se lo dejo todo al bot creo que funcionaria
-    # En todo caso, pendiente
-    # Comprobar posiciones abiertas para ver si he cerrado la posicion
-    # si no hay posiciones, listar las ordenes de un PAIR
-    # la ultima deberia ser la que busco.
+# GET Server Time to form valid requests
 
-    # Esto es experimental!
-    # Obtenemos la posición, y con ello, el beneficio, que será lo que usemos para reportar :)
     payload = {}
     path = '/openApi/swap/v2/server/time'
     method = "GET"
@@ -224,23 +210,25 @@ def get_position():
     paramsStr = praseParam(paramsMap)
     currentTS=json.loads(send_request(method, path, paramsStr, payload))['data']['serverTime']
 
-
+# GET open positions for requested SYMBOS
     payload = {}
     path = '/openApi/swap/v2/user/positions'
     method = "GET"
     paramsMap = {
-    "timestamp": currentTS ,
-    'symbol' : request.json['instrument_id_bingx']
-}
+        "timestamp": currentTS ,
+        'symbol' : request.json['instrument_id_bingx']
+    }
     paramsStr = praseParam(paramsMap)
     response=send_request(method, path, paramsStr, payload)
     currentProfit=0
 
+# EVALUATE returned position
     try:
         dataLen=len(json.loads(response)['data'])
         dataCheck=json.loads(response)['code']
         if dataLen == 0 and dataCheck == 0 :
-            # Position closed!
+        # Valid response, but empty data
+        # Means no open position
             currentProfit=-9999
             if (int)(request.json['order_id_close']) == 0 :
                 # Aqui entramos si la orden esta cerrada, pero moTrade no lo sabe
@@ -249,29 +237,6 @@ def get_position():
                 # Si realmente es un notOpen, lo veremos en BINGX por que la orden seguirá existiendo
                 # Si no es un notOpen... investigaremos.
                 # en real trade. Si pido las ordenes, la ultima sera la de cierre!
-# el siguiente codigo obtiene las ordenes para un activo
-# usarlo para obtener la ultima en este caso
-# si el tipo es correcto, es la orden de cierre
-# necesito devolversela a moTrade para que registre el order id, con el notOpen
-# def demo():
-#     payload = {}
-#     path = '/openApi/swap/v2/server/time'
-#     method = "GET"
-#     paramsMap = { }
-#     paramsStr = parseParam(paramsMap)
-#     currentTS=json.loads(send_request(method, path, paramsStr, payload))['data']['serverTime']
-# 
-#     payload = {}
-#     path = '/openApi/swap/v2/trade/allOrders'
-#     method = "GET"
-#     paramsMap = {
-#     "limit": "500",
-#     "symbol": "BTC-USDT",
-#     "timestamp": currentTS
-# }
-#     paramsStr = parseParam(paramsMap)
-#     return send_request(method, path, paramsStr, payload)
-                
 
                 app.logger.error(request.json['instrument_id_bingx'] )
                 app.logger.error(request.json)
@@ -280,6 +245,9 @@ def get_position():
                 app.logger.error(response)
                 app.logger.error("Fin del debug para el notOpen invalido")
         elif dataCheck == 0 :
+        # Valid response with data
+        # Means position is open
+        # Calculate real profit and continue
             unrealizedProfit=(float)(json.loads(response)['data'][0]['unrealizedProfit'])
             initialMargin=(float)(json.loads(response)['data'][0]['initialMargin'])
             realisedProfit=(float)(json.loads(response)['data'][0]['realisedProfit'])
@@ -344,12 +312,30 @@ def get_position():
             else :
                 buy_amount=(float)(order2['executedQty'])*(float)(order2['avgPrice'])-(float)(order2['commission'])
 
-        data = '['+check+',{"orders":[{"side":"'+side+'"}],"position":{"buy_amount":'+(str)(buy_amount)+', "close_at": '+(str)(close_at)+',"sell_amount":'+(str)(sell_amount)+',"currentProfit":'+(str)(currentProfit)+'}}]'
+        ## All data is ready, except for closed position
+        if currentProfit == -9999 :
+	## Position is closed
+        ## Get last Order and return it
+            payload = {}
+            path = '/openApi/swap/v2/trade/allOrders'
+            method = "GET"
+            paramsMap = {
+                "limit": "500",
+                "symbol": request.json['instrument_id_bingx'] ,
+                "timestamp": currentTS
+            }
+            paramsStr = praseParam(paramsMap)
+            orderHistory=json.loads(send_request(method, path, paramsStr, payload))['data']['orders']
+            lastOrder=len(orderHistory)-1
+            orderIDclose=orderHistory[lastOrder]['orderId']
+            data = '['+check+',{"orders":[{"side":"'+side+'"}],"position":{"buy_amount":'+(str)(buy_amount)+', "close_at": '+(str)(close_at)+',"sell_amount":'+(str)(sell_amount)+',"currentProfit":'+(str)(currentProfit)+',"isPositionOpen":"false","orderIDClose":'+(str)(orderIDclose)+'}}]'
+        else :
+        ## Position is not closed
+            data = '['+check+',{"orders":[{"side":"'+side+'"}],"position":{"buy_amount":'+(str)(buy_amount)+', "close_at": '+(str)(close_at)+',"sell_amount":'+(str)(sell_amount)+',"currentProfit":'+(str)(currentProfit)+',"isPositionOpen":"true","orderIDClose":"-1"}}]'
     except:
         data = '[false,{}]'
 
-
-        app.logger.error (data)
+        app.logger.exception (data)
 
     return (data)
 
