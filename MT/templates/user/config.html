@@ -1,0 +1,15 @@
+<form action="" method="post" id="configForm" onChange="submitConfigForm()">
+  {% csrf_token %}
+  Enter Max Margin {{ form.configMaxBet }} 
+  <label class="switch">
+    {{ form.configProcessEnabled }}
+    <span class="slider round"></span>
+  </label>
+  Enable Bot
+</form>
+
+<script language="javascript" type="text/javascript">
+    function submitConfigForm() {
+       $(this).load("/user/config/", $('#configForm').serializeArray());
+    }
+</script>

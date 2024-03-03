@@ -420,6 +420,7 @@ def configFormView(request) :
             request.user.profile.configMaxBet=form.cleaned_data['configMaxBet']
             request.user.profile.configProcessEnabled=form.cleaned_data['configProcessEnabled']
             request.user.save()
+            updateBetAmount ()
 
     ## No se ha posteado
     else :
@@ -509,21 +510,38 @@ def statusView(request):
         context = {}
         return HttpResponse(template.render(context, request))    
 
-def balanceView(request):
+def updateBetAmount():
     strategyList=Strategy.objects.filter(isRunning=True)
     totalBet=0
     for strategy in strategyList :
         totalBet=totalBet+strategy.bet
     headers = {'Content-Type': 'application/json',}
     balance = requests.get('http://127.0.0.1:5000/get_balance', headers=headers).json()
+    # Balance is set by user in settings
+    adminUser=User.objects.filter(username='admin')
+    for user in adminUser :
+        adminId=user.id
+        adminProfile=Profile.objects.filter(user=adminId)
+        for profile in adminProfile :
+            maxBalance = profile.configMaxBet
+
+    if maxBalance > balance :
+        maxBalance=math.floor(balance)
+        profile.configMaxBet=balance
+        profile.save()
+
     strategyCount=strategyList.count()
-    nextAmount=math.floor(((totalBet+balance)/strategyCount)*0.75)
+    # nextAmount=math.floor(((totalBet+balance)/strategyCount)*0.75)
+    nextAmount=math.floor(maxBalance/strategyCount)
     if nextAmount == 0:
         nextAmount=1
 
     for strategy in strategyList :
         strategy.setAmount(nextAmount)
 
+
+def balanceView(request):
+    updateBetAmount()
     if request.META.get('HTTP_REFERER') :
         return redirect(request.META.get('HTTP_REFERER'))
     else :
