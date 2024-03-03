@@ -3,14 +3,14 @@
 ## DISCLAIMER
 I offer no guarantee on the outcome of this software. It's under heavy development, and even though its objectives are ambitious, they haven't been fulfilled yet. Consider it a combined exercise in programming and trading all at once. Using it blindly can, and most certaingly will, make you lose money.
 
-x. [Introduction](#introduction)
-x. [Objectives](#objectives)
-x. [Setup](#setup)
-x. [Getting started](#gettingstarted)
-x. [Indicators 101](#indicators101)
-x. [Types of operation](#operation)
-x. [Error codes](#errorcodes)
-x. [Uninstall](#uninstall)
+- [Introduction](#introduction)
+- [Objectives](#objectives)
+- [Setup](#setup)
+- [Getting started](#gettingstarted)
+- [Indicators 101](#indicators101)
+- [Types of operation](#operation)
+- [Error codes](#errorcodes)
+- [Uninstall](#uninstall)
 
 <a name="introduction"></a>
 ## Introduction
