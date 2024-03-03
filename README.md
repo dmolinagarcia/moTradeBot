@@ -1,7 +1,9 @@
 # MoTrade
 
-## DISCLAIMER
-I offer no guarantee on the outcome of this software. It's under heavy development, and even though its objectives are ambitious, they haven't been fulfilled yet. Consider it a combined exercise in programming and trading all at once. Using it blindly can, and most certaingly will, make you lose money.
+> [!CAUTION]
+> DISCLAIMER!!
+> 
+> I offer no guarantee on the outcome of this software. It's under heavy development, and even though its objectives are ambitious, they haven't been fulfilled yet. Consider it a combined exercise in programming and trading all at once. Using it blindly can, and most certaingly will, make you lose money.
 
 - [Introduction](#introduction)
 - [Objectives](#objectives)
