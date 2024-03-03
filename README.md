@@ -6,6 +6,8 @@ I offer no guarantee on the outcome of this software. It's under heavy developme
 x. [Introduction](#introduction)
 x. [Objectives](#objectives)
 x. [Setup](#setup)
+x. [Getting started](#gettingstarted)
+x. [Indicators 101](#indicators101)
 x. [Types of operation](#operation)
 x. [Error codes](#errorcodes)
 x. [Uninstall](#uninstall)
@@ -64,32 +66,30 @@ Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 
     /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/install.sh)"
 
+<a name="gettingstarted"></a>
 ## Getting Started
 
-Once you complete moTrade installation, you need to configure how much you intend to risk.
+Once you complete moTrade installation, you need to configure how much you intend to risk. Login to your moTrade Dashboard and enter your desired configuration in the top box:
 
-First things first, you need to understand how moTrade works to get the most ouf of it. This is not a AI/ML powered bot. It won't learn over time, unless I alter it's code to improve its results. moTrade is bases on trading indicators, mostly extracted from TradingView. 
+![image](https://github.com/dmolinagarcia/moTradeBot/assets/30756488/8832f9eb-9aef-40b4-985e-6e55aada7132)
+
+The Max Margin setting determines how much USDT will moTrade use for your positiones. The total amount entered will be split even amongst all running strategies. Then enable the bot to begin operating. When the bot is disabled no operation will be executed at all, so, no new positions will be opened, and existing positions will be closed.
+
+Once this is done, you need to understand how moTrade works to get the most ouf of it. This is not a AI/ML powered bot. It won't learn over time, unless I alter it's code to improve its results. moTrade is bases on trading indicators, mostly extracted from TradingView. Usually, indicator are only meaningful whenever there is a decent market volume for any given asset. Because of this, only cryptos with a high volume are used. Also, no new operations are opened if the US market are closed. The reason behind this is simple. A huge percentage of crypto exchanges comes from US markets, so volume is usually higher when they are opened. This means you can miss good oportunities when the markets are closed, but trust me, this is much better in the long run!
+
+<a name="indicators101"></a>
+## Indicators 101
+TO-DO
 
 <a name="operation"></a>
 ## Types of operation
-
-### Protected Trade
-
-In protected trade mode, we rely on limits to close operations. A operation is opened if ADX > limitOpen, and the sign is determined by DiffDI. limitBuy and limitSell are also enforced. A trailing stop is set based on the stopLoss value. The operation is closed on DiffDI Crossover, or automatically by the stopLoss.
-
-Protected mode is not implemented for BINGX. 
-
-### Normal Trade
 TO-DO
 
 <a name="errorcodes"></a>
-
 ## Error Codes
 TO-DO
 
-
 <a name="uninstall"></a>
-
 ## Uninstall
 
 Warning! This procedure will completely erase your moTrade installation. Any open positions on BINGX will remain Open and not under control of your moTrade bot.
@@ -97,7 +97,3 @@ Warning! This procedure will completely erase your moTrade installation. Any ope
 First, find your MOTRADE_ID. It's the 6 letter identifier at the end of the container name. Then, run the following from your Cloud Shell instance.
 
     curl -fsSL https://raw.githubusercontent.com/dmolinagarcia/moTradeBot/main/setup/cleanup.sh | bash -s -- <YOUR_MOTRADE_ID>
-
-
-    
-
