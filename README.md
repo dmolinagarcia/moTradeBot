@@ -3,13 +3,20 @@
 ## DISCLAIMER
 I offer no guarantee on the outcome of this software. It's under heavy development, and even though its objectives are ambitious, they haven't been fulfilled yet. Consider it a combined exercise in programming and trading all at once. Using it blindly can, and most certaingly will, make you lose money.
 
+x. [Introduction](#introduction)
+x. [Objectives](#objectives)
+x. [Setup](#setup)
+x. [Types of operation](#operation)
+x. [Error codes](#errorcodes)
+x. [Uninstall](#uninstall)
+
+<a name="introduction"></a>
 ## Introduction
 MoTrade is an automated/algorithmic trading platform. It's main purpose is to trade on a 24x7 basis with cryptocurrencies with no human intervention at all and yet, make a profit. Of course some human input would, most likely, obtain increased returns, but that's not the goal of this proyect.
 
 This is the user manual. The document is still in a work-in-progress state. Expect tons of changes.
 
 <a name="objectives"></a>
-
 ## Objectives
 
 - Create a 100% fully automated/autonomous trading bot
@@ -19,7 +26,6 @@ This is the user manual. The document is still in a work-in-progress state. Expe
 - 100% integration with, at least one, trading platform
 
 <a name="setup"></a>
-
 ## Setup
 ### Infrastructure
 
@@ -58,9 +64,13 @@ Login as user ubuntu (moSSH_<your_motrade_id>) and run the installer
 
     /bin/bash -c "$(curl -fsSL https://github.com/dmolinagarcia/moTradeBot/raw/main/setup/install.sh)"
 
+## Getting Started
+
+Once you complete moTrade installation, you need to configure how much you intend to risk.
+
+First things first, you need to understand how moTrade works to get the most ouf of it. This is not a AI/ML powered bot. It won't learn over time, unless I alter it's code to improve its results. moTrade is bases on trading indicators, mostly extracted from TradingView. 
 
 <a name="operation"></a>
-
 ## Types of operation
 
 ### Protected Trade
@@ -79,8 +89,6 @@ TO-DO
 
 
 <a name="uninstall"></a>
-
-
 
 ## Uninstall
 
