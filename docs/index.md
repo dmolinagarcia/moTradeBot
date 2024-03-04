@@ -9,6 +9,8 @@
 - [Objectives](#objectives)
 - [Setup](#setup)
 - [Getting started](#gettingstarted)
+- [Global Settings](#globalsettings)
+    - [Max Margin](#maxmargin)
 - [Indicators 101](#indicators101)
 - [Types of operation](#operation)
 - [Error codes](#errorcodes)
@@ -78,6 +80,15 @@ Once you complete moTrade installation, you need to configure how much you inten
 The Max Margin setting determines how much USDT will moTrade use for your positiones. The total amount entered will be split even amongst all running strategies. Then enable the bot to begin operating. When the bot is disabled no operation will be executed at all, so, no new positions will be opened, and existing positions will be closed.
 
 Once this is done, you need to understand how moTrade works to get the most ouf of it. This is not a AI/ML powered bot. It won't learn over time, unless I alter it's code to improve its results. moTrade is bases on trading indicators, mostly extracted from TradingView. Usually, indicator are only meaningful whenever there is a decent market volume for any given asset. Because of this, only cryptos with a high volume are used. Also, no new operations are opened if the US market are closed. The reason behind this is simple. A huge percentage of crypto exchanges comes from US markets, so volume is usually higher when they are opened. This means you can miss good oportunities when the markets are closed, but trust me, this is much better in the long run!
+
+<a name="globalsettings"></a>
+## Global Settings
+
+<a name="maxmargin"></a>
+### Max Margin
+We call "Margin" to the amount of USDT you have in open trades. moTrade uses your balance in the Perpetual Futures account, but it will only use the amount you set as Max Margin. If the margin is small (Below 300 USDT) the max margin may be exceeded, as there is some heavy rounding involved, specially in cryptos with higher prices. The max margin will be evenly splitted among all enabled strategys. So, if you set your max margin to 100 USDT, with 50 enabled strategies by default, 2 USDT will be used for each of them. For higher priced cryptos, the minimal buy amount is usually higher, so you may end up trading more than your max margin.
+
+After each closed operation, the profit or losses will be added to your max margin.
 
 <a name="indicators101"></a>
 ## Indicators 101

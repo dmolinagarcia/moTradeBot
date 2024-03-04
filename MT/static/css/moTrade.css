@@ -52,6 +52,19 @@ a.button{
   padding-right: 10px;
 }
 
+/* Account info */
+
+ul.accountInfo {
+    width: 100%;
+}
+    
+li.accountInfo {
+    text-align: center;
+    width: 24%;
+    float: left;
+    list-style: none;
+}
+
 /* Tables, maybe should rename at some point */
 #strategies {
   border-collapse: collapse;

@@ -1,13 +1,13 @@
 <div style="height: 45px">
-<ul>
-  <li style="float: left; list-style: none; padding-right:25px;"> Balance: {{ account.data.balance.balance |floatformat:2  }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Equity: {{ account.data.balance.equity |floatformat:2  }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Potential Profit: {{ account.data.balance.unrealizedProfit |floatformat:2 }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Operations: {{ operations.totalOperations }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> WL Ratio: {{ operations.winsLossRatio |floatformat:2 }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Win PCT: {{ operations.averageWinsPct |floatformat:2 }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Loss PCT: {{ operations.averageLossPct |floatformat:2 }} </li>
-  <li style="float: left; list-style: none; padding-right:25px;"> Average PCT: {{ operations.averageProfit |floatformat:2 }} </li>
+<ul class="accountInfo">
+  <li class="accountInfo"> Balance: {{ account.data.balance.balance |floatformat:2  }} </li>
+  <li class="accountInfo"> Equity: {{ account.data.balance.equity |floatformat:2  }} </li>
+  <li class="accountInfo"> Potential Profit: {{ account.data.balance.unrealizedProfit |floatformat:2 }} </li>
+  <li class="accountInfo"> Operations: {{ operations.totalOperations }} </li>
+  <li class="accountInfo"> WL Ratio: {{ operations.winsLossRatio |floatformat:2 }} </li>
+  <li class="accountInfo"> Win PCT: {{ operations.averageWinsPct |floatformat:2 }} </li>
+  <li class="accountInfo"> Loss PCT: {{ operations.averageLossPct |floatformat:2 }} </li>
+  <li class="accountInfo"> Average PCT: {{ operations.averageProfit |floatformat:2 }} </li>
 </ul>
 </div>
 

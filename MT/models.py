@@ -718,6 +718,17 @@ class Strategy(models.Model):
             profit=beneficio*100/self.bet
             Noperation=StrategyOperation.objects.filter(operID__exact=self.operID)
             Noperation[0].close(float(beneficio), float(position['position']['buy_amount']), float(position['position']['sell_amount']), reasonClose, orderIDClose, profit)
+
+            # Update max margin accordingly
+            adminUser=User.objects.filter(username='admin')
+            for user in adminUser :
+                adminId=user.id
+                adminProfile=Profile.objects.filter(user=adminId)
+                for profile in adminProfile :
+                    maxBalance = profile.configMaxBet
+                    profile.configMaxBet=maxBalance+beneficio
+                    profile.save()
+
         self.operID=0
         self.operIDclose=0
         self.bet=0
