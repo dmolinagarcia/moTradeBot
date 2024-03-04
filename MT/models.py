@@ -726,7 +726,7 @@ class Strategy(models.Model):
                 adminProfile=Profile.objects.filter(user=adminId)
                 for profile in adminProfile :
                     maxBalance = profile.configMaxBet
-                    profile.configMaxBet=maxBalance+beneficio
+                    profile.configMaxBet=(float)(maxBalance)+beneficio
                     profile.save()
 
         self.operID=0
@@ -869,7 +869,7 @@ class Profile(models.Model):
         max_length=100,
         choices=timezoneChoices,
     )
-    configMaxBet = models.IntegerField(default=0)
+    configMaxBet = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     configProcessEnabled = models.BooleanField(default=False)
     
     def __str__(self):

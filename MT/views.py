@@ -526,12 +526,11 @@ def updateBetAmount():
             maxBalance = profile.configMaxBet
 
     if maxBalance > balance :
-        maxBalance=math.floor(balance)
-        profile.configMaxBet=balance
+        maxBalance=balance+totalBet
+        profile.configMaxBet=balance+totalBet
         profile.save()
 
     strategyCount=strategyList.count()
-    # nextAmount=math.floor(((totalBet+balance)/strategyCount)*0.75)
     nextAmount=math.floor(maxBalance/strategyCount)
     if nextAmount == 0:
         nextAmount=1
