@@ -8,3 +8,5 @@ MoTrade/settings.py
 nohup.out
 BINGXCFG.py
 db.sqlite3
+temp.changelog
+
