@@ -8,4 +8,4 @@
 ## About moTrade
 MoTrade is an automated/algorithmic trading platform. It's main purpose is to trade on a 24x7 basis with cryptocurrencies with no human intervention at all and yet, make a profit. Of course some human input would, most likely, obtain increased returns, but that's not the goal of this proyect.
 
-If you are interested in using moTrade, please visit the <a src="https://dmolinagarcia.github.io/moTradeBot">moTrade main site</a>
+If you are interested in using moTrade, please visit the [moTrade main site](https://dmolinagarcia.github.io/moTradeBot)
