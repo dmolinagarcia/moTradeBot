@@ -5,7 +5,7 @@ date
 rm -rf moTradeBot
 git clone https://github.com/dmolinagarcia/moTradeBot.git >> /dev/null 2>&1
 cd moTradeBot
-vLATESTTAG=$(git tag | tail -1)
+vLATESTTAG=$(git tag --sort=creatordate | tail -1)
 vCURRENTTAG=$(sudo -u moTrade sh -c "cd /home/moTrade; git tag | tail -1")
 
 cd /home/ubuntu/moTradeBot
