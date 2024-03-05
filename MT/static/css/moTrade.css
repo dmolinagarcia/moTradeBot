@@ -1,9 +1,46 @@
 /* moTrade CSS */
 
+/* Login form */
+
+.centerDiv{
+  width: 800px;
+  border-radius: 5px;
+  background: #ccc;
+  padding: 10px;
+  position: absolute;
+  margin-top: -25px;
+  margin-left: -400px;
+  top: 20%;
+  left: 50%;
+}
+
+.field {
+  width: 500px;
+}
+
+div.field label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+
+div.field input {
+line-height: 28px;
+padding: 8px 16px;
+width: 100%;
+min-height: 44px;
+border: unset;
+border-radius: 4px;
+outline-color: rgb(84 175 93 / 0.5);
+}
+
+
 /* Global styling and layout */
 .box {
+    padding: 15px; 
     background: #EEEEEE;
-    padding: 15px;
     border: 1px;
     border-color: #333333;
     border-style: dotted;
@@ -56,13 +93,19 @@ a.button{
 
 ul.accountInfo {
     width: 100%;
+    margin: 0px;
+    background: #ffffff;
 }
     
 li.accountInfo {
     text-align: center;
-    width: 24%;
+    width: 100%;
     float: left;
     list-style: none;
+}
+
+div#accountInfo {
+    float: left;
 }
 
 /* Tables, maybe should rename at some point */

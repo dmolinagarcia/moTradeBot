@@ -43,42 +43,6 @@
 
 <style>
 
-/* Login form */
-
-.centerDiv{
-  width: 800px;
-  border-radius: 5px;
-  background: #ccc;
-  padding: 10px;
-  position: absolute;
-  margin-top: -25px;
-  margin-left: -400px;
-  top: 20%;
-  left: 50%;
-}
-
-.field {
-  width: 500px;
-}
-
-div.field label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 10px;
-  margin-top: 10px;
-}
-
-
-div.field input {
-line-height: 28px;
-padding: 8px 16px;
-width: 100%;
-min-height: 44px;
-border: unset;
-border-radius: 4px;
-outline-color: rgb(84 175 93 / 0.5);
-}
-
 #graph {
   background-color: #EEEEEE;
 }
@@ -154,9 +118,10 @@ table {
             <div style="width: 25%; float: left"> 
               <a href="/"> <img src="{% static 'logo/logo_small.png' %}" alt="moTrade Logo"> </a>
             </div>
-            <div>
-              
+
+            <div id="accountInfo">
             </div>
+  
             <div style="position: absolute; top: 50%; right:50px; transform: translate(-50%,-50%); float:left;"> 
               <div id="MyClockDisplay" class="clock" onload="showTime()"></div>
               <a class="button" href="{% url 'logout'%}?next={{request.path}}">Logout</a>
