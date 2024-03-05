@@ -871,6 +871,7 @@ class Profile(models.Model):
     )
     configMaxBet = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     configProcessEnabled = models.BooleanField(default=False)
+    configTest = models.BooleanField(default=False)
     
     def __str__(self):
         return ( self.user.username )
