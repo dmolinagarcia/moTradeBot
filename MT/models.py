@@ -391,7 +391,7 @@ class Strategy(models.Model):
                                 self.accion="WAIT"
                                 StrategyOperation.objects.filter(operID=self.operID).delete()
                                 self.operID=0
-    
+                ## Fin de protected trade 
                 else :
                     if self.estado == 0 :
                         self.currentProfit=None
@@ -503,8 +503,6 @@ class Strategy(models.Model):
                                 cierre=True
                                 reason=reason+"limitBuy "
                             ### Ante un stopLoss, esperamos 48 periodos                            
-                            ### Desactivamos stopLoss de IQ.
-                            #if self.currentRate > self.maxCurrentRate * ( 1 + (self.stopLoss/100) ) :
                             if self.currentProfit < self.stopLossCurrent :
                                 cierre=True
                                 reason=reason+"stopLoss "
@@ -514,25 +512,21 @@ class Strategy(models.Model):
                                 reason=reason+"takeProfit "
                                 self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
     
-                        # Aqui actualizamos los SL y TP
-    
+                        # Now we update SLc and TPc
+
                         if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
-                        # el profitactual menos el stopLoss base es superior al stoplosCurrent ( TRAIL! )
+                            # if Current Profit plus stopLoss (Which is always negative!) is higher that current stopLoss, 
+                            # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
                             self.stopLossCurrent = self.currentProfit + self.stopLoss
     
-                        # if (self.stopLossCurrent > self.stopLoss / 2.5) and (self.stopLossCurrent < 1 ) and (self.currentProfit > 5):
                         if (self.stopLossCurrent < 1) and (self.currentProfit > 10):
-                        # 12/02/2024 su profit > 10 y stopLosCurrent < 1 stoploss entonces a 1
-                        # Si hemos superado la mitad del stopLoss. Por ejemplo
-                        # Subo a stopLoss / 2.5 (10 para 25%)
-                        # StopLoss - 25. Si stoLossCurrent entre /2 stopLoss y 1, y profit > 5, stoploss a 1.
+                            # If profit reaches 10, set stopLoss to 1 to prevent Losses
                             self.stopLossCurrent=1
       
                         if (self.stopLossCurrent > 0) :
-                        # En cualquier caso, achuchamos hacia arriba el stopLoss
-                        # Cambiamos de 5% a 1% que se nos va de las manos 
-                        # 09/02/2024 lo subo al 2%
-                            self.stopLossCurrent = self.stopLossCurrent * 1.02
+                            # Stop Loss "Hugging"
+                            # Gap between stopLoss and current profit is reduced to 60%
+                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.40)
     
                         # Finalmente, siempre, takeProfitCurrent
                         self.takeProfitCurrent = self.stopLossCurrent + 40
@@ -585,10 +579,9 @@ class Strategy(models.Model):
             
             
 
-    def manualClose (self) :
+    def manualClose (self, reason) :
     # Used when closed is called from the web console
                             
-        reason="Manual "
         self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*2)
             # Cooldown de 48 periodos. Igual que cierre por stoploss
         force=False
@@ -708,7 +701,7 @@ class Strategy(models.Model):
 
         checkClose,orderIDClose=self.close_position(self.operID)
         if checkClose or forceClose:
-            time.sleep(2)
+            time.sleep(1)
             self.placedPrice=0
             if not forceClose :
                 self.operIDclose=orderIDClose

@@ -567,7 +567,7 @@ def unlockView(request, strategy_id):
 def manualCloseView(request, strategy_id):
     timezone.activate(pytz.timezone(request.user.profile.timezone))
     strategy = get_object_or_404(Strategy, pk=strategy_id)
-    strategy.manualClose()
+    strategy.manualClose("Manual ")
     return redirect(request.META.get('HTTP_REFERER'))
 
 
