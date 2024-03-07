@@ -12,7 +12,8 @@
 - [Global Settings](#globalsettings)
     - [Max Margin](#maxmargin)
 - [Indicators 101](#indicators101)
-- [Types of operation](#operation)
+- [Operation](#operation)
+    - [Stop Loss](#stoploss)
 - [Error codes](#errorcodes)
 - [Uninstall](#uninstall)
 
@@ -95,8 +96,14 @@ After each closed operation, the profit or losses will be added to your max marg
 TO-DO
 
 <a name="operation"></a>
-## Types of operation
+## Operation
 TO-DO
+
+<a name="stoploss"></a>
+### Stop Loss
+TO-DO Here we explain how stop loss works. Each strategy has a stopLoss property (Must be negative!) which defines the starting stopLoss. This is a trailing stop and each cycle, the stopLoss is set to follow the profit. If stop loss is -25 and profit is 5, stop loss is set to -20. 
+When profit reaches 10, stopLoss jumps to 1, to secure some profit.
+Each cycle, the gap between profit and stop loss is reduces by 40%. So, if profit does not grow, stopLoss climbs up asymptotically to the profit. This is meant to secure higher profit if the price goes high fast.
 
 <a name="errorcodes"></a>
 ## Error Codes
