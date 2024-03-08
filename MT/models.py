@@ -440,6 +440,8 @@ class Strategy(models.Model):
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
                     if self.estado == 2 :
+
+
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force=False
@@ -513,7 +515,6 @@ class Strategy(models.Model):
                                 self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
     
                         # Now we update SLc and TPc
-
                         if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
                             # if Current Profit plus stopLoss (Which is always negative!) is higher that current stopLoss, 
                             # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
@@ -523,7 +524,8 @@ class Strategy(models.Model):
                             # If profit reaches 10, set stopLoss to 1 to prevent Losses
                             self.stopLossCurrent=1
       
-                        if (self.stopLossCurrent > 0) :
+                        if (self.stopLossCurrent > -1000) :
+                        #Always!
                             # Stop Loss "Hugging"
                             # Gap between stopLoss and current profit is reduced to 60%
                             self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.40)
