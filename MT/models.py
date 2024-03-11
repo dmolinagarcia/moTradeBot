@@ -528,7 +528,7 @@ class Strategy(models.Model):
                         #Always!
                             # Stop Loss "Hugging"
                             # Gap between stopLoss and current profit is reduced to 60%
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.40)
+                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.15)
     
                         # Finalmente, siempre, takeProfitCurrent
                         self.takeProfitCurrent = self.stopLossCurrent + 40
