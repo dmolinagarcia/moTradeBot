@@ -17,22 +17,55 @@ from BINGXCFG import APIURL, SECRETKEY, APIKEY
 from flask import Flask, json, request
 app = Flask(__name__)
 
+pricesData = None
+pricesTS = 0
+
+
 @app.route("/get_price", methods=['POST'])
 def get_price():
     # Llamada al API de BINGX para obtener el current price
-    # TODO
-    # Query price for all symbols if prices are older than 10 minutes
-    # They query this internal cache
+
+    global pricesTS
+    global pricesData
+
+    # If pricesTS is older than 10 minuts, refresh pricesData
+    if time.time() > pricesTS + 1200 :
+        app.logger.error("Updating pricesData at " + (str)(time.time()))
+        pricesTS = time.time()
+ 
+        # Updating prices
+        payload = {}
+        path = '/openApi/swap/v2/server/time'
+        method = "GET"
+        paramsMap = { }
+        paramsStr = parseParam(paramsMap)
+        currentTS=json.loads(send_request(method, path, paramsStr, payload))['data']['serverTime']
+
+        payload = {}
+        path = '/openApi/swap/v1/ticker/price'
+        method = "GET"
+        paramsMap = { "timestamp": currentTS }
+        paramsStr = parseParam(paramsMap)
+        pricesData=json.loads(send_request(method, path, paramsStr, payload))['data']
+
+    # get Price from pricesData
+    for price in pricesData :
+        if price['symbol'] == request.json['instrument_id_bingx'] :
+            app.logger.error ('Return from cache will is ' + (str)(price))
+            return price
+
+    # If we are here, price is not in pricesData, so we ask for it
 
     payload = {}
     path = '/openApi/swap/v2/quote/price'
     method = "GET"
     paramsMap = { "symbol": request.json['instrument_id_bingx'] }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     response = send_request(method, path, paramsStr, payload)
 
     try :
         price=(json.loads(response)['data']['price'])
+        app.logger.error ('Return will from BINGX will is ' + (str)(json.loads(response)['data'] ))
         return json.loads(response)['data']    
     except :
         return '{"symbol":"xxx-xxxx","price":"-1","time":0}'
@@ -53,7 +86,7 @@ def buy_order():
     path = '/openApi/swap/v2/quote/price'
     method = "GET"
     paramsMap = { "symbol": request.json['instrument_id_bingx'] }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     response = send_request(method, path, paramsStr, payload)
     price=((float)(json.loads(response)['data']['price']))
     amount=(float)(request.json['amount'])*(float)(request.json['leverage'])/price
@@ -73,7 +106,7 @@ def buy_order():
         "side": positionSide,
         "leverage": request.json['leverage'] 
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     send_request(method, path, paramsStr, payload)
 
     # Place order
@@ -89,7 +122,7 @@ def buy_order():
         "positionSide"   : positionSide                                ,
         "quantity"       : (str)(amount) 
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
 
     #Hay que ajustar el return para que sea lo que motrade espera (status, orderid)
     retorno=json.loads(send_request(method, path, paramsStr, payload))
@@ -127,7 +160,7 @@ def close_position():
         "orderId"           : request.json['order_id']                    ,
         "recvWindow": 0
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     response=send_request(method, path, paramsStr, payload)
     side=json.loads(response)['data']['order']['side']
     type=json.loads(response)['data']['order']['type']
@@ -151,7 +184,7 @@ def close_position():
         "positionSide"   : positionSide                                ,
         "quantity"       : executedQty
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
 
     #Hay que ajustar el return para que sea lo que motrade espera (status, orderid)
     retorno=json.loads(send_request(method, path, paramsStr, payload))
@@ -173,7 +206,7 @@ def get_balance ():
     paramsMap = {
         "recvWindow": 0
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     retorno = json.loads(send_request(method, path, paramsStr, payload))
     return retorno['data']['balance']['availableMargin']
 
@@ -185,7 +218,7 @@ def get_account ():
     paramsMap = {
         "recvWindow": 0
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     retorno = json.loads(send_request(method, path, paramsStr, payload))
     return retorno
 
@@ -195,7 +228,7 @@ def get_markets():
     path = '/openApi/swap/v2/quote/contracts'
     method = "GET"
     paramsMap = {}
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     return send_request(method, path, paramsStr, payload)
 
 
@@ -208,7 +241,7 @@ def get_position():
     path = '/openApi/swap/v2/server/time'
     method = "GET"
     paramsMap = { }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     currentTS=json.loads(send_request(method, path, paramsStr, payload))['data']['serverTime']
 
 # GET open positions for requested SYMBOS
@@ -219,7 +252,7 @@ def get_position():
         "timestamp": currentTS ,
         'symbol' : request.json['instrument_id_bingx']
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     response=send_request(method, path, paramsStr, payload)
     currentProfit=0
 
@@ -276,7 +309,7 @@ def get_position():
         "orderId"           : request.json['order_id']                    ,
         "recvWindow": 0
     }
-    paramsStr = praseParam(paramsMap)
+    paramsStr = parseParam(paramsMap)
     retorno1 = json.loads(send_request(method, path, paramsStr, payload))
     check1   = retorno1['code']
     try :
@@ -291,7 +324,7 @@ def get_position():
         check2=-1
 
         if (int)(request.json['order_id_close']) > 0 :
-            paramsStr = praseParam(paramsMap)
+            paramsStr = parseParam(paramsMap)
             retorno2 = json.loads(send_request(method, path, paramsStr, payload))
             check2   = retorno2['code']
             order2   = retorno2['data']['order']
@@ -325,7 +358,7 @@ def get_position():
                 "symbol": request.json['instrument_id_bingx'] ,
                 "timestamp": currentTS
             }
-            paramsStr = praseParam(paramsMap)
+            paramsStr = parseParam(paramsMap)
             orderHistory=json.loads(send_request(method, path, paramsStr, payload))['data']['orders']
             lastOrder=len(orderHistory)-1
             orderIDclose=orderHistory[lastOrder]['orderId']
@@ -358,7 +391,7 @@ def send_request(method, path, urlpa, payload):
     response = requests.request(method, url, headers=headers, data=payload)
     return response.text
 
-def praseParam(paramsMap):
+def parseParam(paramsMap):
     sortedKeys = sorted(paramsMap)
     paramsStr = "&".join(["%s=%s" % (x, paramsMap[x]) for x in sortedKeys])
     return paramsStr+"&timestamp="+str(int(time.time() * 1000))
