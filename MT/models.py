@@ -527,8 +527,16 @@ class Strategy(models.Model):
                         if (self.stopLossCurrent > -1000) :
                         #Always!
                             # Stop Loss "Hugging"
-                            # Gap between stopLoss and current profit is reduced to 60%
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.15)
+                            # TODO
+                            # I am searching for the perfect balance. I am being toooooo aggresive.
+                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.01)
+
+                        # TODO
+                        # Replace stopLoss in the bot with the BINGX stopLoss
+                        # I need a new property, stopLossOrderID
+                        # if stopLossorderID is not -1
+                        # cancel orderId stopLossOrderID
+                        # set new stopLossOrder (I have to calculate the price)!
     
                         # Finalmente, siempre, takeProfitCurrent
                         self.takeProfitCurrent = self.stopLossCurrent + 40
@@ -633,7 +641,8 @@ class Strategy(models.Model):
             cryptoTimeframeDI=self.cryptoTimeframeDI,
             recommendMA=self.recommendMA,
             recommendMA240=self.recommendMA240,
-            isRunning=self.isRunning).save()
+            isRunning=self.isRunning,
+            stopLossCurrent=self.stopLossCurrent).save()
 
     def comprar(self):
         if self.protectedTrade :
@@ -785,6 +794,7 @@ class StrategyState(models.Model):
     isRunning=models.BooleanField(null=True)
     recommendMA=models.FloatField(default=0,null=True,blank=True)
     recommendMA240=models.FloatField(default=0,null=True,blank=True)
+    stopLossCurrent=models.FloatField(null=True,blank=True)
 
     def __str__(self):
         return str(self.strategy.utility+":"+str(self.timestamp))

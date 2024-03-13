@@ -184,7 +184,7 @@ def getGraphData (strategy, history) :
   
     data.append(["Time", "Rate","COMPRAR","VENDER","EMA","EMA20","EMA100"])
     data1.append(["Time", "ADX","+DI","-DI","DIFF","COMPRAR","VENDER"])
-    data2.append(["Time", "PROFIT", "COMPRAR", "VENDER"])
+    data2.append(["Time", "PROFIT", "STOPLOSS", "COMPRAR", "VENDER"])
     data3.append(["Time", "RECOMMEND", "RECOMMEND240", "COMPRAR", "VENDER"])
  
     estado=0
@@ -208,6 +208,12 @@ def getGraphData (strategy, history) :
             currentProfit=0
         else :
             currentProfit=entry.currentProfit
+
+        stopLossCurrent=0
+        if entry.stopLossCurrent is None :
+            stopLossCurrent=0
+        else :
+            stopLossCurrent=entry.stopLossCurrent
 
         ema100=entry.currentRate
         if entry.ema100 is None :
@@ -234,6 +240,7 @@ def getGraphData (strategy, history) :
 
         data2.append([(entry.timestamp).strftime('%m.%d.%y %H:%M'),
             currentProfit,
+            stopLossCurrent,
             comprar,
             vender,
             ])
@@ -602,9 +609,10 @@ def isMarketOpen() :
         if marketStatus == 'Closed' :
             isMarketOpen = False
         if marketStatus == 'Pre-Market' :
-            isMarketOpen = False
+            isMarketOpen = True 
     except :
         logger.info ("Error al pintar isMarketOpen")
+        isMarketOpen = True
         # Por defecto devolvemos True
 
     return isMarketOpen

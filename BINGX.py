@@ -20,8 +20,9 @@ app = Flask(__name__)
 @app.route("/get_price", methods=['POST'])
 def get_price():
     # Llamada al API de BINGX para obtener el current price
-    # Hasta ahora, el model invocaba al API de BINANCE
-    # Pero me fio mas de BINGX
+    # TODO
+    # Query price for all symbols if prices are older than 10 minutes
+    # They query this internal cache
 
     payload = {}
     path = '/openApi/swap/v2/quote/price'
