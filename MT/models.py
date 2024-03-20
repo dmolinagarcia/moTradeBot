@@ -440,8 +440,6 @@ class Strategy(models.Model):
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
                     if self.estado == 2 :
-
-
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force=False
@@ -484,9 +482,8 @@ class Strategy(models.Model):
                                 cierre=True
                                 reason=reason+"limitSell "
                             ### Ante un stopLoss, esperamos 48 periodos                            
-                            ### Desactivamos stopLoss de IQ.
-                            #if self.currentRate > self.maxCurrentRate * ( 1 + (self.stopLoss/100) ) :
-                            if self.currentProfit < self.stopLossCurrent :
+                            ### If we are below stopLoss and checkRecommend Fails. Close!
+                            if ( self.currentProfit < self.stopLossCurrent ) and not self.checkRecommend() :
                                 cierre=True
                                 reason=reason+"stopLoss "
                                 self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
