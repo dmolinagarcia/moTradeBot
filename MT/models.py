@@ -502,7 +502,7 @@ class Strategy(models.Model):
                                 cierre=True
                                 reason=reason+"limitBuy "
                             ### Ante un stopLoss, esperamos 48 periodos                            
-                            if self.currentProfit < self.stopLossCurrent :
+                            if self.currentProfit < self.stopLossCurrent and not self.checkRecommend():
                                 cierre=True
                                 reason=reason+"stopLoss "
                                 self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
