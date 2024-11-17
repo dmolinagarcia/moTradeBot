@@ -431,6 +431,9 @@ def configFormView(request) :
             request.user.profile.configMaxBet=form.cleaned_data['configMaxBet']
             request.user.profile.configProcessEnabled=form.cleaned_data['configProcessEnabled']
             request.user.profile.configGlobalTPEnabled=form.cleaned_data['configGlobalTPEnabled']
+            request.user.profile.configGlobalTPThreshold=form.cleaned_data['configGlobalTPThreshold']
+            request.user.profile.configGlobalTPSleepdown=form.cleaned_data['configGlobalTPSleepdown']
+            request.user.profile.configGlobalTPWakeUp=form.cleaned_data['configGlobalTPWakeUp']
             request.user.save()
             updateBetAmount ()
 
