@@ -12,3 +12,6 @@ class configForm (forms.Form):
     configMaxBet = forms.DecimalField(widget=forms.NumberInput,decimal_places=2)
     configProcessEnabled = forms.BooleanField(widget=forms.CheckboxInput,required=False)
     configGlobalTPEnabled = forms.BooleanField(widget=forms.CheckboxInput,required=False)
+    configGlobalTPThreshold = forms.DecimalField(widget=forms.NumberInput,decimal_places=2)
+    configGlobalTPSleepdown = forms.IntegerField(widget=forms.NumberInput)
+    configGlobalTPWakeUp = forms.DateTimeField()
