@@ -11,3 +11,4 @@ class userTimezoneForm(forms.Form):
 class configForm (forms.Form):
     configMaxBet = forms.DecimalField(widget=forms.NumberInput,decimal_places=2)
     configProcessEnabled = forms.BooleanField(widget=forms.CheckboxInput,required=False)
+    configGlobalTPEnabled = forms.BooleanField(widget=forms.CheckboxInput,required=False)

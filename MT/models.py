@@ -305,6 +305,8 @@ class Strategy(models.Model):
         self.save()
 
     def operation(self, isMarketOpen):
+
+        logger.debug ("Entering operation for " + self.rateSymbol)
   
         try : 
             # Sanity Checks
@@ -331,9 +333,11 @@ class Strategy(models.Model):
             self.nextUpdate=timezone.now()+timedelta(seconds=self.sleep)
             
             if self.isRunning :
+                logger.debug ("Symbol is running so we evaluate")
                 estadoNext=self.estado
                 cierre=False
                 if self.protectedTrade :
+                    logger.debug ("Symbol is in protected trading mode")
                     ## Inicio proceso protected Trade
                     if self.estado == 0 :
                         ## Estado HOLD. 
@@ -393,7 +397,9 @@ class Strategy(models.Model):
                                 self.operID=0
                 ## Fin de protected trade 
                 else :
+                    logger.debug ("Symbol is in normal operation mode")
                     if self.estado == 0 :
+                        logger.debug ("Symbol is in HOLD status")
                         self.currentProfit=None
                         self.maxCurrentRate=0
                         self.accion="WAIT"
@@ -404,10 +410,13 @@ class Strategy(models.Model):
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
                         ## isMarketOpen comprueba si el nasdaq esta abierto
                             ## Busca limitar ante bajo volumen
-                        
+                        logger.debug ("IF adx (" + str(self.adx) + ") > limitOpen (" + str(self.limitOpen) + ") we continue") 
                         if self.adx > self.limitOpen :
+                            logger.debug ("IF diffDI (" + str(self.diffDI) + ") > limitBuy (" + str(self.limitBuy) + ") we continue")
                             if (self.diffDI > self.limitBuy) : 
+                                logger.debug ("IF checkRecommend (" + str(self.checkRecommend()) + ") and isMarketOpen (" + str(isMarketOpen) + ") we continue ")
                                 if self.checkRecommend() and isMarketOpen :
+                                    logger.debug ("Conditions OK, request to open LONG position")
                                     check=self.comprar()
                                     if check :
                                         #payload = {"head": self.__str__(), "body": "Comprar"}
@@ -423,8 +432,11 @@ class Strategy(models.Model):
                                         estadoNext=2
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
+                            logger.debug ("IF diffDI (" + str(self.diffDI) + ") < limitSell (" + str(self.limitSell) + ") we continue")
                             if (self.diffDI < self.limitSell) : 
+                                logger.debug ("IF checkRecommend (" + str(self.checkRecommend()) + ") and isMarketOpen (" + str(isMarketOpen) + ") we continue ")
                                 if self.checkRecommend() and isMarketOpen :
+                                    logger.debug ("Conditions OK, requet to open SHORT position")
                                     check=self.vender()
                                     if check :
                                         payload = {"head": self.__str__(), "body": "Vender"}
@@ -440,6 +452,7 @@ class Strategy(models.Model):
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
                     if self.estado == 2 :
+                        logger.debug ("Symbol is in operation status")
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force=False
@@ -459,7 +472,7 @@ class Strategy(models.Model):
                             # Esta fealdad la puedo sustituir por el retorno isPositionOpen
                                 ## la posicion está cerrada
                                 reason=reason+"notOpen "
-                                self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*2)
+                                self.cooldownUntil=timezone.now()+timedelta(days=2)
                                 self.operIDclose=position['position']['orderIDClose']
                                 cierre=True
                                 force=True
@@ -486,14 +499,14 @@ class Strategy(models.Model):
                             if ( self.currentProfit < self.stopLossCurrent ) and not self.checkRecommend() :
                                 cierre=True
                                 reason=reason+"stopLoss "
-                                self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
+                                self.cooldownUntil=timezone.now()+timedelta(days=1)
                             if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
                                 # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
                                 # Asumimos que seguimos subiendo
                                 # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
                                 cierre=True
                                 reason=reason+"takeProfit "
-                                self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
+                                self.cooldownUntil=timezone.now()+timedelta(days=1)
     
                         else :
                             if self.currentRate > self.maxCurrentRate :
@@ -505,11 +518,11 @@ class Strategy(models.Model):
                             if self.currentProfit < self.stopLossCurrent and not self.checkRecommend():
                                 cierre=True
                                 reason=reason+"stopLoss "
-                                self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
+                                self.cooldownUntil=timezone.now()+timedelta(days=1)
                             if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
                                 cierre=True
                                 reason=reason+"takeProfit "
-                                self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*1)
+                                self.cooldownUntil=timezone.now()+timedelta(days=1)
     
                         # Now we update SLc and TPc
                         if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
@@ -556,6 +569,7 @@ class Strategy(models.Model):
                                 self.adxClose=self.limitClose
     
                 if self.estado == 3 :
+                    logger.debug ("Symbol is in cooldown mode")
                     self.currentProfit=None
                     ## Si el ADX esta por debajo del OPEN, salimos del cooldown
                     ## Si el limitOpen es 0, no hay cooldown y salimos
@@ -589,7 +603,7 @@ class Strategy(models.Model):
     def manualClose (self, reason) :
     # Used when closed is called from the web console
                             
-        self.cooldownUntil=timezone.now()+timedelta(seconds=self.sleep*48*2)
+        self.cooldownUntil=timezone.now()+timedelta(days=1)
             # Cooldown de 48 periodos. Igual que cierre por stoploss
         force=False
         check=self.cerrar(reason,force)
@@ -874,6 +888,12 @@ class Profile(models.Model):
     configMaxBet = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     configProcessEnabled = models.BooleanField(default=False)
     configTest = models.BooleanField(default=False)
+
+    configGlobalTPEnabled = models.BooleanField(default=True)
+    configGlobalTPThreshold = models.DecimalField(default=0,max_digits=5,decimal_places=2)
+    configGlobalTPSleepdown = models.IntegerField(default=100)
+    configGlobalTPWakeUp = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
+
     
     def __str__(self):
         return ( self.user.username )
