@@ -161,7 +161,7 @@ form p label{
 }
 
 
-form #id_configMaxBet { 
+form#configForm input { 
   height: 30px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
