@@ -419,6 +419,10 @@ def userTimezoneFormView(request) :
 def configFormView(request) :
     configMaxBet=request.user.profile.configMaxBet
     configProcessEnabled=request.user.profile.configProcessEnabled
+    configGlobalTPEnabled=request.user.profile.configGlobalTPEnabled
+    configGlobalTPThreshold=request.user.profile.configGlobalTPThreshold
+    configGlobalTPSleepdown=request.user.profile.configGlobalTPSleepdown
+    configGlobalTPWakeUp=request.user.profile.configGlobalTPWakeUp
 
     ## SI se ha posteado el formulario
     if request.method == 'POST' :
@@ -426,18 +430,33 @@ def configFormView(request) :
         if form.is_valid() :
             request.user.profile.configMaxBet=form.cleaned_data['configMaxBet']
             request.user.profile.configProcessEnabled=form.cleaned_data['configProcessEnabled']
+            request.user.profile.configGlobalTPEnabled=form.cleaned_data['configGlobalTPEnabled']
+            request.user.profile.configGlobalTPThreshold=form.cleaned_data['configGlobalTPThreshold']
+            request.user.profile.configGlobalTPSleepdown=form.cleaned_data['configGlobalTPSleepdown']
+            request.user.profile.configGlobalTPWakeUp=form.cleaned_data['configGlobalTPWakeUp']
             request.user.save()
             updateBetAmount ()
 
     ## No se ha posteado
     else :
-        form = configForm(initial={'configMaxBet': configMaxBet, 'configProcessEnabled': configProcessEnabled})
+        form = configForm(initial={
+            'configMaxBet': configMaxBet, 
+            'configProcessEnabled': configProcessEnabled,
+            'configGlobalTPEnabled': configGlobalTPEnabled,
+            'configGlobalTPThreshold': configGlobalTPThreshold,
+            'configGlobalTPSleepdown': configGlobalTPSleepdown,
+            'configGlobalTPWakeUp': configGlobalTPWakeUp
+        })
 
     template = loader.get_template('user/config.html')
     context = {
         'form' : form,
         'configMaxBet': configMaxBet,
-        'configProcessEnabled': configProcessEnabled        
+        'configProcessEnabled': configProcessEnabled,
+        'configGlobalTPEnabled': configGlobalTPEnabled,
+        'configGlobalTPThreshold': configGlobalTPThreshold,
+        'configGlobalTPSleepdown': configGlobalTPSleepdown,
+        'configGlobalTPWakeUp': configGlobalTPWakeUp
     }
     return HttpResponse(template.render(context, request))
 
@@ -605,9 +624,9 @@ def isMarketOpen() :
         if marketStatus == 'Open' :
             isMarketOpen = True
         if marketStatus == 'After-Hours' :
-            isMarketOpen = False
+            isMarketOpen = True
         if marketStatus == 'Closed' :
-            isMarketOpen = False
+            isMarketOpen = True
         if marketStatus == 'Pre-Market' :
             isMarketOpen = True 
     except :

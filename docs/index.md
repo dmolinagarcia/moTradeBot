@@ -5,17 +5,23 @@
 > 
 > I offer no guarantee on the outcome of this software. It's under heavy development, and even though its objectives are ambitious, they haven't been fulfilled yet. Consider it a combined exercise in programming and trading all at once. Using it blindly can, and most certaingly will, make you lose money.
 
-- [Introduction](#introduction)
-- [Objectives](#objectives)
-- [Setup](#setup)
-- [Getting started](#gettingstarted)
-- [Global Settings](#globalsettings)
-    - [Max Margin](#maxmargin)
-- [Indicators 101](#indicators101)
-- [Operation](#operation)
-    - [Stop Loss](#stoploss)
-- [Error codes](#errorcodes)
-- [Uninstall](#uninstall)
+- [MoTrade](#motrade)
+  - [Introduction](#introduction)
+  - [Objectives](#objectives)
+  - [Setup](#setup)
+    - [Infrastructure](#infrastructure)
+    - [Obtain bot.nu subdomain](#obtain-botnu-subdomain)
+    - [Create your BINGX API](#create-your-bingx-api)
+    - [Software](#software)
+  - [Getting Started](#getting-started)
+  - [Global Settings](#global-settings)
+    - [Max Margin](#max-margin)
+    - [Global Take Profit](#global-take-profit)
+  - [Indicators 101](#indicators-101)
+  - [Operation](#operation)
+    - [Stop Loss](#stop-loss)
+  - [Error Codes](#error-codes)
+  - [Uninstall](#uninstall)
 
 <a name="introduction"></a>
 ## Introduction
@@ -90,6 +96,12 @@ Once this is done, you need to understand how moTrade works to get the most ouf 
 We call "Margin" to the amount of USDT you have in open trades. moTrade uses your balance in the Perpetual Futures account, but it will only use the amount you set as Max Margin. If the margin is small (Below 300 USDT) the max margin may be exceeded, as there is some heavy rounding involved, specially in cryptos with higher prices. The max margin will be evenly splitted among all enabled strategys. So, if you set your max margin to 100 USDT, with 50 enabled strategies by default, 2 USDT will be used for each of them. For higher priced cryptos, the minimal buy amount is usually higher, so you may end up trading more than your max margin.
 
 After each closed operation, the profit or losses will be added to your max margin.
+
+<a name="globaltp"></a>
+### Global Take Profit
+The global Take Profit (GTP) pretends to maximize benefits during periods of high market greed. During this periods, is common to have huge price increases, followed by deep dips. This dips try to "close LONGs", and can cause huge losses, and the chances are too quick for the indicators to react on time. We want to avoid operating if this happens.
+
+The GTP triggers when the potential profit represents a big percentaje of our total balance. 10% usually works fine, although it can be adjusted. If GTP is enabled and we hit this percentage, it triggers an auto close on all open positions, and bot operations are interrupted for some amount of time, also configurable. 
 
 <a name="indicators101"></a>
 ## Indicators 101
