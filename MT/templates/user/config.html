@@ -1,5 +1,6 @@
 <form action="" method="post" id="configForm" onChange="submitConfigForm()">
   {% csrf_token %}
+  <br/>
   Enter Max Margin {{ form.configMaxBet }} 
   <label class="switch">
     {{ form.configProcessEnabled }}
