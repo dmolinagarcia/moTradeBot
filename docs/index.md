@@ -22,6 +22,7 @@
     - [Stop Loss](#stop-loss)
   - [Error Codes](#error-codes)
   - [Uninstall](#uninstall)
+- [Changelog](#changelog)
 
 <a name="introduction"></a>
 ## Introduction
@@ -129,3 +130,8 @@ Warning! This procedure will completely erase your moTrade installation. Any ope
 First, find your MOTRADE_ID. It's the 6 letter identifier at the end of the container name. Then, run the following from your Cloud Shell instance.
 
     curl -fsSL https://raw.githubusercontent.com/dmolinagarcia/moTradeBot/main/setup/cleanup.sh | bash -s -- <YOUR_MOTRADE_ID>
+
+<a name="changelog"></a>
+# Changelog
+## Unreleased
+- **Added Global TakeProfit**. Closes all operations and suspends bot for a given amount of time to prevent falling in big dips after steep price increases.
