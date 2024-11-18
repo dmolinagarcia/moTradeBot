@@ -161,7 +161,7 @@ form p label{
 }
 
 
-form #id_configMaxBet #id_configGlobalTPThreshold #id_configGlobalTPSleepdown { 
+form #id_configMaxBet, form #id_configGlobalTPThreshold, form #id_configGlobalTPSleepdown { 
   height: 30px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
@@ -169,7 +169,7 @@ form #id_configMaxBet #id_configGlobalTPThreshold #id_configGlobalTPSleepdown {
   -webkit-border-radius: 4px;
  }
 
- form #id_configGlobalTPThreshold #id_configGlobalTPSleepdown { 
+ form #id_configGlobalTPThreshold, form #id_configGlobalTPSleepdown { 
   width: 200px;
  }
 
