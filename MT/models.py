@@ -504,6 +504,7 @@ class Strategy(models.Model):
                                 # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
                                 # Asumimos que seguimos subiendo
                                 # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
+                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
                                 cierre=True
                                 reason=reason+"takeProfit "
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
@@ -520,7 +521,10 @@ class Strategy(models.Model):
                                 reason=reason+"stopLoss "
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
                             if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
-                                cierre=True
+                                # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
+                                # Asumimos que seguimos subiendo
+                                # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
+                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui                                cierre=True
                                 reason=reason+"takeProfit "
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
     
@@ -530,16 +534,17 @@ class Strategy(models.Model):
                             # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
                             self.stopLossCurrent = self.currentProfit + self.stopLoss
     
-                        if (self.stopLossCurrent < 1) and (self.currentProfit > 10):
-                            # If profit reaches 10, set stopLoss to 1 to prevent Losses
-                            self.stopLossCurrent=1
+                        if (self.stopLossCurrent < 1) and (self.currentProfit > 15):
+                            # If profit reaches 15, set stopLoss to 0 to prevent Losses
+                            self.stopLossCurrent=0
       
-                        if (self.stopLossCurrent > -1000) :
-                        #Always!
+                        if (self.stopLossCurrent < self.currentProfit) :
+                        #IF SL is below currentProfit
                             # Stop Loss "Hugging"
                             # TODO
                             # I am searching for the perfect balance. I am being toooooo aggresive.
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.01)
+                            # 20/11/2024 changed from 0.01 to 0.008
+                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.008)
 
                         # TODO
                         # Replace stopLoss in the bot with the BINGX stopLoss
