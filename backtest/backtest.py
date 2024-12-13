@@ -3,8 +3,14 @@ import ta  # Biblioteca para calcular indicadores técnicos
 import time
 
 # Cargar datos históricos
-file_path = "bitcoin_hourly.csv"  # Cambiar por la ruta del archivo descargado
-df = pd.read_csv(file_path)
+# URL del archivo CSV
+url = "https://www.cryptodatadownload.com/cdd/Binance_BTCUSDT_1h.csv"
+
+# Cargar el CSV en un DataFrame
+df = pd.read_csv(url)
+
+# Mostrar las primeras filas del DataFrame
+df.head()
 
 # Asegúrate de que el DataFrame tiene las columnas necesarias
 # El dataset contiene: Unix,Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USDT,tradecount
