@@ -899,6 +899,7 @@ class Profile(models.Model):
     configGlobalTPSleepdown = models.IntegerField(default=100)
     configGlobalTPWakeUp = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
 
+    configLegacyGraph = models.BooleanField(default=True)
     
     def __str__(self):
         return ( self.user.username )
