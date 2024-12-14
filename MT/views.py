@@ -276,7 +276,7 @@ def strategyGraphView(request, strategy_id):
 
     if ( request.user.profile.configLegacyGraph):
         template = loader.get_template('strategy/graph.html')
-    else
+    else :
         template = loader.get_template('strategy/graphTV.html')
         
     return HttpResponse(template.render(context, request))
@@ -315,7 +315,7 @@ def operationGraphView(request, operation_id):
 
     if ( request.user.profile.configLegacyGraph):
         template = loader.get_template('strategy/graph.html')
-    else
+    else :
         template = loader.get_template('strategy/graphTV.html')
     
     return HttpResponse(template.render(context, request))
