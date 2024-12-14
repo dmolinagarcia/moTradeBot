@@ -274,7 +274,11 @@ def strategyGraphView(request, strategy_id):
 
     context = getGraphData ( strategy, history )
 
-    template = loader.get_template('strategy/graph.html')
+    if ( request.user.profile.configLegacyGraph):
+        template = loader.get_template('strategy/graph.html')
+    else
+        template = loader.get_template('strategy/graphTV.html')
+        
     return HttpResponse(template.render(context, request))
     
 # Operation Views
@@ -309,7 +313,11 @@ def operationGraphView(request, operation_id):
 
     context = getGraphData ( strategy, history )
 
-    template = loader.get_template('strategy/graph.html')
+    if ( request.user.profile.configLegacyGraph):
+        template = loader.get_template('strategy/graph.html')
+    else
+        template = loader.get_template('strategy/graphTV.html')
+    
     return HttpResponse(template.render(context, request))
 
 @login_required
