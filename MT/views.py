@@ -129,7 +129,7 @@ def getHistoryView(request, strategy_id, operation_id, interval) :
             {"time": "2024-12-14T01:45:00", "open": 32075, "high": 32150, "low": 32050, "close": 32125},
         ]
     }
-    return JsonResponse(data['15m'], safe=False))
+    return JsonResponse(data['15m'], safe=False)
 
 
 # Strategy Views
