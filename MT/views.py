@@ -123,13 +123,23 @@ def getHistoryView(request, strategy_id, operation_id, interval) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
 
     data = {
-        '15m': [
-            {"time": "2024-12-14T01:15:00", "open": 32000, "high": 32050, "low": 31950, "close": 32025},
-            {"time": "2024-12-14T01:30:00", "open": 32025, "high": 32100, "low": 32000, "close": 32075},
-            {"time": "2024-12-14T01:45:00", "open": 32075, "high": 32150, "low": 32050, "close": 32125},
+        '4h': [
+            {"time": "2024-12-01T00:00:00", "open": 32000, "high": 32300, "low": 31800, "close": 32150},
+            {"time": "2024-12-01T04:00:00", "open": 32150, "high": 32400, "low": 31950, "close": 32250},
+            {"time": "2024-12-01T08:00:00", "open": 32250, "high": 32500, "low": 32050, "close": 32300},
+            {"time": "2024-12-01T12:00:00", "open": 32300, "high": 32700, "low": 32150, "close": 32450},
+            {"time": "2024-12-01T16:00:00", "open": 32450, "high": 32800, "low": 32250, "close": 32600},
+            {"time": "2024-12-01T20:00:00", "open": 32600, "high": 33000, "low": 32400, "close": 32850},
+            {"time": "2024-12-02T00:00:00", "open": 32850, "high": 33200, "low": 32650, "close": 32950},
+            {"time": "2024-12-02T04:00:00", "open": 32950, "high": 33400, "low": 32700, "close": 33100},
+            {"time": "2024-12-02T08:00:00", "open": 33100, "high": 33500, "low": 32900, "close": 33250},
+            {"time": "2024-12-02T12:00:00", "open": 33250, "high": 33650, "low": 33050, "close": 33400},
+            {"time": "2024-12-02T16:00:00", "open": 33400, "high": 33800, "low": 33200, "close": 33650},
+            {"time": "2024-12-02T20:00:00", "open": 33650, "high": 34000, "low": 33450, "close": 33800}
         ]
     }
-    return JsonResponse(data['15m'], safe=False)
+    
+    return JsonResponse(data['4h'], safe=False)
 
 
 # Strategy Views
