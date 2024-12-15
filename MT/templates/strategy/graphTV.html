@@ -1,53 +1,78 @@
 <!-- Chart Div PlaceHolder -->
  TV Graphs. Experimental!
- <div id="crypto-chart"></div>
+     <!-- Selector de intervalos -->
+     <div id="interval-selector">
+      <button onclick="setIntervalData('15m')">15 Minutos</button>
+      <button onclick="setIntervalData('1h')">1 Hora</button>
+      <button onclick="setIntervalData('4h')">4 Horas</button>
+      <button onclick="setIntervalData('1d')">1 Día</button>
+      <button onclick="setIntervalData('1w')">1 Semana</button>
+  </div>
 
- <script>
-     // Crear el gráfico
-     const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-         layout: {
-             backgroundColor: '#EEEEEE',
-             textColor: '#000000',
-         },
-         width: document.getElementById('crypto-chart').clientWidth,
-         height: 400,
-         grid: {
-             vertLines: {
-                 color: '#f0f3fa',
-             },
-             horzLines: {
-                 color: '#f0f3fa',
-             },
-         },
-         timeScale: {
-             timeVisible: true,
-             secondsVisible: false,
-         },
-     });
+  <!-- Contenedor del gráfico -->
+  <div id="crypto-chart"></div>
 
-     // Añadir una serie de velas (Candlestick)
-     const candlestickSeries = chart.addCandlestickSeries({
-         upColor: '#4caf50',
-         downColor: '#f44336',
-         borderUpColor: '#4caf50',
-         borderDownColor: '#f44336',
-         wickUpColor: '#4caf50',
-         wickDownColor: '#f44336',
-     });
+  <script>
+      // Crear el gráfico
+      const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+          layout: {
+              backgroundColor: '#ffffff',
+              textColor: '#000000',
+          },
+          width: document.getElementById('crypto-chart').clientWidth,
+          height: 400,
+          grid: {
+              vertLines: {
+                  color: '#f0f3fa',
+              },
+              horzLines: {
+                  color: '#f0f3fa',
+              },
+          },
+          timeScale: {
+              timeVisible: true,
+              secondsVisible: false,
+          },
+      });
 
-     // Datos de ejemplo (puedes reemplazarlos con tus propios datos)
-     candlestickSeries.setData([
-         { time: '2024-12-14', open: 32000, high: 32500, low: 31800, close: 32400 },
-         { time: '2024-12-15', open: 32400, high: 33000, low: 32200, close: 32800 },
-         { time: '2024-12-16', open: 32800, high: 33200, low: 32600, close: 32900 },
-         { time: '2024-12-17', open: 32900, high: 33300, low: 32700, close: 33100 },
-         { time: '2024-12-18', open: 33100, high: 33500, low: 32900, close: 33400 },
-     ]);
+      // Añadir una serie de velas (Candlestick)
+      const candlestickSeries = chart.addCandlestickSeries({
+          upColor: '#4caf50',
+          downColor: '#f44336',
+          borderUpColor: '#4caf50',
+          borderDownColor: '#f44336',
+          wickUpColor: '#4caf50',
+          wickDownColor: '#f44336',
+      });
 
-     // Escuchar eventos de redimensionamiento de ventana para ajustar el tamaño del gráfico
-     window.addEventListener('resize', () => {
-         chart.applyOptions({
-             width: document.getElementById('crypto-chart').clientWidth,
-         });
-     });
- </script>
+      // Función para obtener datos desde el servidor
+      async function fetchData(interval) {
+          try {
+              const response = await fetch(`/getData/${interval}`);
+              if (!response.ok) {
+                  throw new Error(`Error al obtener datos: ${response.status}`);
+              }
+              const data = await response.json();
+              return data;
+          } catch (error) {
+              console.error(error);
+              return [];
+          }
+      }
+
+      // Función para establecer los datos en el gráfico
+      async function setIntervalData(interval) {
+          const data = await fetchData(interval);
+          candlestickSeries.setData(data);
+      }
+
+      // Inicialización con el intervalo de 4 horas
+      setIntervalData('4h');
+
+      // Ajustar tamaño del gráfico al redimensionar la ventana
+      window.addEventListener('resize', () => {
+          chart.applyOptions({
+              width: document.getElementById('crypto-chart').clientWidth,
+          });
+      });
+  </script>
