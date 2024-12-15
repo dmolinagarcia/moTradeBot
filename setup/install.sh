@@ -58,7 +58,7 @@ executeStep "Upgrading OS Kernel" "sudo apt-get dist-upgrade --yes"
 executeStep "Installing support packages" "sudo apt-get --assume-yes install software-properties-common git python3 vim bsdmainutils sqlite3 python3-pip jq nodejs python2 cron apache2 libapache2-mod-wsgi-py3 certbot python3-certbot-apache rsync"
 umask 027
 sudo ln -s -f /usr/bin/python3 /usr/bin/python
-executeStep "Installing python packages" "sudo pip3 install testresources Django json2html flask"
+executeStep "Installing python packages" "sudo pip3 install testresources Django json2html flask pandas ta"
 ## sudo pip3 install git+git://github.com/Lu-Yi-Hsun/iqoptionapi.git
 ## IQOption no longer supported
 # Set Timezone
@@ -466,3 +466,4 @@ crontab -l | { cat; echo "0 2 * * * /bin/bash -c \"\$(curl -fsSL https://github.
 whiptail --msgbox --title "moTradeBot setup complete" "System will now reboot to apply system patches" 8 80
 
 sudo reboot
+

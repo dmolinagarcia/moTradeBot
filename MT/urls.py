@@ -12,12 +12,11 @@ urlpatterns = [
 
     path ('strategy/list/', views.strategyListView, name='strategyListView'),
     path ('strategy/<int:strategy_id>/<int:operation_id>/', views.strategyView, name='strategyView'),
-    path ('strategy/graph/<int:strategy_id>/', views.strategyGraphView, name='strategyGraphView'),
+    path ('strategy/graph/<int:strategy_id>/<int:operation_id>/', views.strategyGraphView, name='strategyGraphView'),
     path ('strategy/operations/<int:strategy_id>/', views.strategyOperationView, name='strategyOperationView'),
     path ('strategy/comments/<int:strategy_id>/', views.strategyCommentsView, name='strategyCommentsView'),
     path ('strategy/clear/<int:strategy_id>/', views.strategyClearView, name='strategyClearView'),
 
-    path ('operation/graph/<int:operation_id>/', views.operationGraphView, name='operationGraphView'),
     path ('operation/detail/<int:operation_id>/', views.operationDetailView, name='operationDetailView'),
     path ('operation/clear/<int:operation_id>/', views.operationClearView, name='operationClearView'),
     path ('getHistory/<int:strategy_id>/<int:operation_id>/<str:interval>', views.getHistoryView, name='getHistoryView'),

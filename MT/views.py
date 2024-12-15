@@ -121,6 +121,9 @@ def strategyOpenOperationView (request) :
 @login_required
 def getHistoryView(request, strategy_id, operation_id, interval) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
+    strategy = get_object_or_404(Strategy, pk=strategy_id)
+    if (operation_id != 0) :
+        title='Strategy ' + str(strategy)
 
     data = {
         "15m": [
@@ -364,12 +367,16 @@ def getGraphData (strategy, history) :
     return context
 
 @login_required
-def strategyGraphView(request, strategy_id):
+def strategyGraphView(request, strategy_id, operation_id):
     timezone.activate(pytz.timezone(request.user.profile.timezone))
     
     strategy = get_object_or_404(Strategy, pk=strategy_id)
-    history = strategy.getHistory()
-
+    if (operation_id != 0 ) :
+        operation = get_object_or_404(StrategyOperation, operID=operation_id)
+        history = operation.getHistory()
+    else :
+        history = strategy.getHistory()
+    
     context = getGraphData ( strategy, history )
 
     if ( request.user.profile.configLegacyGraph):
@@ -378,6 +385,25 @@ def strategyGraphView(request, strategy_id):
         template = loader.get_template('strategy/graphTV.html')
         
     return HttpResponse(template.render(context, request))
+
+#   @login_required
+#   def operationGraphView(request, operation_id):
+#       timezone.activate(pytz.timezone(request.user.profile.timezone))
+#       operation = get_object_or_404(StrategyOperation, operID=operation_id)
+#    
+#       ## Hay que pillar el strategy_id, las fechas, y sacas los datos apra ellas
+#       ## Implementamos un operation.getHistory()????
+#       history = operation.getHistory()
+#       trategy = operation.getStrategy()
+#
+#    context = getGraphData ( strategy, history )
+#
+#    if ( request.user.profile.configLegacyGraph):
+#        template = loader.get_template('strategy/graph.html')
+#    else :
+#        template = loader.get_template('strategy/graphTV.html')
+#    
+#    return HttpResponse(template.render(context, request))    
     
 # Operation Views
 @login_required    
@@ -389,25 +415,6 @@ def operationDetailView(request, operation_id) :
     }
     return HttpResponse(template.render(context, request))      
     
-@login_required
-def operationGraphView(request, operation_id):
-    timezone.activate(pytz.timezone(request.user.profile.timezone))
-    operation = get_object_or_404(StrategyOperation, operID=operation_id)
-    
-    ## Hay que pillar el strategy_id, las fechas, y sacas los datos apra ellas
-    ## Implementamos un operation.getHistory()????
-    history = operation.getHistory()
-    strategy = operation.getStrategy()
-
-    context = getGraphData ( strategy, history )
-
-    if ( request.user.profile.configLegacyGraph):
-        template = loader.get_template('strategy/graph.html')
-    else :
-        template = loader.get_template('strategy/graphTV.html')
-    
-    return HttpResponse(template.render(context, request))
-
 @login_required
 def operationClearView(request, operation_id):
     operation = get_object_or_404(StrategyOperation, operID=operation_id)
