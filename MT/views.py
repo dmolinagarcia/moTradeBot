@@ -119,7 +119,7 @@ def strategyOpenOperationView (request) :
 
 # get History (JSON VIEWS)
 @login_required
-def getHistory(request, strategy_id, operation_id, interval) :
+def getHistoryView(request, strategy_id, operation_id, interval) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
 
     data = {
