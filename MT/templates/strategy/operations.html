@@ -15,7 +15,7 @@
 	{% for operation in operations %}
 		<tr>
 	        <td><a href="/strategy/{{ operation.strategy.id }}">{{ operation.strategy }}</a></td>
-			<td><a href="/strategy/{{ strategy.id }}/{{ operation.operID }}">VIEW</td>
+			<td><a href="/strategy/{{ operation.strategy.id }}/{{ operation.operID }}">VIEW</td>
             {% if request.user.is_staff %}
   				<td><a onclick="return confirm('Eliminar {{ operation.operID }}?')" href="/operation/clear/{{ operation.operID }}">DELETE</td>
   			{% endif %}
