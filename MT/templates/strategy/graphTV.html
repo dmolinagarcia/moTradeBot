@@ -1,103 +1,53 @@
 <!-- Chart Div PlaceHolder -->
  TV Graphs. Experimental!
-<div id="chart"></div>
-<div id="chart1"></div>
-<div id="chart2"></div>
-<div id="chart3"></div>
+ <div id="crypto-chart"></div>
 
-<div id="app"></div>
-<script type="text/javascript" src="/static/js/data.json"></script>
+ <script>
+     // Crear el gráfico
+     const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+         layout: {
+             backgroundColor: '#ffffff',
+             textColor: '#000000',
+         },
+         width: document.getElementById('crypto-chart').clientWidth,
+         height: 400,
+         grid: {
+             vertLines: {
+                 color: '#f0f3fa',
+             },
+             horzLines: {
+                 color: '#f0f3fa',
+             },
+         },
+         timeScale: {
+             timeVisible: true,
+             secondsVisible: false,
+         },
+     });
 
-<!-- Chart display -->
-<script type="text/javascript">
+     // Añadir una serie de velas (Candlestick)
+     const candlestickSeries = chart.addCandlestickSeries({
+         upColor: '#4caf50',
+         downColor: '#f44336',
+         borderUpColor: '#4caf50',
+         borderDownColor: '#f44336',
+         wickUpColor: '#4caf50',
+         wickDownColor: '#f44336',
+     });
 
-import { createChart, PriceScaleMode } from "lightweight-charts";
+     // Datos de ejemplo (puedes reemplazarlos con tus propios datos)
+     candlestickSeries.setData([
+         { time: '2024-12-14', open: 32000, high: 32500, low: 31800, close: 32400 },
+         { time: '2024-12-15', open: 32400, high: 33000, low: 32200, close: 32800 },
+         { time: '2024-12-16', open: 32800, high: 33200, low: 32600, close: 32900 },
+         { time: '2024-12-17', open: 32900, high: 33300, low: 32700, close: 33100 },
+         { time: '2024-12-18', open: 33100, high: 33500, low: 32900, close: 33400 },
+     ]);
 
-var chart = createChart(document.body, {
-  width: window.innerWidth - 100,
-  height: window.innerHeight - 100,
-  rightPriceScale: {
-    scaleMargins: {
-      top: 0.3,
-      bottom: 0.25
-    },
-    mode: PriceScaleMode.Logarithmic
-  },
-  layout: {
-    backgroundColor: "#131722",
-    textColor: "#d1d4dd"
-  },
-  grid: {
-    vertLines: {
-      color: "rgba(42, 46, 57, 0)"
-    },
-    horzLines: {
-      color: "rgba(42, 46, 57, 0.6)"
-    }
-  },
-  timeScale: {
-    timeVisible: true,
-    secondsVisible: false
-  }
-});
-
-var areaSeries = chart.addAreaSeries({
-  topColor: "rgba(38,198,218, 0.56)",
-  bottomColor: "rgba(38,198,218, 0.04)",
-  lineColor: "rgba(38,198,218, 1)",
-  lineWidth: 2
-});
-
-var volumeSeries = chart.addHistogramSeries({
-  color: "#26a69a",
-  priceFormat: {
-    type: "volume"
-  },
-  priceScaleId: "",
-  scaleMargins: {
-    top: 0.8,
-    bottom: 0
-  }
-});
-
-readTextFile("data.json", function (text) {
-  var data = JSON.parse(text);
-  var datetime = data.DateTime;
-  var price = data.Price;
-  var size = data.Size;
-  const chart_data = [];
-  const bar_data = [];
-  var lastDateTime = 0;
-  var step = 1;
-  for (var i in Object.keys(datetime)) {
-    var timestamp = datetime[i] / 1000;
-    if (datetime[i] === lastDateTime) {
-      timestamp = (datetime[i] + step) / 1000;
-      step++;
-    } else {
-      step = 1;
-      lastDateTime = datetime[i];
-    }
-    chart_data.push({ time: timestamp, value: price[i] });
-    bar_data.push({ time: timestamp, value: size[i] });
-  }
-  console.log(chart_data);
-  areaSeries.setData(chart_data);
-  volumeSeries.setData(bar_data);
-});
-
-function readTextFile(file, callback) {
-  var rawFile = new XMLHttpRequest();
-  rawFile.overrideMimeType("application/json");
-  rawFile.open("GET", file, true);
-  rawFile.onreadystatechange = function () {
-    if (rawFile.readyState === 4 && rawFile.status == "200") {
-      callback(rawFile.responseText);
-    }
-  };
-  rawFile.send(null);
-}
-
-
-</script>
-
+     // Escuchar eventos de redimensionamiento de ventana para ajustar el tamaño del gráfico
+     window.addEventListener('resize', () => {
+         chart.applyOptions({
+             width: document.getElementById('crypto-chart').clientWidth,
+         });
+     });
+ </script>
