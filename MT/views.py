@@ -122,9 +122,14 @@ def strategyOpenOperationView (request) :
 def getHistoryView(request, strategy_id, operation_id, interval) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
 
-    data = {"time": "2024-12-01T00:00:00", "open": 32000, "high": 32300, "low": 31800, "close": 32150}
-
-    return JsonResponse(data)
+    data = {
+        '15m': [
+            {"time": "2024-12-14T01:15:00", "open": 32000, "high": 32050, "low": 31950, "close": 32025},
+            {"time": "2024-12-14T01:30:00", "open": 32025, "high": 32100, "low": 32000, "close": 32075},
+            {"time": "2024-12-14T01:45:00", "open": 32075, "high": 32150, "low": 32050, "close": 32125},
+        ]
+    }
+    return JsonResponse(data['15m'])
 
 
 # Strategy Views
