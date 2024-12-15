@@ -118,14 +118,21 @@ def strategyOpenOperationView (request) :
     
 # Strategy Views
 @login_required
-def strategyView(request, strategy_id) :
+def strategyView(request, strategy_id, operation_id=0) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
-    template = loader.get_template('strategy/strategy.html')
     strategy = get_object_or_404(Strategy, pk=strategy_id)
+
+    if (operation_id=0) :
+        title='Strategy ' + str(strategy)
+        template = loader.get_template('strategy/strategy.html')
+    else :
+        template = loader.get_template('operation/operation.html')
+        title='Operation ' + str(operation_id)
 
     context = {
         'strategy_id': strategy_id,
-        'title': 'Strategy ' + str(strategy), 
+        'operation_id': operation_id,
+        'title': title, 
     }
     return HttpResponse(template.render(context, request))
 
@@ -282,16 +289,6 @@ def strategyGraphView(request, strategy_id):
     return HttpResponse(template.render(context, request))
     
 # Operation Views
-@login_required
-def operationView(request, operation_id) :
-    timezone.activate(pytz.timezone(request.user.profile.timezone))
-    template = loader.get_template('operation/operation.html')
-    context = {
-        'operation_id': operation_id,
-        'title': 'Operation ' + str(operation_id),
-    }
-    return HttpResponse(template.render(context, request))  
-    
 @login_required    
 def operationDetailView(request, operation_id) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
