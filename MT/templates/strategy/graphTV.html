@@ -71,38 +71,42 @@
     async function setIntervalData(interval) {
         const data = await fetchData(interval);
         candlestickSeries.setData(data);
-        // Ajusta el intervalo del gráfico
-        adjustTimeScale(interval);        
+        // Ajustar el intervalo temporal del gráfico
+        adjustBarSpacing(interval);  
     }
 
     // Inicialización con el intervalo de 4 horas
     setIntervalData('4h');
 
-    // Función para ajustar el intervalo temporal del gráfico
-    function adjustTimeScale(interval) {
-       let secondsPerCandle = 0;
-    
-       switch (interval) {
-           case '15m':
-               secondsPerCandle = 15 * 60;  // 15 minutos
-               break;
-           case '4h':
-               secondsPerCandle = 4 * 60 * 60;  // 4 horas
-               break;
-           case '1d':
-               secondsPerCandle = 24 * 60 * 60;  // 1 día
-               break;
-           case '1w':
-               secondsPerCandle = 7 * 24 * 60 * 60;  // 1 semana
-               break;
-           default:
-               secondsPerCandle = 24 * 60 * 60;  // Por defecto 1 día
-               break;
-       }
+    // Función para ajustar el espaciado de las barras basado en el intervalo
+    function adjustBarSpacing(interval) {
+        let barSpacing = 0;
 
-        // Ajustar la escala de tiempo para que las velas se muestren correctamente
-        chart.timeScale().setBarSpacing(secondsPerCandle);
-    }   
+        switch (interval) {
+            case '15m':
+                barSpacing = 2;  // 15 minutos, más espacio entre las velas
+                break;
+            case '4h':
+                barSpacing = 6;  // 4 horas, un poco más de espacio
+                break;
+            case '1d':
+                barSpacing = 12;  // 1 día, menos espacio entre las velas
+                break;
+            case '1w':
+                barSpacing = 24;  // 1 semana, más espacio
+                break;
+            default:
+                barSpacing = 6;  // Intervalo por defecto
+                break;
+        }
+
+        // Ajustar la propiedad barSpacing del gráfico
+        chart.applyOptions({
+            timeScale: {
+                barSpacing: barSpacing
+            }
+        });
+    }
 
     // Ajustar tamaño del gráfico al redimensionar la ventana
     window.addEventListener('resize', () => {
