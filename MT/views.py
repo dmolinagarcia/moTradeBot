@@ -228,7 +228,7 @@ def getHistoryView(request, strategy_id, operation_id, interval) :
       ]
     }
 
-    return JsonResponse(data['4h'], safe=False)
+    return JsonResponse(data[interval], safe=False)
 
 
 # Strategy Views
