@@ -52,7 +52,7 @@
 
     // Función para obtener datos desde el servidor
     async function fetchData(interval) {
-        const endpoint = `/getHistory/strategy/${strategyId}/${operationId}/${interval}`;
+        const endpoint = `/getHistory/${strategyId}/${operationId}/${interval}`;
         try {
             const response = await fetch(endpoint);
             if (!response.ok) {

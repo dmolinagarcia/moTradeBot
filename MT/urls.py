@@ -20,6 +20,8 @@ urlpatterns = [
     path ('operation/graph/<int:operation_id>/', views.operationGraphView, name='operationGraphView'),
     path ('operation/detail/<int:operation_id>/', views.operationDetailView, name='operationDetailView'),
     path ('operation/clear/<int:operation_id>/', views.operationClearView, name='operationClearView'),
+
+    path ('getHistory/<int:strategy_id>/<int:operation_id>/<str:interval>'), views.getHistory, name='getHistory'),
     
     path ('toggle/<int:strategy_id>/', views.toggleView, name='toggleView'),
     path ('unlock/<int:strategy_id>/', views.unlockView, name='unlockView'),

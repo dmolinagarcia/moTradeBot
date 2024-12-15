@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 import math
 import logging
@@ -115,7 +116,20 @@ def strategyOpenOperationView (request) :
     }
     template = loader.get_template('strategy/operations.html')
     return HttpResponse(template.render(context, request))
-    
+
+# get History (JSON VIEWS)
+@login_required
+def getHistory(request, strategy_id, operation_id, interval) :
+    timezone.activate(pytz.timezone(request.user.profile.timezone))
+
+    data = {
+        'some_var_1': 'foo',
+        'some_var_2': 'bar',
+    }
+
+    return JsonResponse(data)
+
+
 # Strategy Views
 @login_required
 def strategyView(request, strategy_id, operation_id) :
