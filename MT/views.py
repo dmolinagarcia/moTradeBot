@@ -122,7 +122,7 @@ def strategyView(request, strategy_id, operation_id=0) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
     strategy = get_object_or_404(Strategy, pk=strategy_id)
 
-    if (operation_id=0) :
+    if (operation_id == 0) :
         title='Strategy ' + str(strategy)
         template = loader.get_template('strategy/strategy.html')
     else :
