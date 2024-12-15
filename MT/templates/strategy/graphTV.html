@@ -46,6 +46,7 @@
     });
 
     // Extraer strategy_id y operation_id de la URL actual
+    let currentInterval = '4h';  // El intervalo inicial
     const urlParts = window.location.pathname.split('/');
     const strategyId = urlParts[2];
     const operationId = urlParts[3];
@@ -70,10 +71,38 @@
     async function setIntervalData(interval) {
         const data = await fetchData(interval);
         candlestickSeries.setData(data);
+        // Ajusta el intervalo del gráfico
+        adjustTimeScale(interval);        
     }
 
     // Inicialización con el intervalo de 4 horas
-    setIntervalData('15m');
+    setIntervalData('4h');
+
+    / Función para ajustar el intervalo temporal del gráfico
+    unction adjustTimeScale(interval) {
+       let secondsPerCandle = 0;
+    
+       switch (interval) {
+           case '15m':
+               secondsPerCandle = 15 * 60;  // 15 minutos
+               break;
+           case '4h':
+               secondsPerCandle = 4 * 60 * 60;  // 4 horas
+               break;
+           case '1d':
+               secondsPerCandle = 24 * 60 * 60;  // 1 día
+               break;
+           case '1w':
+               secondsPerCandle = 7 * 24 * 60 * 60;  // 1 semana
+               break;
+           default:
+               secondsPerCandle = 24 * 60 * 60;  // Por defecto 1 día
+               break;
+       }
+
+        // Ajustar la escala de tiempo para que las velas se muestren correctamente
+        chart.timeScale().setBarSpacing(secondsPerCandle);
+    }   
 
     // Ajustar tamaño del gráfico al redimensionar la ventana
     window.addEventListener('resize', () => {
