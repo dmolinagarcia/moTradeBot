@@ -13,66 +13,72 @@
   <div id="crypto-chart"></div>
 
   <script>
-      // Crear el gráfico
-      const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-          layout: {
-              backgroundColor: '#ffffff',
-              textColor: '#000000',
-          },
-          width: document.getElementById('crypto-chart').clientWidth,
-          height: 400,
-          grid: {
-              vertLines: {
-                  color: '#f0f3fa',
-              },
-              horzLines: {
-                  color: '#f0f3fa',
-              },
-          },
-          timeScale: {
-              timeVisible: true,
-              secondsVisible: false,
-          },
-      });
+    // Crear el gráfico
+    const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+        layout: {
+            backgroundColor: '#ffffff',
+            textColor: '#000000',
+        },
+        width: document.getElementById('crypto-chart').clientWidth,
+        height: 400,
+        grid: {
+            vertLines: {
+                color: '#f0f3fa',
+            },
+            horzLines: {
+                color: '#f0f3fa',
+            },
+        },
+        timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+        },
+    });
 
-      // Añadir una serie de velas (Candlestick)
-      const candlestickSeries = chart.addCandlestickSeries({
-          upColor: '#4caf50',
-          downColor: '#f44336',
-          borderUpColor: '#4caf50',
-          borderDownColor: '#f44336',
-          wickUpColor: '#4caf50',
-          wickDownColor: '#f44336',
-      });
+    // Añadir una serie de velas (Candlestick)
+    const candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#4caf50',
+        downColor: '#f44336',
+        borderUpColor: '#4caf50',
+        borderDownColor: '#f44336',
+        wickUpColor: '#4caf50',
+        wickDownColor: '#f44336',
+    });
 
-      // Función para obtener datos desde el servidor
-      async function fetchData(interval) {
-          try {
-              const response = await fetch(`/getData/${interval}`);
-              if (!response.ok) {
-                  throw new Error(`Error al obtener datos: ${response.status}`);
-              }
-              const data = await response.json();
-              return data;
-          } catch (error) {
-              console.error(error);
-              return [];
-          }
-      }
+    // Extraer strategy_id y operation_id de la URL actual
+    const urlParts = window.location.pathname.split('/');
+    const strategyId = urlParts[2];
+    const operationId = urlParts[3];
 
-      // Función para establecer los datos en el gráfico
-      async function setIntervalData(interval) {
-          const data = await fetchData(interval);
-          candlestickSeries.setData(data);
-      }
+    // Función para obtener datos desde el servidor
+    async function fetchData(interval) {
+        const endpoint = `/getHistory/strategy/${strategyId}/${operationId}/${interval}`;
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                throw new Error(`Error al obtener datos: ${response.status}`);
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    }
 
-      // Inicialización con el intervalo de 4 horas
-      setIntervalData('4h');
+    // Función para establecer los datos en el gráfico
+    async function setIntervalData(interval) {
+        const data = await fetchData(interval);
+        candlestickSeries.setData(data);
+    }
 
-      // Ajustar tamaño del gráfico al redimensionar la ventana
-      window.addEventListener('resize', () => {
-          chart.applyOptions({
-              width: document.getElementById('crypto-chart').clientWidth,
-          });
-      });
-  </script>
+    // Inicialización con el intervalo de 4 horas
+    setIntervalData('4h');
+
+    // Ajustar tamaño del gráfico al redimensionar la ventana
+    window.addEventListener('resize', () => {
+        chart.applyOptions({
+            width: document.getElementById('crypto-chart').clientWidth,
+        });
+    });
+</script>
