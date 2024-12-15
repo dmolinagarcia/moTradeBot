@@ -246,9 +246,7 @@ input:checked + .slider:before {
   margin: 20px;
 }
 #crypto-chart {
-  width: 80%;
-  max-width: 800px;
-  height: 400px;
+  height: 800px;
 }
 button {
   padding: 10px 20px;
@@ -263,5 +261,5 @@ button:hover {
   background-color: #1b8332;
 }
 button:active {
-  background-color: #5cfd61;
+  background-color: #1f9739;
 }
