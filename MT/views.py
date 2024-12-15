@@ -118,7 +118,7 @@ def strategyOpenOperationView (request) :
     
 # Strategy Views
 @login_required
-def strategyView(request, strategy_id, operation_id=0) :
+def strategyView(request, strategy_id, operation_id) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
     strategy = get_object_or_404(Strategy, pk=strategy_id)
 

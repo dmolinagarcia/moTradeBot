@@ -11,10 +11,7 @@ urlpatterns = [
     path ('strategyOpen/', views.strategyOpenOperationView, name='strategyOpenOperationView'),
 
     path ('strategy/list/', views.strategyListView, name='strategyListView'),
-
-    path ('strategy/<int:strategy_id>/', views.strategyView, name='strategyView'),
     path ('strategy/<int:strategy_id>/<int:operation_id>/', views.strategyView, name='strategyView'),
-
     path ('strategy/graph/<int:strategy_id>/', views.strategyGraphView, name='strategyGraphView'),
     path ('strategy/operations/<int:strategy_id>/', views.strategyOperationView, name='strategyOperationView'),
     path ('strategy/comments/<int:strategy_id>/', views.strategyCommentsView, name='strategyCommentsView'),
