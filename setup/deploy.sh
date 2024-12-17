@@ -11,8 +11,7 @@ chmod 600 .ssh/id_rsa_${MOTRADE_ID}
 echo Creating moTrade proBox infrastructure ...
 export COMPARTMENT_NAME="moTrade_${MOTRADE_ID}"
 export COMPUTE_NAME="moTrade-${MOTRADE_ID}-probox"
-## export COMPUTE_SHAPE='VM.Standard.A1.Flex'          ## ARM instances not supported yet
-export COMPUTE_SHAPE='VM.Standard.E2.1.Micro'
+export COMPUTE_SHAPE='VM.Standard.A1.Flex'
 export USER_HOME=$(eval echo ~)
 
 echo "Search for available availability domains ... "
@@ -82,6 +81,7 @@ export COMPUTE_OCID=$(oci compute instance launch \
  --display-name "${COMPUTE_NAME}" \
  --image-id "${IMAGE_ID}" \
  --ssh-authorized-keys-file "${USER_HOME}/.ssh/id_rsa_${MOTRADE_ID}.pub" \
+ --shape-config '{"memoryInGBs":24, "ocpus":4}' \
  --subnet-id ${SUBNET_ID} \
  --availability-domain "${AVAILABILITY_DOMAIN}" \
  --assign-public-ip FALSE \
