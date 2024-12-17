@@ -28,6 +28,9 @@ done
 # Search for ubuntu 22.04 image
 
 export IMAGE_ID=$(oci compute image list -c $OCI_TENANCY --query "data[?contains(\"display-name\",'Canonical-Ubuntu-22.04-Minimal-2')].id | [0]" --all --raw-output)
+export IMAGE_ID='ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaevqvpysi6itvzw2wks7zlopyroyfe5vvm5pfspk433tax452vhoq'
+# ARM
+
 
 echo moTradeID: $MOTRADE_ID
 echo Compartment Name: $COMPARTMENT_NAME
