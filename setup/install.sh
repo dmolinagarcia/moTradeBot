@@ -69,7 +69,7 @@ executeStep "Setting Europe/Madrid Timezone" "sudo dpkg-reconfigure --frontend n
 sudo timedatectl set-timezone "Europe/Madrid"
 executeStep "Unpacking moTrade binaries" "git clone https://github.com/dmolinagarcia/moTradeBot.git"
 cd moTradeBot
-vLATESTTAG=$(git tag | tail -1)
+vLATESTTAG=$(git tag --sort=creatordate | tail -1)
 executeStep "Syncing moTrade to version $vLATESTTAG" "git checkout $vLATESTTAG"
 executeStep "Commiting kernel changes" "sudo apt-get dist-upgrade --yes"
 
