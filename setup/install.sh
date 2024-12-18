@@ -439,6 +439,7 @@ executeStep "Starting BINGX API" "sudo systemctl start BINGX.service"
 
 ## Reset django ADMIN password
 
+sudo -u moTrade python /home/moTrade/manage.py migrate >> /dev/null 2>&1
 sudo -u moTrade python /home/moTrade/manage.py shell << EOF
 
 from django.contrib.auth import get_user_model
