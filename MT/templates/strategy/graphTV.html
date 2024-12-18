@@ -13,26 +13,20 @@
   <div id="crypto-chart"></div>
 
   <script>
-    // Crear el gráfico
+    // Asignar un ancho fijo para las etiquetas de la escala de precios
+    const fixedScaleWidth = 120; // Puedes ajustar este valor según sea necesario
+
+    // Crear el gráfico principal
     const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-        layout: {
-            backgroundColor: '#ffffff',
-            textColor: '#000000',
-        },
+        layout: { backgroundColor: '#ffffff', textColor: '#000000', },
         width: document.getElementById('crypto-chart').clientWidth,
-        height: document.getElementById('crypto-chart').clientHeight,
-        grid: {
-            vertLines: {
-                color: '#f0f3fa',
-            },
-            horzLines: {
-                color: '#f0f3fa',
-            },
+        height: 300 , // Altura del gráfico primario
+        grid: { vertLines: { color: '#f0f3fa', },
+                horzLines: { color: '#f0f3fa', },
         },
-        timeScale: {
-            timeVisible: true,
-            secondsVisible: false,
-        },
+        timeScale: { timeVisible: true, secondsVisible: false, },
+        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
+        watermark: { visible: true, fontSize: 16, color: 'rgba(0, 0, 0, 0.1)', text: 'TradingView', },
     });
 
     // Añadir una serie de velas (Candlestick)
@@ -44,6 +38,59 @@
         wickUpColor: '#4caf50',
         wickDownColor: '#f44336',
     });
+
+    // Gráfico secundario (ADX)
+    const adxChart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+        layout: { backgroundColor: '#ffffff', textColor: '#000000' },
+        width: document.getElementById('crypto-chart').clientWidth,
+        height: 150, // Altura del gráfico secundario
+        timeScale: { timeVisible: true, secondsVisible: false, visible: true }, // Sin escala de tiempo visible
+        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
+    });
+
+    // Línea ADX
+    const adxSeries = adxChart.addLineSeries({
+        color: '#ff9800', // Naranja para ADX
+        lineWidth: 2,
+    });
+
+    // Línea +DI
+    const plusDiSeries = adxChart.addLineSeries({
+        color: '#4caf50', // Verde para +DI
+        lineWidth: 2,
+    });
+
+    // Línea -DI
+    const minusDiSeries = adxChart.addLineSeries({
+        color: '#f44336', // Rojo para -DI
+        lineWidth: 2,
+    });
+
+
+    // Establecer los datos en cada serie
+    adxSeries.setData([
+        { time: 1640995200, value: 20 },
+        { time: 1640996700, value: 25 },
+        { time: 1640998200, value: 30 },
+        { time: 1640999700, value: 35 },
+        { time: 1641001200, value: 28 },
+    ]);
+
+    plusDiSeries.setData([
+        { time: 1640995200, value: 15 },
+        { time: 1640996700, value: 20 },
+        { time: 1640998200, value: 25 },
+        { time: 1640999700, value: 30 },
+        { time: 1641001200, value: 27 },
+    ]);
+
+    minusDiSeries.setData([
+        { time: 1640995200, value: 10 },
+        { time: 1640996700, value: 12 },
+        { time: 1640998200, value: 18 },
+        { time: 1640999700, value: 22 },
+        { time: 1641001200, value: 25 },
+    ]);
 
     // Extraer strategy_id y operation_id de la URL actual
     let currentInterval = '4h';  // El intervalo inicial
@@ -72,7 +119,7 @@
         const data = await fetchData(interval);
         candlestickSeries.setData(data);
         // Ajustar el intervalo temporal del gráfico
-        adjustBarSpacing(interval);  
+        // adjustBarSpacing(interval);  
     }
 
     // Inicialización con el intervalo de 4 horas
