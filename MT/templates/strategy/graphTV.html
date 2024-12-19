@@ -13,152 +13,120 @@
   <div id="crypto-chart"></div>
 
   <script>
-    // Asignar un ancho fijo para las etiquetas de la escala de precios
-    const fixedScaleWidth = 120; // Puedes ajustar este valor según sea necesario
+<!-- Chart Div PlaceHolder -->
+ TV Graphs. Experimental!
+     <!-- Selector de intervalos -->
+     <div id="interval-selector">
+      <button onclick="setIntervalData('15m')">15 Minutos</button>
+      <button onclick="setIntervalData('1h')">1 Hora</button>
+      <button onclick="setIntervalData('4h')">4 Horas</button>
+      <button onclick="setIntervalData('1d')">1 Día</button>
+      <button onclick="setIntervalData('1w')">1 Semana</button>
+  </div>
 
-    // Crear el gráfico principal
-    const chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-        layout: { backgroundColor: '#ffffff', textColor: '#000000', },
-        width: document.getElementById('crypto-chart').clientWidth,
-        height: 300 , // Altura del gráfico primario
-        grid: { vertLines: { color: '#f0f3fa', },
-                horzLines: { color: '#f0f3fa', },
-        },
-        timeScale: { timeVisible: true, secondsVisible: false, },
-        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
-        watermark: { visible: true, fontSize: 16, color: 'rgba(0, 0, 0, 0.1)', text: 'TradingView', },
-    });
+  <!-- Contenedor del gráfico -->
+  <div id="crypto-chart"></div>
 
-    // Añadir una serie de velas (Candlestick)
-    const candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#4caf50',
-        downColor: '#f44336',
-        borderUpColor: '#4caf50',
-        borderDownColor: '#f44336',
-        wickUpColor: '#4caf50',
-        wickDownColor: '#f44336',
-    });
+  <script>
+function generateLineData(minValue, maxValue, maxDailyGainLoss = 1000) {
+		var res = [];
+		var time = new Date(Date.UTC(2018, 0, 1, 0, 0, 0, 0));
+		for (var i = 0; i < 500; ++i) {
+			var previous = res.length > 0 ? res[res.length - 1] : { value: 0 };
+			var newValue = previous.value + ((Math.random() * maxDailyGainLoss * 2) - maxDailyGainLoss);
 
-    // Gráfico secundario (ADX)
-    const adxChart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-        layout: { backgroundColor: '#ffffff', textColor: '#000000' },
-        width: document.getElementById('crypto-chart').clientWidth,
-        height: 150, // Altura del gráfico secundario
-        timeScale: { timeVisible: true, secondsVisible: false, visible: true }, // Sin escala de tiempo visible
-        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
-    });
+			res.push({
+				time: time.getTime() / 1000,
+				value: Math.max(minValue, Math.min(maxValue, newValue))
+			});
 
-    // Línea ADX
-    const adxSeries = adxChart.addLineSeries({
-        color: '#ff9800', // Naranja para ADX
-        lineWidth: 2,
-    });
+			time.setUTCDate(time.getUTCDate() + 1);
+		}
 
-    // Línea +DI
-    const plusDiSeries = adxChart.addLineSeries({
-        color: '#4caf50', // Verde para +DI
-        lineWidth: 2,
-    });
+		return res;
+	}
 
-    // Línea -DI
-    const minusDiSeries = adxChart.addLineSeries({
-        color: '#f44336', // Rojo para -DI
-        lineWidth: 2,
-    });
+	function generateHistogramData(minValue, maxValue) {
+		var res = [];
+		var time = new Date(Date.UTC(2018, 0, 1, 0, 0, 0, 0));
+		for (var i = 0; i < 500; ++i) {
+			res.push({
+				time: time.getTime() / 1000,
+				value: minValue + Math.random() * (maxValue - minValue)
+			});
 
+			time.setUTCDate(time.getUTCDate() + 1);
+		}
 
-    // Establecer los datos en cada serie
-    adxSeries.setData([
-        { time: 1640995200, value: 20 },
-        { time: 1640996700, value: 25 },
-        { time: 1640998200, value: 30 },
-        { time: 1640999700, value: 35 },
-        { time: 1641001200, value: 28 },
-    ]);
+		return res;
+	}
 
-    plusDiSeries.setData([
-        { time: 1640995200, value: 15 },
-        { time: 1640996700, value: 20 },
-        { time: 1640998200, value: 25 },
-        { time: 1640999700, value: 30 },
-        { time: 1641001200, value: 27 },
-    ]);
+	var chart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+		timeScale: {
+			borderColor: "rgb(225, 226, 227)"
+		},
+		overlayPriceScales: {
+			scaleMargins: {
+				top: 0.6,
+				bottom: 0,
+			}
+		},
+		rightPriceScale: {
+			autoScale: true,
+			scaleMargins: {
+				top: 0.1,
+				bottom: 0.08,
+			}
+		}
+	});
 
-    minusDiSeries.setData([
-        { time: 1640995200, value: 10 },
-        { time: 1640996700, value: 12 },
-        { time: 1640998200, value: 18 },
-        { time: 1640999700, value: 22 },
-        { time: 1641001200, value: 25 },
-    ]);
+	var mainSeries = chart.addLineSeries({
+		title: 'primary',
+		priceFormat: {
+			minMove: 1,
+			precision: 0,
+		},
+	});
 
-    // Extraer strategy_id y operation_id de la URL actual
-    let currentInterval = '4h';  // El intervalo inicial
-    const urlParts = window.location.pathname.split('/');
-    const strategyId = urlParts[2];
-    const operationId = urlParts[3];
+	mainSeries.setData(generateLineData(1000, 300000, 1500));
 
-    // Función para obtener datos desde el servidor
-    async function fetchData(interval) {
-        const endpoint = `/getHistory/${strategyId}/${operationId}/${interval}`;
-        try {
-            const response = await fetch(endpoint);
-            if (!response.ok) {
-                throw new Error(`Error al obtener datos: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error(error);
-            return [];
-        }
-    }
+	var secondSeries = chart.addLineSeries({
+		title: 'second',
+		priceFormat: {
+			minMove: 1,
+			precision: 0,
+		},
+		color: '#ff0000',
+		pane: 1
+	});
+	secondSeries.setData(generateLineData(0, 100, 20));
 
-    // Función para establecer los datos en el gráfico
-    async function setIntervalData(interval) {
-        const data = await fetchData(interval);
-        candlestickSeries.setData(data);
-        // Ajustar el intervalo temporal del gráfico
-        // adjustBarSpacing(interval);  
-    }
+	var thirdSeries = chart.addLineSeries({
+		title: 'third',
+		priceFormat: {
+			minMove: 1,
+			precision: 0,
+		},
+		color: '#00ff00',
+		pane: 1
+	});
+	thirdSeries.setData(generateLineData(0, 100, 20));
 
-    // Inicialización con el intervalo de 4 horas
-    setIntervalData('4h');
+	var fourthSeries = chart.addLineSeries({
+		title: 'fourth',
+		priceFormat: {
+			minMove: 1,
+			precision: 0,
+		},
+		color: '#ea6622',
+		pane: 2
+	});
+	fourthSeries.setData(generateLineData(0, 100, 20));
 
-    // Función para ajustar el espaciado de las barras basado en el intervalo
-    function adjustBarSpacing(interval) {
-        let barSpacing = 0;
-
-        switch (interval) {
-            case '15m':
-                barSpacing = 2;  // 15 minutos, más espacio entre las velas
-                break;
-            case '4h':
-                barSpacing = 6;  // 4 horas, un poco más de espacio
-                break;
-            case '1d':
-                barSpacing = 12;  // 1 día, menos espacio entre las velas
-                break;
-            case '1w':
-                barSpacing = 24;  // 1 semana, más espacio
-                break;
-            default:
-                barSpacing = 6;  // Intervalo por defecto
-                break;
-        }
-
-        // Ajustar la propiedad barSpacing del gráfico
-        chart.applyOptions({
-            timeScale: {
-                barSpacing: barSpacing
-            }
-        });
-    }
-
-    // Ajustar tamaño del gráfico al redimensionar la ventana
-    window.addEventListener('resize', () => {
-        chart.applyOptions({
-            width: document.getElementById('crypto-chart').clientWidth,
-        });
-    });
+	var volumeSeries = chart.addHistogramSeries({
+		secondary: 'volume',
+		priceScaleId: '',
+		pane: 0
+	});
+	volumeSeries.setData(generateHistogramData(100000, 3000000));
 </script>
