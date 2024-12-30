@@ -1,0 +1,53 @@
+
+
+
+
+
+    // Gráfico secundario (ADX)
+    const adxChart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
+        layout: { backgroundColor: '#ffffff', textColor: '#000000' },
+        width: document.getElementById('crypto-chart').clientWidth,
+        height: 150, // Altura del gráfico secundario
+        timeScale: { timeVisible: true, secondsVisible: false, visible: true }, // Sin escala de tiempo visible
+        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
+    });
+
+
+
+
+    // Función para ajustar el espaciado de las barras basado en el intervalo
+    function adjustBarSpacing(interval) {
+        let barSpacing = 0;
+
+        switch (interval) {
+            case '15m':
+                barSpacing = 2;  // 15 minutos, más espacio entre las velas
+                break;
+            case '4h':
+                barSpacing = 6;  // 4 horas, un poco más de espacio
+                break;
+            case '1d':
+                barSpacing = 12;  // 1 día, menos espacio entre las velas
+                break;
+            case '1w':
+                barSpacing = 24;  // 1 semana, más espacio
+                break;
+            default:
+                barSpacing = 6;  // Intervalo por defecto
+                break;
+        }
+
+        // Ajustar la propiedad barSpacing del gráfico
+        chart.applyOptions({
+            timeScale: {
+                barSpacing: barSpacing
+            }
+        });
+    }
+
+    // Ajustar tamaño del gráfico al redimensionar la ventana
+    window.addEventListener('resize', () => {
+        chart.applyOptions({
+            width: document.getElementById('crypto-chart').clientWidth,
+        });
+    });
