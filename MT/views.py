@@ -121,9 +121,15 @@ def strategyOpenOperationView (request) :
 @login_required
 def getHistoryView(request, strategy_id, operation_id, interval) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
+
+    timezone.activate(pytz.timezone(request.user.profile.timezone))
+    
     strategy = get_object_or_404(Strategy, pk=strategy_id)
-    if (operation_id != 0) :
-        title='Strategy ' + str(strategy)
+    if (operation_id != 0 ) :
+        operation = get_object_or_404(StrategyOperation, operID=operation_id)
+        history = operation.getHistory()
+    else :
+        history = strategy.getHistory()
 
     data = {
         "15m": [
@@ -204,11 +210,23 @@ def getHistoryView(request, strategy_id, operation_id, interval) :
             {"time": 1641801600, "open": 50200, "high": 50700, "low": 50000, "close": 50500},
             {"time": 1641840000, "open": 50500, "high": 51000, "low": 50200, "close": 50700},
             {"time": 1641878400, "open": 50700, "high": 51200, "low": 50500, "close": 51000}
-        ]
+        ],
     }
+ 
+    data['line'] = []
+
+    for entry in history:
+        data['line'].append(
+            {
+                "time":  entry.timestamp.timestamp(),
+                "rate":  entry.currentRate,
+                "ema":   entry.ema,
+                "ema20": entry.ema20,
+            }
+        )
 
     return JsonResponse(data[interval], safe=False)
-
+    return JsonResponse(data, safe=False)
 
 # Strategy Views
 @login_required

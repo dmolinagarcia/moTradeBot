@@ -1,6 +1,5 @@
 <!-- Chart Div PlaceHolder -->
- TV Graphs. Experimental!
-     <!-- Selector de intervalos -->
+  <!-- Selector de intervalos
      <div id="interval-selector">
       <button onclick="setIntervalData('15m')">15 Minutos</button>
       <button onclick="setIntervalData('1h')">1 Hora</button>
@@ -9,28 +8,56 @@
       <button onclick="setIntervalData('1w')">1 Semana</button>
   </div>
 
+  -->
+  
   <!-- Contenedor del gráfico -->
   <div id="crypto-chart"></div>
 
   <script>
-	// Funcion de datos de prueba para la linea. Comentamos porque no deberia ser necesaria
-	//  function generateLineData(minValue, maxValue, maxDailyGainLoss = 1000) {
-	//  	var res = [];
-	//  	var time = new Date(Date.UTC(2018, 0, 1, 0, 0, 0, 0));
-	//  	for (var i = 0; i < 500; ++i) {
-	//  		var previous = res.length > 0 ? res[res.length - 1] : { value: 0 };
-	//  		var newValue = previous.value + ((Math.random() * maxDailyGainLoss * 2) - maxDailyGainLoss);
-	//  
-	//  		res.push({
-	//  			time: time.getTime() / 1000,
-	//  			value: Math.max(minValue, Math.min(maxValue, newValue))
-	//  		});
-	//  
-	//  		time.setUTCDate(time.getUTCDate() + 1);
-	//  	}
-	//  
-	//  	return res;
-	//  }
+	// Data Decimation
+	function decimateData(data, targetPoints) {
+    	const dataLength = data.length;
+
+    	// Si los datos ya son pocos, no hacemos nada
+	    if (dataLength <= targetPoints) {
+    	    return data;
+    	}
+
+    	const bucketSize = Math.ceil(dataLength / targetPoints);
+	    const decimated = [];
+
+	    for (let i = 0; i < dataLength; i += bucketSize) {
+    	    const bucket = data.slice(i, i + bucketSize);
+	        const min = bucket.reduce((prev, curr) => (curr.value < prev.value ? curr : prev), bucket[0]);
+        	const max = bucket.reduce((prev, curr) => (curr.value > prev.value ? curr : prev), bucket[0]);
+
+    	    decimated.push(min);
+	        if (min !== max) {
+        	    decimated.push(max);
+    	    }
+	    }
+
+    	return decimated;
+	}	
+
+	//Funcion de datos de prueba para la linea. Comentamos porque no deberia ser necesaria
+	function generateLineData(minValue, maxValue, maxDailyGainLoss = 1000) {
+		var res = [];
+		var time = new Date(Date.UTC(2018, 0, 1, 0, 0, 0, 0));
+		for (var i = 0; i < 500; ++i) {
+			var previous = res.length > 0 ? res[res.length - 1] : { value: 0 };
+			var newValue = previous.value + ((Math.random() * maxDailyGainLoss * 2) - maxDailyGainLoss);
+	
+			res.push({
+				time: time.getTime() / 1000,
+				value: Math.max(minValue, Math.min(maxValue, newValue))
+			});
+	
+			time.setUTCDate(time.getUTCDate() + 1);
+		}
+	
+		return res;
+	}
 
 	// Funcion de datos de prueba para volumen. Comentamos
 	//  function generateHistogramData(minValue, maxValue) {
@@ -53,7 +80,7 @@
 
     // Crear el gráfico principal
 	    const priceChart = LightweightCharts.createChart(document.getElementById('crypto-chart'), {
-	        layout: { backgroundColor: '#ffffff', textColor: '#000000', },
+	        layout: { backgroundColor: '#eeeeee', textColor: '#000000', },
         	width: document.getElementById('crypto-chart').clientWidth,
 	        height: 700 , // Altura del gráfico primario
     	    grid: { vertLines: { color: '#f0f3fa', },
@@ -61,6 +88,7 @@
     	    },
         	timeScale: { timeVisible: true, secondsVisible: false, },
 	        rightPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Ancho fijo para el gráfico principal
+		    leftPriceScale: { visible: true, minimumWidth: fixedScaleWidth, }, // Escala izquierda
         });
 
 	// Grafico de muestra principal. Sustituimos por nuestro priceChart
@@ -84,14 +112,14 @@
 	//	});
 
 	// Añadir una serie de velas (Candlestick) con los precios
-		const priceSeries = priceChart.addCandlestickSeries({
-	        upColor: '#4caf50',
-    	    downColor: '#f44336',
-        	borderUpColor: '#4caf50',
-	        borderDownColor: '#f44336',
-    	    wickUpColor: '#4caf50',
-        	wickDownColor: '#f44336',
-	    });
+	//  	const priceSeries = priceChart.addCandlestickSeries({
+	//          upColor: '#4caf50',
+    //  	    downColor: '#f44336',
+    //      	borderUpColor: '#4caf50',
+	//          borderDownColor: '#f44336',
+    //  	    wickUpColor: '#4caf50',
+    //      	wickDownColor: '#f44336',
+	//      });
 
 	// Serie original de prueba. Comentamos
 	//  var mainSeries = chart.addLineSeries({
@@ -102,8 +130,29 @@
 	//  	},
 	//  });
 
+	var rateSeries = priceChart.addLineSeries({ 
+		priceFormat: { minMove: 1, precision: 0, },
+	 	color: '#8f9c4e',
+    	priceScaleId: 'left', // Escala de precios izquierda
+	 	pane: 0
+	});	
+
+	var emaSeries = priceChart.addLineSeries({ 
+		priceFormat: { minMove: 1, precision: 0, },
+	 	color: '#524e9c',
+    	priceScaleId: 'left', // Escala de precios izquierda
+	 	pane: 0
+	});	
+
+	var ema20Series = priceChart.addLineSeries({ 
+		priceFormat: { minMove: 1, precision: 0, },
+	 	color: '#2a754c',
+    	priceScaleId: 'left', // Escala de precios izquierda
+	 	pane: 0
+	});	
+
 	// Datos de prueba de la muestra. Comentamos
-	// mainSeries.setData(generateLineData(1000, 300000, 1500));
+	//  priceSeries.setData(generateLineData(1000, 300000, 1500));
 
 	// Series de datos de los paneles 1 y 2 (Atentos a la propiedad pane)
 	//  var secondSeries = chart.addLineSeries({
@@ -113,18 +162,6 @@
 	//  		precision: 0,
 	//  	},
 	//  	color: '#ff0000',
-	//  	pane: 1
-	//  });
-
-	//  secondSeries.setData(generateLineData(0, 100, 20));
-
-	//  var thirdSeries = chart.addLineSeries({
-	//  	title: 'third',
-	//  	priceFormat: {
-	//  		minMove: 1,
-	//  		precision: 0,
-	//  	},
-	//  	color: '#00ff00',
 	//  	pane: 1
 	//  });
 
@@ -151,10 +188,10 @@
 
 	//  volumeSeries.setData(generateHistogramData(100000, 3000000));
 
-    // Extraer strategy_id y operation_id de la URL actual
-	    let currentInterval = '4h';  // El intervalo inicial
+    //  Extraer strategy_id y operation_id de la URL actual
+		let currentInterval = '4h';  // El intervalo inicial
     	const urlParts = window.location.pathname.split('/');
-	    const strategyId = urlParts[2];
+	   	const strategyId = urlParts[2];
     	const operationId = urlParts[3];
 
     // Función para obtener datos desde el servidor
@@ -166,7 +203,8 @@
     	            throw new Error(`Error al obtener datos: ${response.status}`);
         	    }
             	const data = await response.json();
-	            return data;
+				const decimatedData = decimateData(data, 3000);
+	            return decimatedData;
     	    } catch (error) {
         	    console.error(error);
             	return [];
@@ -176,36 +214,24 @@
     // Función para establecer los datos en el gráfico
     	async function setIntervalData(interval) {
         	const data = await fetchData(interval);
-	        priceSeries.setData(data);
-    	    // Ajustar el intervalo temporal del gráfico
-        	// adjustBarSpacing(interval);  
+	        // priceSeries.setData(data);
+			rateSeries.setData   (data.map((point) => ({ time: point.time, value: point.rate })));
+			emaSeries.setData    (data.map((point) => ({ time: point.time, value: point.ema })));
+			ema20Series.setData  (data.map((point) => ({ time: point.time, value: point.ema20 })));
+
+			priceChart.timeScale().fitContent();
 	    }		
 
     // Inicialización con el intervalo de 4 horas
-    	setIntervalData('4h');		
+    setIntervalData('line');		
 
+	/*
     // Línea ADX
     const adxSeries = priceChart.addLineSeries({
         color: '#ff9800', // Naranja para ADX
         lineWidth: 2,
 		pane: 1,
     });
-
-    // Línea +DI
-    const plusDiSeries = priceChart.addLineSeries({
-        color: '#4caf50', // Verde para +DI
-        lineWidth: 2,
-		pane: 1,
-    });
-
-    // Línea -DI
-    const minusDiSeries = priceChart.addLineSeries({
-        color: '#f44336', // Rojo para -DI
-        lineWidth: 2,
-		pane: 1,
-    });
-
-
     // Establecer los datos en cada serie
     adxSeries.setData([
         { time: 1640995200, value: 20 },
@@ -215,19 +241,5 @@
         { time: 1641001200, value: 28 },
     ]);
 
-    plusDiSeries.setData([
-        { time: 1640995200, value: 15 },
-        { time: 1640996700, value: 20 },
-        { time: 1640998200, value: 25 },
-        { time: 1640999700, value: 30 },
-        { time: 1641001200, value: 27 },
-    ]);
-
-    minusDiSeries.setData([
-        { time: 1640995200, value: 10 },
-        { time: 1640996700, value: 12 },
-        { time: 1640998200, value: 18 },
-        { time: 1640999700, value: 22 },
-        { time: 1641001200, value: 25 },
-    ]);		
+	*/
 </script>
