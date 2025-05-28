@@ -544,7 +544,7 @@ class Strategy(models.Model):
                             # TODO
                             # I am searching for the perfect balance. I am being toooooo aggresive.
                             # 20/11/2024 changed from 0.01 to 0.008
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.008)
+                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.002)
 
                         # TODO
                         # Replace stopLoss in the bot with the BINGX stopLoss
