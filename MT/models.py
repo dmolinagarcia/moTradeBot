@@ -38,25 +38,18 @@ def _D(x):
 # STRATEGY
 # ──────────────────────────────────────────────────────────────────────────────
 class Strategy(models.Model):
-    
-    def status (self) :
+
+    # ── MÉTODOS DE ESTADO / UI ────────────────────────────────────────────────
+    def status(self):
         statusUtility = "<u><b>"+self.utility + str(self.cryptoTimeframeADX or '|1d') + str(self.cryptoTimeframeDI or '|1d')+"</b></u> \n"
-        if self.accion == "VENDER" :
+        if self.accion == "VENDER":
             statusOperation = "VENDER"
-            multiplier=-1
-        elif self.accion == "COMPRAR" :
+        elif self.accion == "COMPRAR":
             statusOperation = "COMPRAR"
-            multiplier=1
-        else :
+        else:
             statusOPeration = ""
             
         profit = self.currentProfit
-        ## placedPrice
-        ## currentRate
-            
-        ## Que me falta....
-        ## Apertura, fecha, precio actual, ganancia
-            
         return statusUtility + " " + statusOperation + " " + f'{profit:3.2f}' + "%"            
             
 
@@ -84,9 +77,9 @@ class Strategy(models.Model):
         try :
             salida = (response.json())
         except :
-            logger.error (' -- ' + self.operSymbolBingx)
-            logger.error ('Error en get_position al leer el response.json()')
-            logger.error (response.text)
+            logger.error(' -- ' + self.operSymbolBingx)
+            logger.error('Error en get_position al leer el response.json()')
+            logger.error(response.text)
 
         return response.json()[0], response.json()[1]
 
@@ -94,18 +87,18 @@ class Strategy(models.Model):
         amount, leverage, type, limit_price=None, stop_lose_kind=None, 
         stop_lose_value=None, use_trail_stop=None) :
 
-        data= {
-            'instrument_type' : instrument_type,
-            'instrument_id' : instrument_id,
-            'instrument_id_bingx' : instrument_id_bingx,
-            'side' : side,
-            'amount' : amount,
-            'leverage' : leverage,
-            'type' : type,
-            'limit_price' : limit_price,
-            'stop_lose_kind' : stop_lose_kind,
-            'stop_lose_value' : stop_lose_value,
-            'use_trail_stop' : use_trail_stop ,
+        data = {
+            'instrument_type': instrument_type,
+            'instrument_id': instrument_id,
+            'instrument_id_bingx': instrument_id_bingx,
+            'side': side,
+            'amount': amount,
+            'leverage': leverage,
+            'type': type,
+            'limit_price': limit_price,
+            'stop_lose_kind': stop_lose_kind,
+            'stop_lose_value': stop_lose_value,
+            'use_trail_stop': use_trail_stop,
         }
 
         headers = {'Content-Type': 'application/json',}
@@ -129,11 +122,10 @@ class Strategy(models.Model):
             headers=headers, 
             data=json.dumps(data))
 
-	# no probado, con BINGX devuelvo el ID de orden de cierre
+        # no probado, con BINGX devuelvo el ID de orden de cierre
         return response.json()[0], response.json()[1]
 
     def cancel_order(self, order_id) :
-
         data='{"order_id": '+str(order_id)+' }'
         headers = {'Content-Type': 'application/json',}
         response = requests.post(
@@ -165,7 +157,7 @@ class Strategy(models.Model):
     currentProfit=models.FloatField(null=True,blank=True)
     accion=models.CharField(max_length=10,null=True,blank=True)
     class StrategyStates(models.IntegerChoices):
-        HOLD = 0 
+        HOLD = 0
         PREOPER = 1
         OPER = 2
         COOLDOWN = 3
@@ -209,34 +201,33 @@ class Strategy(models.Model):
         return ( self.utility + str(self.cryptoTimeframeADX or '|1d') + 
                 str(self.cryptoTimeframeDI or '|1d'))
 
-    ## Modificadores ##########################################################
-
-    def clear (self):
-        self.beneficioTotal=0
-        self.isRunning=True
-        self.operID=0
-        self.estado=3
-        self.accion="COOLDOWN"
-        self.maxCurrentRate=0
-        self.nextUpdate=timezone.now()
-        self.bet=0
-        self.comments=""
+    # ── MODIFICADORES ────────────────────────────────────────────────────────
+    def clear(self):
+        self.beneficioTotal = 0
+        self.isRunning = True
+        self.operID = 0
+        self.estado = 3
+        self.accion = "COOLDOWN"
+        self.maxCurrentRate = 0
+        self.nextUpdate = timezone.now()
+        self.bet = 0
+        self.comments = ""
         self.save()
         self.getOperations().delete()
-        StrategyState.objects.filter(strategy=self).delete() 
+        StrategyState.objects.filter(strategy=self).delete()
 
-    def toggleIsRunning (self):
-        if self.isRunning :
+    def toggleIsRunning(self):
+        if self.isRunning:
             self.isRunning = False
-        else :
+        else:
             self.isRunning = True
-            self.estado=3
+            self.estado = 3
         self.save()
 
-    def unlock (self):
-        if self.estado == 3 :
-            self.estado=0
-            self.accion="WAIT"
+    def unlock(self):
+        if self.estado == 3:
+            self.estado = 0
+            self.accion = "WAIT"
             self.save()
 
     def setAmount (self, amount):
@@ -896,9 +887,9 @@ class StrategyOperation(models.Model):
         # Update Strategy beneficioTotal
         
         # Self.delete
-
-## User profile
-
+# ──────────────────────────────────────────────────────────────────────────────
+# USER PROFILE 
+# ──────────────────────────────────────────────────────────────────────────────
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -910,20 +901,20 @@ class Profile(models.Model):
         max_length=100,
         choices=timezoneChoices,
     )
-    configMaxBet = models.DecimalField(default=0,max_digits=14,decimal_places=2)
+    configMaxBet = models.DecimalField(default=0, max_digits=14, decimal_places=2)
     configProcessEnabled = models.BooleanField(default=False)
     configTest = models.BooleanField(default=False)
 
     configGlobalTPEnabled = models.BooleanField(default=True)
-    configGlobalTPThreshold = models.DecimalField(default=0,max_digits=5,decimal_places=2)
+    configGlobalTPThreshold = models.DecimalField(default=0, max_digits=5, decimal_places=2)
     configGlobalTPSleepdown = models.IntegerField(default=100)
     configGlobalTPWakeUp = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
 
     configLegacyGraph = models.BooleanField(default=True)
-    
+
     def __str__(self):
-        return ( self.user.username )
-    
+        return (self.user.username)
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -932,4 +923,3 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
-    
