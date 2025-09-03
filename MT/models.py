@@ -19,6 +19,24 @@ from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Parámetros mejorados de gestión (seguros por defecteo)
+# ──────────────────────────────────────────────────────────────────────────────
+ATR_MULT_SL = Decimal("2.0")       # Stop inicial: 2xATR
+ATR_MULT_TSL = Decimal("2.5")      # Trailing: 2.5xATR desde el extremo
+TP1_R_MULT = Decimal("1.0")        # (lógico) Toma parcial en 1R (marcado por flag)
+BREAKEVEN_R = Decimal("0.7")       # Mover a BE a partir de 0.7R
+MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
+ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
+VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
+DAILY_DD_LIMIT_PCT = Decimal("5.0")  # Corte diario del sistema (% relativo, lógico)
+
+def _D(x):
+    return Decimal(str(x)) if x is not None else None
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STRATEGY
+# ──────────────────────────────────────────────────────────────────────────────
 class Strategy(models.Model):
     
     def status (self) :
