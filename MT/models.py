@@ -390,11 +390,10 @@ class Strategy(models.Model):
             logger.error ("Error al leer datos de tradingview. ")
             raise e
 
-        data=  {
+        data = {
             'instrument_id_bingx': self.operSymbolBingx
         }
-
-        headers = {'Content-Type': 'application/json',}
+        headers = {'Content-Type': 'application/json'}
        
         response = requests.post(
             'http://127.0.0.1:5000/get_price',
@@ -899,33 +898,33 @@ class StrategyState(models.Model):
         OPER = 2
         PRECIERRE= 3
     estado = models.IntegerField(choices=StrategyStateStates.choices,null=True)
-    ema=models.FloatField(null=True)
-    ema20=models.FloatField(null=True)
-    ema100=models.FloatField(null=True)
-    adx=models.FloatField(null=True)
-    plusDI=models.FloatField(null=True)
-    minusDI=models.FloatField(null=True)
-    diffDI=models.FloatField(null=True)
-    currentRate=models.FloatField(null=True)
-    currentProfit=models.FloatField(null=True)
-    maxCurrentRate=models.FloatField(null=True)
-    stopLoss=models.FloatField(null=True)
-    sleep=models.IntegerField(null=True)
-    amount=models.IntegerField(null=True)
-    beneficioTotal=models.FloatField(null=True)
-    limitOpen=models.IntegerField(null=True)
-    limitClose=models.IntegerField(null=True)
-    limitBuy=models.IntegerField(null=True)
-    limitSell=models.IntegerField(null=True)
-    cryptoTimeframeADX=models.CharField(max_length=4,null=True)
-    cryptoTimeframeDI=models.CharField(max_length=4,null=True)
-    isRunning=models.BooleanField(null=True)
-    recommendMA=models.FloatField(default=0,null=True,blank=True)
-    recommendMA240=models.FloatField(default=0,null=True,blank=True)
-    stopLossCurrent=models.FloatField(null=True,blank=True)
+    ema = models.FloatField(null=True)
+    ema20 = models.FloatField(null=True)
+    ema100 = models.FloatField(null=True)
+    adx = models.FloatField(null=True)
+    plusDI = models.FloatField(null=True)
+    minusDI = models.FloatField(null=True)
+    diffDI = models.FloatField(null=True)
+    currentRate = models.FloatField(null=True)
+    currentProfit = models.FloatField(null=True)
+    maxCurrentRate = models.FloatField(null=True)
+    stopLoss = models.FloatField(null=True)
+    sleep = models.IntegerField(null=True)
+    amount = models.IntegerField(null=True)
+    beneficioTotal = models.FloatField(null=True)
+    limitOpen = models.IntegerField(null=True)
+    limitClose = models.IntegerField(null=True)
+    limitBuy = models.IntegerField(null=True)
+    limitSell = models.IntegerField(null=True)
+    cryptoTimeframeADX = models.CharField(max_length=4, null=True)
+    cryptoTimeframeDI = models.CharField(max_length=4, null=True)
+    isRunning = models.BooleanField(null=True)
+    recommendMA = models.FloatField(default=0, null=True, blank=True)
+    recommendMA240 = models.FloatField(default=0, null=True, blank=True)
+    stopLossCurrent = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return str(self.strategy.utility+":"+str(self.timestamp))
+        return str(self.strategy.utility + ":" + str(self.timestamp))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -986,7 +985,7 @@ class StrategyOperation(models.Model):
             entry.save()
 
         if self.beneficio:
-            self.strategy.beneficioTotal = self.strategy.beneficioTotal-self.beneficio
+            self.strategy.beneficioTotal = (self.strategy.beneficioTotal or 0) - self.beneficio
             self.strategy.save()
                 
         # Update Strategy beneficioTotal
