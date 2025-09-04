@@ -778,7 +778,7 @@ class Strategy(models.Model):
 
     def comprar(self):
         if self.protectedTrade :
-             check,order_id=self.buy_order(
+            check,order_id=self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
@@ -810,7 +810,7 @@ class Strategy(models.Model):
 
     def vender(self):
         if self.protectedTrade :
-             check,order_id=self.buy_order(
+            check,order_id=self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
