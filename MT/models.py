@@ -394,8 +394,8 @@ class Strategy(models.Model):
             self.diffDI = self.plusDI - self.minusDI
             self.recommendMA = d[6]
             self.recommendMA240 = d[7]
-        except SomeError as e :
-            logger.error ("Error al leer datos de tradingview. ")
+        except Exception as e :
+            logger.error("Error al leer datos de tradingview: %s", e)
             raise e
 
         data = {
