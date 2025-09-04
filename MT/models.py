@@ -41,51 +41,47 @@ class Strategy(models.Model):
 
     # ── MÉTODOS DE ESTADO / UI ────────────────────────────────────────────────
     def status(self):
-        statusUtility = "<u><b>"+self.utility + str(self.cryptoTimeframeADX or '|1d') + str(self.cryptoTimeframeDI or '|1d')+"</b></u> \n"
+        statusUtility = "<u><b>" + self.utility + str(self.cryptoTimeframeADX or '|1d') + str(self.cryptoTimeframeDI or '|1d') + "</b></u> \n"
         if self.accion == "VENDER":
             statusOperation = "VENDER"
         elif self.accion == "COMPRAR":
             statusOperation = "COMPRAR"
         else:
-            statusOPeration = ""
-            
-        profit = self.currentProfit
-        return statusUtility + " " + statusOperation + " " + f'{profit:3.2f}' + "%"            
-            
+            statusOperation = ""
+        profit = self.currentProfit if self.currentProfit is not None else 0
+        return statusUtility + " " + statusOperation + " " + f'{profit:3.2f}' + "%"
 
-    ## Funciones interfaz con IQ.py ###########################################
-
-    def get_position(self, position_id) :
-
-        if self.operIDclose is None :
+    # ── INTERFAZ CON EL SERVICIO LOCAL (sin cambios funcionales) ─────────────
+    def get_position(self, position_id):
+        if self.operIDclose is None:
             operIDclose = 0
-        else :
+        else:
             operIDclose = self.operIDclose
 
-        data= {
-           'order_id': position_id,
-           'order_id_close': operIDclose,
-           'instrument_id_bingx' : self.operSymbolBingx
+        data = {
+            'order_id': position_id,
+            'order_id_close': operIDclose,
+            'instrument_id_bingx': self.operSymbolBingx
         }
 
-        headers = {'Content-Type': 'application/json',}
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
-            'http://127.0.0.1:5000/get_position', 
-            headers=headers, 
+            'http://127.0.0.1:5000/get_position',
+            headers=headers,
             data=json.dumps(data))
 
-        try :
+        try:
             salida = (response.json())
-        except :
-            logger.error(' -- ' + self.operSymbolBingx)
+        except Exception:
+            logger.error(' -- ' + str(self.operSymbolBingx))
             logger.error('Error en get_position al leer el response.json()')
             logger.error(response.text)
 
         return response.json()[0], response.json()[1]
 
-    def buy_order(self, instrument_type, instrument_id, instrument_id_bingx, side, 
-        amount, leverage, type, limit_price=None, stop_lose_kind=None, 
-        stop_lose_value=None, use_trail_stop=None) :
+    def buy_order(self, instrument_type, instrument_id, instrument_id_bingx, side,
+        amount, leverage, type, limit_price=None, stop_lose_kind=None,
+        stop_lose_value=None, use_trail_stop=None):
 
         data = {
             'instrument_type': instrument_type,
@@ -101,40 +97,39 @@ class Strategy(models.Model):
             'use_trail_stop': use_trail_stop,
         }
 
-        headers = {'Content-Type': 'application/json',}
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
-            'http://127.0.0.1:5000/buy_order', 
-            headers=headers, 
+            'http://127.0.0.1:5000/buy_order',
+            headers=headers,
             data=json.dumps(data))
-
 
         return response.json()[0], response.json()[1]
 
-    def close_position(self, order_id) :
-        data= {
+    def close_position(self, order_id):
+        data = {
             'order_id': order_id,
-            'instrument_id_bingx' : self.operSymbolBingx
+            'instrument_id_bingx': self.operSymbolBingx
         }
 
-        headers = {'Content-Type': 'application/json',}
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
-            'http://127.0.0.1:5000/close_position', 
-            headers=headers, 
+            'http://127.0.0.1:5000/close_position',
+            headers=headers,
             data=json.dumps(data))
 
         # no probado, con BINGX devuelvo el ID de orden de cierre
         return response.json()[0], response.json()[1]
 
-    def cancel_order(self, order_id) :
+    def cancel_order(self, order_id):
         data='{"order_id": '+str(order_id)+' }'
         headers = {'Content-Type': 'application/json',}
         response = requests.post(
-            'http://127.0.0.1:5000/cancel_order', 
-            headers=headers, 
+            'http://127.0.0.1:5000/cancel_order',
+            headers=headers,
             data=data)
         return response.json()
 
-    def get_candle(self) :
+    def get_candle(self):
         data='{"operSymbol": "'+self.operSymbol+'" }'
         headers = {'Content-Type': 'application/json',}
         response = requests.post(
@@ -198,7 +193,7 @@ class Strategy(models.Model):
     leverage=models.IntegerField(default=4)
   
     def __str__(self):
-        return ( self.utility + str(self.cryptoTimeframeADX or '|1d') + 
+        return (self.utility + str(self.cryptoTimeframeADX or '|1d') +
                 str(self.cryptoTimeframeDI or '|1d'))
 
     # ── MODIFICADORES ────────────────────────────────────────────────────────
@@ -230,19 +225,18 @@ class Strategy(models.Model):
             self.accion = "WAIT"
             self.save()
 
-    def setAmount (self, amount):
-        self.amount=amount
+    def setAmount(self, amount):
+        self.amount = amount
         self.save()
-        
-    ## GETS ###################################################################
 
-    def getHistory (self):
+    # ── GETS ─────────────────────────────────────────────────────────────────
+    def getHistory(self):
         history = StrategyState.objects.filter(strategy=self).order_by('timestamp')
         return history
 
-    def getOperations (self):
+    def getOperations(self):
         return StrategyOperation.objects.filter(strategy=self)
-        
+
     def getComments (self):
         return self.comments;
         
@@ -292,8 +286,8 @@ class Strategy(models.Model):
             logger.error ("Error al leer datos de tradingview. ")
             raise e
 
-        data= {
-            'instrument_id_bingx' : self.operSymbolBingx
+        data=  {
+            'instrument_id_bingx': self.operSymbolBingx
         }
 
         headers = {'Content-Type': 'application/json',}
@@ -316,8 +310,7 @@ class Strategy(models.Model):
         self.save()
 
     def operation(self, isMarketOpen):
-
-        logger.debug ("Entering operation for " + self.rateSymbol)
+        logger.debug("Entering operation for " + self.rateSymbol)
   
         try : 
             # Sanity Checks
@@ -329,20 +322,20 @@ class Strategy(models.Model):
                 self.inError=True
                 self.save()
                 return
-    
-            if self.estado == 2 and self.bet == 0 :
+
+            if self.estado == 2 and self.bet == 0:
             ## Operacion en curso, pero no se ha cargado BET
                 logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
                 self.inError=True
                 self.save()
                 return
-            
+
             if self.cooldownUntil is None :
                 self.cooldownUntil = timezone.now()
-                
+
             self.update()
             self.nextUpdate=timezone.now()+timedelta(seconds=self.sleep)
-            
+
             if self.isRunning :
                 logger.debug ("Symbol is running so we evaluate")
                 estadoNext=self.estado
@@ -621,9 +614,9 @@ class Strategy(models.Model):
                             
         self.cooldownUntil=timezone.now()+timedelta(days=1)
             # Cooldown de 48 periodos. Igual que cierre por stoploss
-        force=False
-        check=self.cerrar(reason,force)
-        if check :
+        force = False
+        check = self.cerrar(reason,force)
+        if check:
             #payload = {"head": self.__str__(), "body": "Cerrar"}
             #send_group_notification(group_name="notificame", payload=payload, ttl=100000)      
             #telegram_settings = settings.TELEGRAM
@@ -640,8 +633,8 @@ class Strategy(models.Model):
             self.log()
             self.save()
 
-
-    def log (self) :
+    # ── LOG DE ESTADO ───────────────────────────────────────────────────────
+    def log(self):
         StrategyState(strategy=self, 
             operID=self.operID,
             accion=self.accion,
@@ -787,6 +780,10 @@ class Strategy(models.Model):
 
         return resultado
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STRATEGY STATE 
+# ──────────────────────────────────────────────────────────────────────────────
 class StrategyState(models.Model):
     strategy=models.ForeignKey(Strategy, on_delete=models.CASCADE)
     timestamp=models.DateTimeField(auto_now=False, auto_now_add=True)
@@ -826,23 +823,27 @@ class StrategyState(models.Model):
     def __str__(self):
         return str(self.strategy.utility+":"+str(self.timestamp))
 
-class StrategyOperation(models.Model):
-    strategy=models.ForeignKey(Strategy, on_delete=models.CASCADE)
-    operID=models.IntegerField()
-    type=models.CharField(max_length=4)
-    timestampOpen=models.DateTimeField(auto_now=False, auto_now_add=True)
-    timestampClose=models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
-    beneficio=models.FloatField(null=True, blank=True)
-    buyAmount=models.FloatField(null=True)
-    sellAmount=models.FloatField(null=True, blank=True)
-    reasonClose=models.CharField(max_length=128,null=True, blank=True)
-    operIDClose=models.IntegerField(null=True)
-    profit=models.FloatField(null=True, blank=True)
-    
-    def __str__(self):
-        return str(self.strategy.utility+":"+str(self.operID))
 
-    def close (self, beneficio, buyAmount, sellAmount, reasonClose, operIDClose, profit) :
+# ──────────────────────────────────────────────────────────────────────────────
+# STRATEGY OPERATION 
+# ──────────────────────────────────────────────────────────────────────────────
+class StrategyOperation(models.Model):
+    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
+    operID = models.IntegerField()
+    type = models.CharField(max_length=4)
+    timestampOpen = models.DateTimeField(auto_now=False, auto_now_add=True)
+    timestampClose = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
+    beneficio = models.FloatField(null=True, blank=True)
+    buyAmount = models.FloatField(null=True)
+    sellAmount = models.FloatField(null=True, blank=True)
+    reasonClose = models.CharField(max_length=128, null=True, blank=True)
+    operIDClose = models.IntegerField(null=True)
+    profit = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return str(self.strategy.utility + ":" + str(self.operID))
+
+    def close(self, beneficio, buyAmount, sellAmount, reasonClose, operIDClose, profit):
         self.timestampClose = timezone.now()
         self.beneficio = beneficio
         self.buyAmount = buyAmount
@@ -851,37 +852,37 @@ class StrategyOperation(models.Model):
         self.operIDClose = operIDClose
         self.profit = profit
         self.save()
-        
-    def getHistory (self):
-        history=self.strategy.getHistory()
-        startTS=self.strategy.getHistory().exclude(timestamp__gt=self.timestampOpen).order_by('-timestamp')[:20].aggregate(Min('timestamp'))['timestamp__min']
-        
-        if startTS :
-            history=history.filter(timestamp__gt=startTS)
-    
-        if self.timestampClose :
-            endTS=self.strategy.getHistory().filter(timestamp__gte=self.timestampClose).order_by('timestamp')[:20].aggregate(Max('timestamp'))['timestamp__max']
-            history=history.exclude(timestamp__gt=endTS)                        
+
+    def getHistory(self):
+        history = self.strategy.getHistory()
+        startTS = self.strategy.getHistory().exclude(timestamp__gt=self.timestampOpen).order_by('-timestamp')[:20].aggregate(Min('timestamp'))['timestamp__min']
+
+        if startTS:
+            history = history.filter(timestamp__gt=startTS)
+
+        if self.timestampClose:
+            endTS = self.strategy.getHistory().filter(timestamp__gte=self.timestampClose).order_by('timestamp')[:20].aggregate(Max('timestamp'))['timestamp__max']
+            history = history.exclude(timestamp__gt=endTS)
 
         return history
-        
-    def getStrategy (self):
-        return self.strategy;
-        
-    def deleteOperation (self):
+
+    def getStrategy(self):
+        return self.strategy
+
+    def deleteOperation(self):
         # Clear History
-        history=self.strategy.getHistory()
-        history=history.filter(timestamp__gte=self.timestampOpen)
+        history = self.strategy.getHistory()
+        history = history.filter(timestamp__gte=self.timestampOpen)
         if self.timestampClose:
-            history=history.exclude(timestamp__gt=self.timestampClose)
-        
+            history = history.exclude(timestamp__gt=self.timestampClose)
+
         for entry in history:
-            entry.accion="WAIT"
-            entry.currentProfit=0
+            entry.accion = "WAIT"
+            entry.currentProfit = 0
             entry.save()
-        
-        if self.beneficio :    
-            self.strategy.beneficioTotal=self.strategy.beneficioTotal-self.beneficio
+
+        if self.beneficio:
+            self.strategy.beneficioTotal = self.strategy.beneficioTotal-self.beneficio
             self.strategy.save()
                 
         # Update Strategy beneficioTotal
