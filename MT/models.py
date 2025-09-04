@@ -769,7 +769,7 @@ class Strategy(models.Model):
             recommendMA=self.recommendMA,
             recommendMA240=self.recommendMA240,
             isRunning=self.isRunning,
-            stopLossCurrent=self.stopLossCurrent
+            stopLossCurrent=self.stopLossCurrent,
             atr=self.atr).save()
 
     def comprar(self):
