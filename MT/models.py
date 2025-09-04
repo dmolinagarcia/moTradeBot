@@ -396,6 +396,7 @@ class Strategy(models.Model):
             self.recommendMA240 = d[7]
         except Exception as e :
             logger.error("Error al leer datos de tradingview: %s", e)
+            logger.error(response.content)
             raise e
 
         data = {
