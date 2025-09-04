@@ -362,7 +362,7 @@ class Strategy(models.Model):
                          + '"EMA20' + str(self.cryptoTimeframeADX or '') + '",'
                          + '"EMA100' + str(self.cryptoTimeframeADX or '') + '",'
                          + '"Recommend.MA' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"Recommend.MA|240",'
+                         + '"Recommend.MA|240"'
                          + ']}')
 
         headers = {
