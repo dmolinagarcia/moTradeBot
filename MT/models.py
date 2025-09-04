@@ -173,14 +173,73 @@ class Strategy(models.Model):
             data=data)
         return response.json()
 
-    def get_candle(self):
-        data = '{"operSymbol": "' + self.operSymbol + '" }'
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post(
-            'http://127.0.0.1:5000/get_candle',
-            headers=headers,
-            data=data)
-        return response.json()
+    # ── Obtener velas de los datos locales ───────────────────────────────────
+    def get_candle(self, limit=200, timeframe="1d", with_atr=False, atr_period=14, session_offset_minutes=0):
+        """
+        Genera velas desde StrategyState (muestras 10m) SIN llamar a ningún endpoint externo.
+
+        Parámetros:
+          - limit: nº de velas a devolver (por defecto 200)
+          - timeframe: sólo "1d" está soportado aquí
+          - with_atr: si True, añade clave 'atr' en cada vela (Wilder)
+          - atr_period: periodo del ATR
+          - session_offset_minutes: desplaza el rollover diario (0 = UTC puro)
+
+        Devuelve:
+          Lista de velas en orden ASC:
+          [{"time":"YYYY-mm-ddT00:00:00Z","open":..,"high":..,"low":..,"close":.., "atr":..?}, ...]
+        """
+        if timeframe.lower() != "1d":
+            # Puedes ampliar a 1h/4h si lo necesitas; por ahora forzamos 1d
+            timeframe = "1d"
+
+        # Para tener margen para ATR, lee días extra
+        days_needed = int(limit) + int(atr_period) + 5
+        start_dt = timezone.now() - timedelta(days=days_needed)
+
+        # Lee tus muestras (cada 10 min) de ESTA estrategia
+        qs = (StrategyState.objects
+              .filter(strategy=self, timestamp__gte=start_dt)
+              .exclude(currentRate__isnull=True)
+              .order_by('timestamp')
+              .values('timestamp', 'currentRate'))
+
+        # Agregación diaria
+        daily_map = {}   # key: date  → dict con o/h/l/c
+        for row in qs.iterator():
+            ts = row['timestamp']
+            px = float(row['currentRate'])
+            dkey = _to_roll_date(ts, offset_minutes=session_offset_minutes)
+            if dkey is None:
+                continue
+            if dkey not in daily_map:
+                daily_map[dkey] = {'open': px, 'high': px, 'low': px, 'close': px}
+            else:
+                rec = daily_map[dkey]
+                # open es el primero del día (no cambia)
+                rec['high'] = max(rec['high'], px)
+                rec['low']  = min(rec['low'], px)
+                rec['close'] = px  # último del día
+
+        # Ordena por fecha ASC y forma velas
+        days_sorted = sorted(daily_map.keys())
+        candles = [{
+            "time": f"{d.isoformat()}T00:00:00Z",
+            "open": float(daily_map[d]['open']),
+            "high": float(daily_map[d]['high']),
+            "low":  float(daily_map[d]['low']),
+            "close":float(daily_map[d]['close']),
+        } for d in days_sorted]
+
+        # Limita al nº solicitado
+        if len(candles) > limit:
+            candles = candles[-limit:]
+
+        # ATR opcional
+        if with_atr:
+            _compute_atr_wilder(candles, period=atr_period)
+
+        return candles
 
     # ── MODELO DE DATOS ──────────────────────────────────────────────────────
     utility = models.CharField(max_length=16, null=True)
