@@ -354,15 +354,15 @@ class Strategy(models.Model):
     # ── Operation ────────────────────────────────────────────────────────────
     # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
-        cryptoDataraw=('{"symbols":{"tickers":["'+self.tickSymbol+'"],"query":{"types":[]}},"columns":['
-            + '"ADX'+str(self.cryptoTimeframeADX or '')+'",'
-            + '"ADX+DI'+str(self.cryptoTimeframeDI or '')+'",'
-            + '"ADX-DI'+str(self.cryptoTimeframeDI or '')+'",'
-            + '"EMA10'+str(self.cryptoTimeframeADX or '')+'",'
-            + '"EMA20'+str(self.cryptoTimeframeADX or '')+'",'
-            + '"EMA100'+str(self.cryptoTimeframeADX or '')+'",'
-            + '"Recommend.MA'+str(self.cryptoTimeframeADX or '')+'",'
-            + '"Recommend.MA|240"'
+        cryptoDataraw = ('{"symbols":{"tickers":["' + self.tickSymbol + '"],"query":{"types":[]}},"columns":['
+            + '"ADX' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"ADX+DI' + str(self.cryptoTimeframeDI or '') + '",'
+            + '"ADX-DI' + str(self.cryptoTimeframeDI or '') + '",'
+            + '"EMA10' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"EMA20' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"EMA100' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"Recommend.MA' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"Recommend.MA|240",'
             + ']}')
 
         headers = {
@@ -379,20 +379,21 @@ class Strategy(models.Model):
             'cookie': '_ga=GA1.2.526459883.1610099096; __gads=ID=8f36aef99159e559:T=1610100101:S=ALNI_Mars83GB1m6Wd227WWiChIcow2RpQ; sessionid=8pzntqn1e9y9p347mq5y54mo5yvb8zqq; tv_ecuid=41f8c020-6882-40d1-a729-c638b361d4b3; _sp_id.cf1a=18259830-0041-4e5d-bbec-2f481ebd9b76.1610099095.44.1613162553.1612699115.1f98354c-1841-47fc-ab5d-d7113cfa5090; _sp_ses.cf1a=*; _gid=GA1.2.1715043600.1613162554; _gat_gtag_UA_24278967_1=1',
         }
 
+        try:
         response = requests.post(
             'https://scanner.tradingview.com/crypto/scan', 
             headers=headers, 
             data=cryptoDataraw)
-        try :
-            self.adx=response.json()['data'][0]['d'][0]
-            self.plusDI=response.json()['data'][0]['d'][1]
-            self.minusDI=response.json()['data'][0]['d'][2]
-            self.ema=response.json()['data'][0]['d'][3]
-            self.ema20=response.json()['data'][0]['d'][4]
-            self.ema100=response.json()['data'][0]['d'][5]
-            self.diffDI=self.plusDI-self.minusDI
-            self.recommendMA=response.json()['data'][0]['d'][6]
-            self.recommendMA240=response.json()['data'][0]['d'][7]
+            d = response.json()['data'][0]['d']
+            self.adx = d[0]
+            self.plusDI = d[1]
+            self.minusDI = d[2]
+            self.ema = d[3]
+            self.ema20 = d[4]
+            self.ema100 = d[5]
+            self.diffDI = self.plusDI - self.minusDI
+            self.recommendMA = d[6]
+            self.recommendMA240 = d[7]
         except SomeError as e :
             logger.error ("Error al leer datos de tradingview. ")
             raise e
@@ -412,9 +413,9 @@ class Strategy(models.Model):
         #resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
         #resp_json = resp.json()
 
-        if float(resp_json['price']) > -1 :
-            self.currentRate=float(resp_json['price'])
-        else :
+        if float(resp_json['price']) > -1:
+            self.currentRate = float(resp_json['price'])
+        else:
             logger.error ("No se ha podido obtener el precio de " + self.rateSymbol)
 
         self.save()
@@ -422,14 +423,14 @@ class Strategy(models.Model):
     def operation(self, isMarketOpen):
         logger.debug("Entering operation for " + self.rateSymbol)
   
-        try : 
+        try: 
             # Sanity Checks
             # Comprobaciones de que todo es correcto. Si no, cancelamos llamada a operation
 
-            if self.estado == 2 and self.operID == 0 :
+            if self.estado == 2 and self.operID == 0:
             ## Operacion en curso, pero no tenemos OPERID
-                logger.error ("MOT-00001: Open operation without operID at " + self.rateSymbol)
-                self.inError=True
+                logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
+                self.inError = True
                 self.save()
                 return
 
@@ -710,7 +711,7 @@ class Strategy(models.Model):
                 self.estado=estadoNext
     
             self.log()
-            self.inError=False
+            self.inError = False
             self.save()
         except :
             self.inError=True
@@ -734,10 +735,10 @@ class Strategy(models.Model):
             #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
             #    text=self.__str__()+" Cerrar", parse_mode=telegram.ParseMode.HTML)
             self.accion="CERRAR"
-            estadoNext=3
-            self.bet=0
-            self.adxClose=self.limitClose
-            self.estado=estadoNext
+            estadoNext = 3
+            self.bet = 0
+            self.adxClose = self.limitClose
+            self.estado = estadoNext
             self.stopLossCurrent = None
             self.takeProfitCurrent = None
             self.log()
@@ -784,13 +785,13 @@ class Strategy(models.Model):
                 side="buy",
                 amount=self.amount,
                 leverage=self.leverage,
-                #type="limit", limit_price=self.ema,
+                # type="limit", limit_price=self.ema,
                 type="market",
                 stop_lose_kind="percent", stop_lose_value=self.stopLoss,
                 use_trail_stop=True)
-             self.placedPrice=self.ema
-        else :
-            check,order_id=self.buy_order(
+            self.placedPrice = self.ema
+        else:
+            check, order_id = self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
@@ -798,7 +799,7 @@ class Strategy(models.Model):
                 amount=self.amount,
                 leverage=self.leverage,
                 type="market")
-        if check :
+        if check:
             self.operID=order_id
 #           check,position=self.get_position(self.operID)
             self.placedPrice=self.currentRate
@@ -816,13 +817,13 @@ class Strategy(models.Model):
                 side="sell",
                 amount=self.amount,
                 leverage=self.leverage,
-                #type="limit", limit_price=self.ema,
+                # type="limit", limit_price=self.ema,
                 type="market",
                 stop_lose_kind="percent", stop_lose_value=self.stopLoss,
                 use_trail_stop=True)
-             self.placedPrice=self.ema
-        else :
-            check,order_id=self.buy_order(
+            self.placedPrice = self.ema
+        else:
+            check, order_id = self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
@@ -864,13 +865,13 @@ class Strategy(models.Model):
                     profile.configMaxBet=(float)(maxBalance)+beneficio
                     profile.save()
 
-        self.operID=0
-        self.operIDclose=0
-        self.bet=0
+        self.operID = 0
+        self.operIDclose = 0
+        self.bet = 0
         self.save()
         return checkClose or forceClose
 
-    def checkRecommend(self) :
+    def checkRecommend(self):
 
         resultado = False
         recomendacionTV = self.recommendMA + self.recommendMA240
@@ -885,8 +886,8 @@ class Strategy(models.Model):
                 resultado = True
 
         if self.diffDI < self.limitSell :
-            ## Vender
-            if recomendacionTV < -1.5 :
+            # Vender
+            if recomendacionTV < -1.5:
                 resultado = True
 
         return resultado
@@ -896,16 +897,18 @@ class Strategy(models.Model):
 # STRATEGY STATE 
 # ──────────────────────────────────────────────────────────────────────────────
 class StrategyState(models.Model):
-    strategy=models.ForeignKey(Strategy, on_delete=models.CASCADE)
-    timestamp=models.DateTimeField(auto_now=False, auto_now_add=True)
-    operID=models.IntegerField(null=True)
-    accion=models.CharField(max_length=10,null=True)
+    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now=False, auto_now_add=True)
+    operID = models.IntegerField(null=True)
+    accion = models.CharField(max_length=10, null=True)
+
     class StrategyStateStates(models.IntegerChoices):
         HOLD = 0
         PREOPER = 1
         OPER = 2
-        PRECIERRE= 3
-    estado = models.IntegerField(choices=StrategyStateStates.choices,null=True)
+        PRECIERRE = 3
+
+    estado = models.IntegerField(choices=StrategyStateStates.choices, null=True)
     ema = models.FloatField(null=True)
     ema20 = models.FloatField(null=True)
     ema100 = models.FloatField(null=True)
