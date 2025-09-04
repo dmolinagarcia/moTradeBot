@@ -31,8 +31,52 @@ ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
 DAILY_DD_LIMIT_PCT = Decimal("5.0")  # Corte diario del sistema (% relativo, lógico)
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Funciones Helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
 def _D(x):
     return Decimal(str(x)) if x is not None else None
+
+def _to_roll_date(dttm, offset_minutes=0):
+    """Convierte un datetime a fecha (UTC) aplicando un 'rollover' por minutos (p.ej. sesión)."""
+    if dttm is None:
+        return None
+    # Asegura zona
+    if timezone.is_naive(dttm):
+        dttm = timezone.make_aware(dttm, timezone.utc)
+    dttm_utc = dttm.astimezone(timezone.utc) + timedelta(minutes=offset_minutes)
+    return dttm_utc.date()
+
+def _compute_atr_wilder(candles, period=14):
+    """
+    Modifica in-place la lista de velas (orden ascendente), añadiendo 'atr' por barra.
+    candles: [{'open':..., 'high':..., 'low':..., 'close':..., 'time': 'YYYY-mm-ddT00:00:00Z'}, ...]
+    """
+    n = len(candles)
+    if n == 0:
+        return candles
+    # True Range por barra
+    trs = []
+    prev_close = None
+    for i in range(n):
+        h, l, c = float(candles[i]["high"]), float(candles[i]["low"]), float(candles[i]["close"])
+        if prev_close is None:
+            tr = h - l
+        else:
+            tr = max(h - l, abs(h - prev_close), abs(l - prev_close))
+        trs.append(tr)
+        prev_close = c
+    # RMA de Wilder
+    atr = [None] * n
+    if n >= period:
+        atr[period-1] = sum(trs[:period]) / period
+        for i in range(period, n):
+            atr[i] = (atr[i-1] * (period - 1) + trs[i]) / period
+    # Asigna
+    for i in range(n):
+        candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
+    return candles
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STRATEGY
@@ -121,8 +165,8 @@ class Strategy(models.Model):
         return response.json()[0], response.json()[1]
 
     def cancel_order(self, order_id):
-        data='{"order_id": '+str(order_id)+' }'
-        headers = {'Content-Type': 'application/json',}
+        data = '{"order_id": ' + str(order_id) + ' }'
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
             'http://127.0.0.1:5000/cancel_order',
             headers=headers,
@@ -130,67 +174,68 @@ class Strategy(models.Model):
         return response.json()
 
     def get_candle(self):
-        data='{"operSymbol": "'+self.operSymbol+'" }'
-        headers = {'Content-Type': 'application/json',}
+        data = '{"operSymbol": "' + self.operSymbol + '" }'
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
             'http://127.0.0.1:5000/get_candle',
             headers=headers,
             data=data)
         return response.json()
 
-    ## Modelo de datos ########################################################
-
-    utility=models.CharField(max_length=16,null=True)
-    nextUpdate=models.DateTimeField(
+    # ── MODELO DE DATOS ──────────────────────────────────────────────────────
+    utility = models.CharField(max_length=16, null=True)
+    nextUpdate = models.DateTimeField(
         auto_now=False, auto_now_add=False, null=True, default=timezone.now)
-    rateSymbol=models.CharField(max_length=16,null=True)
-    operSymbol=models.CharField(max_length=16,null=True)
-    operSymbolBingx=models.CharField(max_length=16,null=True)
-    tickSymbol=models.CharField(max_length=32,null=True)
-    operID=models.IntegerField(null=True,blank=True)
-    operIDclose=models.IntegerField(null=True,blank=True)
-    currentProfit=models.FloatField(null=True,blank=True)
-    accion=models.CharField(max_length=10,null=True,blank=True)
+    rateSymbol = models.CharField(max_length=16, null=True)
+    operSymbol = models.CharField(max_length=16, null=True)
+    operSymbolBingx = models.CharField(max_length=16, null=True)
+    tickSymbol = models.CharField(max_length=32, null=True)
+    operID = models.IntegerField(null=True, blank=True)
+    operIDclose = models.IntegerField(null=True, blank=True)
+    currentProfit = models.FloatField(null=True, blank=True)
+    accion = models.CharField(max_length=10, null=True, blank=True)
+
     class StrategyStates(models.IntegerChoices):
         HOLD = 0
         PREOPER = 1
         OPER = 2
         COOLDOWN = 3
+
     estado = models.IntegerField(
-            choices=StrategyStates.choices,null=True, default=0)
-    ema=models.FloatField(null=True,blank=True)
-    ema20=models.FloatField(null=True,blank=True)
-    ema100=models.FloatField(null=True,blank=True)
-    adx=models.FloatField(null=True,blank=True)
-    plusDI=models.FloatField(null=True,blank=True)
-    minusDI=models.FloatField(null=True,blank=True)
-    diffDI=models.FloatField(null=True,blank=True)
-    currentRate=models.FloatField(null=True,blank=True)
-    maxCurrentRate=models.FloatField(null=True,blank=True)
-    stopLoss=models.FloatField(null=True)
-    stopLossCurrent=models.FloatField(null=True,blank=True)
-    takeProfitCurrent=models.FloatField(null=True,blank=True)
-    sleep=models.IntegerField(null=True)
-    cooldownUntil=models.DateTimeField(
+        choices=StrategyStates.choices, null=True, default=0)
+    ema = models.FloatField(null=True, blank=True)
+    ema20 = models.FloatField(null=True, blank=True)
+    ema100 = models.FloatField(null=True, blank=True)
+    adx = models.FloatField(null=True, blank=True)
+    plusDI = models.FloatField(null=True, blank=True)
+    minusDI = models.FloatField(null=True, blank=True)
+    diffDI = models.FloatField(null=True, blank=True)
+    currentRate = models.FloatField(null=True, blank=True)
+    maxCurrentRate = models.FloatField(null=True, blank=True)
+    stopLoss = models.FloatField(null=True)
+    stopLossCurrent = models.FloatField(null=True, blank=True)
+    takeProfitCurrent = models.FloatField(null=True, blank=True)
+    sleep = models.IntegerField(null=True)
+    cooldownUntil = models.DateTimeField(
         auto_now=False, auto_now_add=False, null=True, default=timezone.now)
-    amount=models.IntegerField(null=True)
-    beneficioTotal=models.FloatField(null=True,default=0,blank=True)
-    limitOpen=models.IntegerField(null=True)
-    limitClose=models.IntegerField(null=True)
-    adxClose=models.IntegerField(null=True,default=0)
-    limitBuy=models.IntegerField(null=True)
-    limitSell=models.IntegerField(null=True)
-    cryptoTimeframeADX=models.CharField(max_length=4,null=True,blank=True)
-    cryptoTimeframeDI=models.CharField(max_length=4,null=True,blank=True)
-    isRunning=models.BooleanField(default=False)
-    protectedTrade=models.BooleanField(default=False)
-    placedPrice=models.FloatField(null=True,blank=True)
-    bet=models.IntegerField(null=True,default=0)
-    comments=models.TextField(null=True,blank=True)
-    recommendMA=models.FloatField(default=0,null=True,blank=True)
-    recommendMA240=models.FloatField(default=0,null=True,blank=True)
-    inError=models.BooleanField(default=False)
-    leverage=models.IntegerField(default=4)
+    amount = models.IntegerField(null=True)
+    beneficioTotal = models.FloatField(null=True, default=0, blank=True)
+    limitOpen = models.IntegerField(null=True)
+    limitClose = models.IntegerField(null=True)
+    adxClose = models.IntegerField(null=True, default=0)
+    limitBuy = models.IntegerField(null=True)
+    limitSell = models.IntegerField(null=True)
+    cryptoTimeframeADX = models.CharField(max_length=4, null=True, blank=True)
+    cryptoTimeframeDI = models.CharField(max_length=4, null=True, blank=True)
+    isRunning = models.BooleanField(default=False)
+    protectedTrade = models.BooleanField(default=False)
+    placedPrice = models.FloatField(null=True, blank=True)
+    bet = models.IntegerField(null=True, default=0)
+    comments = models.TextField(null=True, blank=True)
+    recommendMA = models.FloatField(default=0, null=True, blank=True)
+    recommendMA240 = models.FloatField(default=0, null=True, blank=True)
+    inError = models.BooleanField(default=False)
+    leverage = models.IntegerField(default=4)
   
     def __str__(self):
         return (self.utility + str(self.cryptoTimeframeADX or '|1d') +
