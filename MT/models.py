@@ -380,10 +380,10 @@ class Strategy(models.Model):
         }
 
         try:
-            response = requests.post(
-                'https://scanner.tradingview.com/crypto/scan', 
-                headers=headers, 
-                data=cryptoDataraw)
+        response = requests.post(
+            'https://scanner.tradingview.com/crypto/scan', 
+            headers=headers, 
+            data=cryptoDataraw)
             d = response.json()['data'][0]['d']
             self.adx = d[0]
             self.plusDI = d[1]
@@ -394,21 +394,8 @@ class Strategy(models.Model):
             self.diffDI = self.plusDI - self.minusDI
             self.recommendMA = d[6]
             self.recommendMA240 = d[7]
-
-            # --- ATR desde tus propias muestras (StrategyState) ---
-            try:
-                candles = self.get_candle(limit=200, timeframe=self.cryptoTimeframeADX or "1d",
-                                          with_atr=True, atr_period=14, session_offset_minutes=0)
-                if candles and candles[-1].get("atr") is not None:
-                    self.atr = float(candles[-1]["atr"])
-                else:
-                    self.atr = None
-            except Exception as e:
-                logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
-                self.atr = None
-
         except SomeError as e :
-            logger.error("Error al leer datos de tradingview: %s", e)
+            logger.error ("Error al leer datos de tradingview. ")
             raise e
 
         data = {
@@ -422,6 +409,10 @@ class Strategy(models.Model):
             data=json.dumps(data))
 	
         resp_json = response.json()
+ 
+        #resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
+        #resp_json = resp.json()
+
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
@@ -438,24 +429,23 @@ class Strategy(models.Model):
 
             if self.estado == 2 and self.operID == 0:
             ## Operacion en curso, pero no tenemos OPERID
-                logger.error("MOT-00001: Open operation without operID at " + str(self.rateSymbol))
+                logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
                 self.inError = True
                 self.save()
                 return
 
             if self.estado == 2 and self.bet == 0:
             ## Operacion en curso, pero no se ha cargado BET
-                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + str(self.rateSymbol))
-                self.inError = True
+                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
+                self.inError=True
                 self.save()
                 return
 
-            if self.cooldownUntil is None:
+            if self.cooldownUntil is None :
                 self.cooldownUntil = timezone.now()
 
-            # Refresca datos
             self.update()
-            self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
+            self.nextUpdate=timezone.now()+timedelta(seconds=self.sleep)
 
             if self.isRunning :
                 logger.debug ("Symbol is running so we evaluate")
@@ -466,27 +456,27 @@ class Strategy(models.Model):
                     ## Inicio proceso protected Trade
                     if self.estado == 0 :
                         ## Estado HOLD. 
-                        self.maxCurrentRate = 0
-                        self.accion = "WAIT"
+                        self.maxCurrentRate=0
+                        self.accion="WAIT"
                         ## Abrimos si el ADX está por encima del mínimo limitOpen
                         if self.adx > self.limitOpen :
                             if self.diffDI > self.limitBuy :
                                 check=self.comprar()
-                                if check:
-                                    estadoNext = 2
-                                    self.currentProfit = 0
-                                    self.bet = self.amount
-                                    self.maxCurrentRate = self.currentRate
+                                if check :
+                                    estadoNext=2
+                                    self.currentProfit=0
+                                    self.bet=self.amount
+                                    self.maxCurrentRate=self.currentRate
                             if self.diffDI < self.limitSell :
                                 check=self.vender()
-                                if check:
-                                    estadoNext = 2
-                                    self.currentProfit = 0
-                                    self.bet = self.amount
-                                    self.maxCurrentRate = self.currentRate
-                    if self.estado == 2:
-                        check, position = self.get_position(self.operID)
-                        if check:
+                                if check :
+                                    estadoNext=2
+                                    self.currentProfit=0
+                                    self.bet=self.amount
+                                    self.maxCurrentRate=self.currentRate
+                    if self.estado == 2 :
+                        check,position=self.get_position(self.operID)
+                        if check :
                             # La orden se ha ejecutado
                             self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
                             if position['position']['sell_amount'] == 0 or position['position']['buy_amount'] == 0:
@@ -788,7 +778,7 @@ class Strategy(models.Model):
 
     def comprar(self):
         if self.protectedTrade :
-            check, order_id = self.buy_order(
+             check,order_id=self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
@@ -820,7 +810,7 @@ class Strategy(models.Model):
 
     def vender(self):
         if self.protectedTrade :
-            check,order_id=self.buy_order(
+             check,order_id=self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
