@@ -395,7 +395,7 @@ class Strategy(models.Model):
             self.recommendMA = d[6]
             self.recommendMA240 = d[7]
         except SomeError as e :
-            logger.error ("Error al leer datos de tradingview. ")
+            logger.error("Error al leer datos de tradingview: %s", e)
             raise e
 
         data = {
@@ -409,10 +409,6 @@ class Strategy(models.Model):
             data=json.dumps(data))
 	
         resp_json = response.json()
- 
-        #resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
-        #resp_json = resp.json()
-
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
@@ -429,23 +425,24 @@ class Strategy(models.Model):
 
             if self.estado == 2 and self.operID == 0:
             ## Operacion en curso, pero no tenemos OPERID
-                logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
+                logger.error("MOT-00001: Open operation without operID at " + str(self.rateSymbol))
                 self.inError = True
                 self.save()
                 return
 
             if self.estado == 2 and self.bet == 0:
             ## Operacion en curso, pero no se ha cargado BET
-                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
-                self.inError=True
+                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + str(self.rateSymbol))
+                self.inError = True
                 self.save()
                 return
 
-            if self.cooldownUntil is None :
+            if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
 
+            # Refresca datos
             self.update()
-            self.nextUpdate=timezone.now()+timedelta(seconds=self.sleep)
+            self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning :
                 logger.debug ("Symbol is running so we evaluate")
@@ -456,27 +453,27 @@ class Strategy(models.Model):
                     ## Inicio proceso protected Trade
                     if self.estado == 0 :
                         ## Estado HOLD. 
-                        self.maxCurrentRate=0
-                        self.accion="WAIT"
+                        self.maxCurrentRate = 0
+                        self.accion = "WAIT"
                         ## Abrimos si el ADX está por encima del mínimo limitOpen
                         if self.adx > self.limitOpen :
                             if self.diffDI > self.limitBuy :
                                 check=self.comprar()
-                                if check :
-                                    estadoNext=2
-                                    self.currentProfit=0
-                                    self.bet=self.amount
-                                    self.maxCurrentRate=self.currentRate
+                                if check:
+                                    estadoNext = 2
+                                    self.currentProfit = 0
+                                    self.bet = self.amount
+                                    self.maxCurrentRate = self.currentRate
                             if self.diffDI < self.limitSell :
                                 check=self.vender()
-                                if check :
-                                    estadoNext=2
-                                    self.currentProfit=0
-                                    self.bet=self.amount
-                                    self.maxCurrentRate=self.currentRate
-                    if self.estado == 2 :
-                        check,position=self.get_position(self.operID)
-                        if check :
+                                if check:
+                                    estadoNext = 2
+                                    self.currentProfit = 0
+                                    self.bet = self.amount
+                                    self.maxCurrentRate = self.currentRate
+                    if self.estado == 2:
+                        check, position = self.get_position(self.operID)
+                        if check:
                             # La orden se ha ejecutado
                             self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
                             if position['position']['sell_amount'] == 0 or position['position']['buy_amount'] == 0:
