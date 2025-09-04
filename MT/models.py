@@ -380,10 +380,10 @@ class Strategy(models.Model):
         }
 
         try:
-        response = requests.post(
-            'https://scanner.tradingview.com/crypto/scan', 
-            headers=headers, 
-            data=cryptoDataraw)
+            response = requests.post(
+                'https://scanner.tradingview.com/crypto/scan', 
+                headers=headers, 
+                data=cryptoDataraw)
             d = response.json()['data'][0]['d']
             self.adx = d[0]
             self.plusDI = d[1]
