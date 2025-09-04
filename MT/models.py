@@ -295,6 +295,10 @@ class Strategy(models.Model):
     recommendMA240 = models.FloatField(default=0, null=True, blank=True)
     inError = models.BooleanField(default=False)
     leverage = models.IntegerField(default=4)
+
+    # NUEVOS CAMPOS (opcionales)
+    atr = models.FloatField(null=True, blank=True)  # ATR para sizing/SL
+    
   
     def __str__(self):
         return (self.utility + str(self.cryptoTimeframeADX or '|1d') +
@@ -672,17 +676,17 @@ class Strategy(models.Model):
                                 #bot = telegram.Bot(token=telegram_settings['bot_token'])
                                 #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
                                 #    text=self.__str__()+" Cerrar", parse_mode=telegram.ParseMode.HTML)
-                                self.accion="CERRAR"
-                                estadoNext=3
-                                self.bet=0
+                                self.accion = "CERRAR"
+                                estadoNext = 3
+                                self.bet = 0
                                 self.stopLossCurrent = None
                                 self.takeProfitCurrent = None
                                 self.currentProfit = None
-                                self.adxClose=self.limitClose
+                                self.adxClose = self.limitClose or 0
     
-                if self.estado == 3 :
-                    logger.debug ("Symbol is in cooldown mode")
-                    self.currentProfit=None
+                if self.estado == 3:
+                    logger.debug("Symbol is in cooldown mode")
+                    self.currentProfit = None
                     ## Si el ADX esta por debajo del OPEN, salimos del cooldown
                     ## Si el limitOpen es 0, no hay cooldown y salimos
                     if self.adx < self.limitOpen or self.limitOpen==0 :
@@ -765,7 +769,8 @@ class Strategy(models.Model):
             recommendMA=self.recommendMA,
             recommendMA240=self.recommendMA240,
             isRunning=self.isRunning,
-            stopLossCurrent=self.stopLossCurrent).save()
+            stopLossCurrent=self.stopLossCurrent
+            atr=self.atr).save()
 
     def comprar(self):
         if self.protectedTrade :
@@ -922,6 +927,7 @@ class StrategyState(models.Model):
     recommendMA = models.FloatField(default=0, null=True, blank=True)
     recommendMA240 = models.FloatField(default=0, null=True, blank=True)
     stopLossCurrent = models.FloatField(null=True, blank=True)
+    atr = models.FloatField(null=True, blank=True) # ATR actual
 
     def __str__(self):
         return str(self.strategy.utility + ":" + str(self.timestamp))
