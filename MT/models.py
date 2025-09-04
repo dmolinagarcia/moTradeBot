@@ -298,7 +298,10 @@ class Strategy(models.Model):
 
     # NUEVOS CAMPOS (opcionales)
     atr = models.FloatField(null=True, blank=True)  # ATR para sizing/SL
-    
+    bars_in_trade = models.IntegerField(null=True, blank=True, default=0)
+    partial_done = models.BooleanField(default=False)
+    last_trade_day = models.DateField(null=True, blank=True)
+    day_pnl = models.DecimalField(default=Decimal("0"), max_digits=9, decimal_places=2)
   
     def __str__(self):
         return (self.utility + str(self.cryptoTimeframeADX or '|1d') +
@@ -345,11 +348,11 @@ class Strategy(models.Model):
     def getOperations(self):
         return StrategyOperation.objects.filter(strategy=self)
 
-    def getComments (self):
-        return self.comments;
+    def getComments(self):
+        return self.comments
         
-    ## Operation ##############################################################
-    
+    # ── Operation ────────────────────────────────────────────────────────────
+    # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
         cryptoDataraw=('{"symbols":{"tickers":["'+self.tickSymbol+'"],"query":{"types":[]}},"columns":['
             + '"ADX'+str(self.cryptoTimeframeADX or '')+'",'
