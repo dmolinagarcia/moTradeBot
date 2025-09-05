@@ -734,10 +734,16 @@ class Strategy(models.Model):
             self.log()
             self.inError = False
             self.save()
-        except :
-            self.inError=True
+
+        except MoTradeError as e:
+            logger.error("Excepción conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
+            self.inError = True
+            self.save()                
+
+        except Exception as e:
+            self.inError = True
             self.save()
-            logger.exception ("MOT-00600: Unhandled exception in " + self.rateSymbol)
+            logger.exception("MOT-99999: Excepción no controlada en " + self.rateSymbol)
             
             
 
