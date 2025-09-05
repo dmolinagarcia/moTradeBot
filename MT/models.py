@@ -34,6 +34,7 @@ class MoTradeError(Exception):
     def __str__(self):
         return f"[{self.code}] {self.message}"
 
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -317,7 +318,7 @@ class Strategy(models.Model):
     partial_done = models.BooleanField(default=False)
     last_trade_day = models.DateField(null=True, blank=True)
     day_pnl = models.DecimalField(default=Decimal("0"), max_digits=9, decimal_places=2)
-  
+
     def __str__(self):
         return (self.utility + str(self.cryptoTimeframeADX or '|1d') +
                 str(self.cryptoTimeframeDI or '|1d'))
@@ -365,7 +366,7 @@ class Strategy(models.Model):
 
     def getComments(self):
         return self.comments
-        
+
     # ── Operation ────────────────────────────────────────────────────────────
     # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
@@ -398,6 +399,7 @@ class Strategy(models.Model):
             'https://scanner.tradingview.com/crypto/scan', 
             headers=headers, 
             data=cryptoDataraw)
+
         if response.json()['totalCount'] == 0:
             raise MoTradeError(3, "MOT-00003: No data from TradingView for " + self.rateSymbol)
 
@@ -412,7 +414,20 @@ class Strategy(models.Model):
             self.diffDI = self.plusDI - self.minusDI
             self.recommendMA = d[6]
             self.recommendMA240 = d[7]
-        except Exception as e :
+
+            # --- ATR desde tus propias muestras (StrategyState) ---
+            try:
+                candles = self.get_candle(limit=200, timeframe=self.cryptoTimeframeADX or "1d",
+                                          with_atr=True, atr_period=14, session_offset_minutes=0)
+                if candles and candles[-1].get("atr") is not None:
+                    self.atr = float(candles[-1]["atr"])
+                else:
+                    self.atr = None
+            except Exception as e:
+                logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
+                self.atr = None
+
+        except Exception as e:
             logger.error("Error al leer datos de tradingview: %s", e)
             logger.error(response.content)
             raise e
@@ -421,28 +436,27 @@ class Strategy(models.Model):
             'instrument_id_bingx': self.operSymbolBingx
         }
         headers = {'Content-Type': 'application/json'}
-       
+
         response = requests.post(
             'http://127.0.0.1:5000/get_price',
             headers=headers,
             data=json.dumps(data))
 	
         resp_json = response.json()
- 
+
         #resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
         #resp_json = resp.json()
-
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
-            logger.error ("No se ha podido obtener el precio de " + self.rateSymbol)
-
+            logger.error("No se ha podido obtener el precio de " + str(self.rateSymbol))
         self.save()
 
+    # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
     def operation(self, isMarketOpen):
-        logger.debug("Entering operation for " + self.rateSymbol)
-  
-        try: 
+        logger.debug("Entering operation for " + str(self.rateSymbol))
+
+        try:
             # Sanity Checks
             # Comprobaciones de que todo es correcto. Si no, cancelamos llamada a operation
 
@@ -462,11 +476,12 @@ class Strategy(models.Model):
                 # return
                 raise MoTradeError(2, "MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
 
-            if self.cooldownUntil is None :
+            if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
 
+            # Refresca datos
             self.update()
-            self.nextUpdate=timezone.now()+timedelta(seconds=self.sleep)
+            self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning :
                 logger.debug ("Symbol is running so we evaluate")
@@ -961,7 +976,7 @@ class StrategyState(models.Model):
     recommendMA240 = models.FloatField(default=0, null=True, blank=True)
     stopLossCurrent = models.FloatField(null=True, blank=True)
     atr = models.FloatField(null=True, blank=True) # ATR actual
-
+    
     def __str__(self):
         return str(self.strategy.utility + ":" + str(self.timestamp))
 
@@ -1026,7 +1041,7 @@ class StrategyOperation(models.Model):
         if self.beneficio:
             self.strategy.beneficioTotal = (self.strategy.beneficioTotal or 0) - self.beneficio
             self.strategy.save()
-                
+
         # Update Strategy beneficioTotal
         
         # Self.delete
