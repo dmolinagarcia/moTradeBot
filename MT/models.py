@@ -20,6 +20,21 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Gestión de excepciones
+# ──────────────────────────────────────────────────────────────────────────────
+
+class MoTradeError(Exception):
+    """Excepción unificada con código de error y mensaje."""
+
+    def __init__(self, code: int, message: str, *args):
+        super().__init__(message, *args)
+        self.code = code
+        self.message = message
+
+    def __str__(self):
+        return f"[{self.code}] {self.message}"
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
 ATR_MULT_SL = Decimal("2.0")       # Stop inicial: 2xATR
@@ -384,6 +399,7 @@ class Strategy(models.Model):
                 'https://scanner.tradingview.com/crypto/scan', 
                 headers=headers, 
                 data=cryptoDataraw)
+            logger.error(response.content)
             d = response.json()['data'][0]['d']
             self.adx = d[0]
             self.plusDI = d[1]
@@ -430,17 +446,19 @@ class Strategy(models.Model):
 
             if self.estado == 2 and self.operID == 0:
             ## Operacion en curso, pero no tenemos OPERID
-                logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
-                self.inError = True
-                self.save()
-                return
+                # logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
+                # self.inError = True
+                # self.save()
+                # return
+                raise MoTradeError(1, "MOT-00001: Open operation without operID at " + self.rateSymbol)
 
             if self.estado == 2 and self.bet == 0:
             ## Operacion en curso, pero no se ha cargado BET
-                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
-                self.inError=True
-                self.save()
-                return
+                # logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
+                # self.inError=True
+                # self.save()
+                # return
+                raise MoTradeError(2, "MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
 
             if self.cooldownUntil is None :
                 self.cooldownUntil = timezone.now()
