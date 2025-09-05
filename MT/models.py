@@ -736,14 +736,14 @@ class Strategy(models.Model):
             self.save()
 
         except MoTradeError as e:
-            logger.error("Excepción conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
+            logger.error("Excepcion conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
             self.inError = True
             self.save()                
 
         except Exception as e:
             self.inError = True
             self.save()
-            logger.exception("MOT-99999: Excepción no controlada en " + self.rateSymbol)
+            logger.exception("MOT-99999: Excepcion no controlada en " + self.rateSymbol)
             
             
 
