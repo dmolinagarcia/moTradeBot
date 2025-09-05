@@ -483,36 +483,37 @@ class Strategy(models.Model):
             self.update()
             self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
-            if self.isRunning :
-                logger.debug ("Symbol is running so we evaluate")
-                estadoNext=self.estado
+            if self.isRunning:
+                logger.debug("Symbol is running so we evaluate")
+                estadoNext = self.estado
                 cierre=False
-                if self.protectedTrade :
-                    logger.debug ("Symbol is in protected trading mode")
+                # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
+                if self.protectedTrade:
+                    logger.debug("Symbol is in protected trading mode")
                     ## Inicio proceso protected Trade
-                    if self.estado == 0 :
+                    if self.estado == 0:
                         ## Estado HOLD. 
-                        self.maxCurrentRate=0
-                        self.accion="WAIT"
+                        self.maxCurrentRate = 0
+                        self.accion = "WAIT"
                         ## Abrimos si el ADX está por encima del mínimo limitOpen
                         if self.adx > self.limitOpen :
                             if self.diffDI > self.limitBuy :
-                                check=self.comprar()
-                                if check :
-                                    estadoNext=2
-                                    self.currentProfit=0
-                                    self.bet=self.amount
-                                    self.maxCurrentRate=self.currentRate
-                            if self.diffDI < self.limitSell :
-                                check=self.vender()
-                                if check :
-                                    estadoNext=2
-                                    self.currentProfit=0
-                                    self.bet=self.amount
-                                    self.maxCurrentRate=self.currentRate
-                    if self.estado == 2 :
+                                check = self.comprar()
+                                if check:
+                                    estadoNext = 2
+                                    self.currentProfit = 0
+                                    self.bet = self.amount
+                                    self.maxCurrentRate = self.currentRate
+                            if self.diffDI < self.limitSel :
+                                check = self.vender()
+                                if check:
+                                    estadoNext = 2
+                                    self.currentProfit = 0
+                                    self.bet = self.amount
+                                    self.maxCurrentRate = self.currentRate
+                    if self.estado == 2:
                         check,position=self.get_position(self.operID)
-                        if check :
+                        if check:
                             # La orden se ha ejecutado
                             self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
                             if position['position']['sell_amount'] == 0 or position['position']['buy_amount'] == 0:
@@ -521,11 +522,11 @@ class Strategy(models.Model):
                                     self.accion="VENDER"
                                     if self.currentRate < self.maxCurrentRate :
                                         self.maxCurrentRate = self.currentRate
-                                else :
+                                else:
                                     self.accion="COMPRAR"
                                     if self.currentRate > self.maxCurrentRate :
                                         self.maxCurrentRate = self.currentRate
-                            else :
+                            else:
                                 # Y la orden se ha cerrado
                                 estadoNext=0
                                 self.sleep=60
@@ -538,7 +539,7 @@ class Strategy(models.Model):
                                 Noperation[0].close(float(beneficio), float(position['position']['buy_amount']), float(position['position']['sell_amount']), "AUTO",profit)
                                 self.operID=0
                                 self.bet=0
-                        else :
+                        else:
                             check=self.cancel_order(self.operID)
                             if check:
                                 estadoNext=0
@@ -547,9 +548,9 @@ class Strategy(models.Model):
                                 StrategyOperation.objects.filter(operID=self.operID).delete()
                                 self.operID=0
                 ## Fin de protected trade 
-                else :
+                else:
                     logger.debug ("Symbol is in normal operation mode")
-                    if self.estado == 0 :
+                    if self.estado == 0:
                         logger.debug ("Symbol is in HOLD status")
                         self.currentProfit=None
                         self.maxCurrentRate=0
@@ -873,38 +874,42 @@ class Strategy(models.Model):
                 amount=self.amount,
                 leverage=self.leverage,
                 type="market")
-        if check :
-            self.operID=order_id
-#           check,position=self.get_position(self.operID)
-            self.placedPrice=self.currentRate
-            Noperation=StrategyOperation(strategy=self,operID=order_id,type="sell")
+        if check:
+            self.operID = order_id
+            self.placedPrice = self.currentRate
+            Noperation = StrategyOperation(strategy=self, operID=order_id, type="sell")
             Noperation.save()
         self.save()
         return check
 
+    # ── CIERRE Y CONTABILIDAD ───────────────────────────────────────────────
     def cerrar(self, reasonClose, forceClose):
-
-        checkClose,orderIDClose=self.close_position(self.operID)
+        checkClose, orderIDClose = self.close_position(self.operID)
         if checkClose or forceClose:
             time.sleep(1)
-            self.placedPrice=0
-            if not forceClose :
-                self.operIDclose=orderIDClose
-            check,position=self.get_position(self.operID)
-            beneficio=position['position']['sell_amount']-position['position']['buy_amount']
-            self.beneficioTotal=self.beneficioTotal+beneficio
-            profit=beneficio*100/self.bet
-            Noperation=StrategyOperation.objects.filter(operID__exact=self.operID)
-            Noperation[0].close(float(beneficio), float(position['position']['buy_amount']), float(position['position']['sell_amount']), reasonClose, orderIDClose, profit)
+            self.placedPrice = 0
+            if not forceClose:
+                self.operIDclose = orderIDClose
+            check, position = self.get_position(self.operID)
+            beneficio = position['position']['sell_amount'] - position['position']['buy_amount']
+            self.beneficioTotal = (self.beneficioTotal or 0) + beneficio
+            profit = beneficio*100/self.bet
+            Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
+            Noperation[0].close(float(beneficio),
+                                float(position['position']['buy_amount']),
+                                float(position['position']['sell_amount']),
+                                reasonClose,
+                                orderIDClose,
+                                profit)
 
             # Update max margin accordingly
-            adminUser=User.objects.filter(username='admin')
-            for user in adminUser :
-                adminId=user.id
-                adminProfile=Profile.objects.filter(user=adminId)
-                for profile in adminProfile :
+            adminUser = User.objects.filter(username='admin')
+            for user in adminUser:
+                adminId = user.id
+                adminProfile = Profile.objects.filter(user=adminId)
+                for profile in adminProfile:
                     maxBalance = profile.configMaxBet
-                    profile.configMaxBet=(float)(maxBalance)+beneficio
+                    profile.configMaxBet = (float)(maxBalance) + beneficio
                     profile.save()
 
         self.operID = 0
@@ -913,8 +918,8 @@ class Strategy(models.Model):
         self.save()
         return checkClose or forceClose
 
+    # ── FILTRO MACRO ─────────────────────────────────────────────────────────
     def checkRecommend(self):
-
         resultado = False
         recomendacionTV = self.recommendMA + self.recommendMA240
         ## Resultado por defecto False
@@ -922,12 +927,12 @@ class Strategy(models.Model):
         ## La suma debe ser mayor a 1, en la direccion adecuada
         ## Es decir, como no puede superar 1, al menos deben estar en la misma direccion!
 
-        if self.diffDI > self.limitBuy :
-            ## Comprar
-            if recomendacionTV > 1.5 :
+        if (self.diffDI is not None) and (self.limitBuy is not None) and (self.diffDI > self.limitBuy):
+            # Comprar
+            if recomendacionTV > 1.5:
                 resultado = True
 
-        if self.diffDI < self.limitSell :
+        if (self.diffDI is not None) and (self.limitSell is not None) and (self.diffDI < self.limitSell):
             # Vender
             if recomendacionTV < -1.5:
                 resultado = True

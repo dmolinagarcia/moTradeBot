@@ -490,12 +490,15 @@ class Strategy(models.Model):
                 self.day_pnl = Decimal("0")
 
             if self.isRunning:
+                logger.debug("Symbol is running so we evaluate")
                 estadoNext = self.estado
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
                     logger.debug("Symbol is in protected trading mode")
+                    ## Inicio proceso protected Trade
                     if self.estado == 0:
+                        ## Estado HOLD. 
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
                         if self.adx and self.limitOpen and (self.adx > self.limitOpen):
@@ -905,41 +908,35 @@ class Strategy(models.Model):
         self.save()
         return check
 
-    # ── CIERRE Y CONTABILIDAD (igual, con pequeñas seguridades) ─────────────
+    # ── CIERRE Y CONTABILIDAD ───────────────────────────────────────────────
     def cerrar(self, reasonClose, forceClose):
         checkClose, orderIDClose = self.close_position(self.operID)
         if checkClose or forceClose:
-            # evita sleeps largos; pero conservamos el breve para no romper tu flujo
-            time.sleep(0.2)
+            time.sleep(1)
             self.placedPrice = 0
             if not forceClose:
                 self.operIDclose = orderIDClose
             check, position = self.get_position(self.operID)
             beneficio = position['position']['sell_amount'] - position['position']['buy_amount']
             self.beneficioTotal = (self.beneficioTotal or 0) + beneficio
-            profit = beneficio * 100 / (self.bet or 1)
+            profit = beneficio*100/self.bet
             Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
-            if Noperation:
-                Noperation[0].close(float(beneficio),
-                                    float(position['position']['buy_amount']),
-                                    float(position['position']['sell_amount']),
-                                    reasonClose,
-                                    orderIDClose,
-                                    profit)
+            Noperation[0].close(float(beneficio),
+                                float(position['position']['buy_amount']),
+                                float(position['position']['sell_amount']),
+                                reasonClose,
+                                orderIDClose,
+                                profit)
 
-            # Update max margin accordingly (conserva tu comportamiento)
-            try:
-                from django.contrib.auth.models import User
-                adminUser = User.objects.filter(username='admin')
-                for user in adminUser:
-                    adminId = user.id
-                    adminProfile = Profile.objects.filter(user=adminId)
-                    for profile in adminProfile:
-                        maxBalance = profile.configMaxBet
-                        profile.configMaxBet = (float(maxBalance)) + beneficio
-                        profile.save()
-            except Exception as e:
-                logger.error("No se pudo actualizar configMaxBet del admin: %s", e)
+            # Update max margin accordingly
+            adminUser = User.objects.filter(username='admin')
+            for user in adminUser:
+                adminId = user.id
+                adminProfile = Profile.objects.filter(user=adminId)
+                for profile in adminProfile:
+                    maxBalance = profile.configMaxBet
+                    profile.configMaxBet = (float)(maxBalance) + beneficio
+                    profile.save()
 
         self.operID = 0
         self.operIDclose = 0
@@ -947,10 +944,14 @@ class Strategy(models.Model):
         self.save()
         return checkClose or forceClose
 
-    # ── FILTRO MACRO (idéntico a tu original) ────────────────────────────────
+    # ── FILTRO MACRO ─────────────────────────────────────────────────────────
     def checkRecommend(self):
         resultado = False
-        recomendacionTV = (self.recommendMA or 0) + (self.recommendMA240 or 0)
+        recomendacionTV = self.recommendMA + self.recommendMA240
+        ## Resultado por defecto False
+        ## recomendacionTV es la suma de recommendMA y recommendMA240
+        ## La suma debe ser mayor a 1, en la direccion adecuada
+        ## Es decir, como no puede superar 1, al menos deben estar en la misma direccion!
 
         if (self.diffDI is not None) and (self.limitBuy is not None) and (self.diffDI > self.limitBuy):
             # Comprar
