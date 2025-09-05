@@ -20,6 +20,22 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Gestión de excepciones
+# ──────────────────────────────────────────────────────────────────────────────
+
+class MoTradeError(Exception):
+    """Excepción unificada con código de error y mensaje."""
+
+    def __init__(self, code: int, message: str, *args):
+        super().__init__(message, *args)
+        self.code = code
+        self.message = message
+
+    def __str__(self):
+        return f"[{self.code}] {self.message}"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
 ATR_MULT_SL = Decimal("2.0")       # Stop inicial: 2xATR
@@ -355,15 +371,15 @@ class Strategy(models.Model):
     # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
         cryptoDataraw = ('{"symbols":{"tickers":["' + self.tickSymbol + '"],"query":{"types":[]}},"columns":['
-                         + '"ADX' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"ADX+DI' + str(self.cryptoTimeframeDI or '') + '",'
-                         + '"ADX-DI' + str(self.cryptoTimeframeDI or '') + '",'
-                         + '"EMA10' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"EMA20' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"EMA100' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"Recommend.MA' + str(self.cryptoTimeframeADX or '') + '",'
-                         + '"Recommend.MA|240"'
-                         + ']}')
+            + '"ADX' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"ADX+DI' + str(self.cryptoTimeframeDI or '') + '",'
+            + '"ADX-DI' + str(self.cryptoTimeframeDI or '') + '",'
+            + '"EMA10' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"EMA20' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"EMA100' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"Recommend.MA' + str(self.cryptoTimeframeADX or '') + '",'
+            + '"Recommend.MA|240"'
+            + ']}')
 
         headers = {
             'authority': 'scanner.tradingview.com',
@@ -379,11 +395,15 @@ class Strategy(models.Model):
             'cookie': '_ga=GA1.2.526459883.1610099096; __gads=ID=8f36aef99159e559:T=1610100101:S=ALNI_Mars83GB1m6Wd227WWiChIcow2RpQ; sessionid=8pzntqn1e9y9p347mq5y54mo5yvb8zqq; tv_ecuid=41f8c020-6882-40d1-a729-c638b361d4b3; _sp_id.cf1a=18259830-0041-4e5d-bbec-2f481ebd9b76.1610099095.44.1613162553.1612699115.1f98354c-1841-47fc-ab5d-d7113cfa5090; _sp_ses.cf1a=*; _gid=GA1.2.1715043600.1613162554; _gat_gtag_UA_24278967_1=1',
         }
 
+        response = requests.post(
+            'https://scanner.tradingview.com/crypto/scan', 
+            headers=headers, 
+            data=cryptoDataraw)
+
+        if response.json()['totalCount'] == 0:
+            raise MoTradeError(3, "MOT-00003: No data from TradingView for " + self.rateSymbol)
+
         try:
-            response = requests.post(
-                'https://scanner.tradingview.com/crypto/scan', 
-                headers=headers, 
-                data=cryptoDataraw)
             d = response.json()['data'][0]['d']
             self.adx = d[0]
             self.plusDI = d[1]
@@ -407,8 +427,9 @@ class Strategy(models.Model):
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
                 self.atr = None
 
-        except SomeError as e :
+        except Exception as e:
             logger.error("Error al leer datos de tradingview: %s", e)
+            logger.error(response.content)
             raise e
 
         data = {
@@ -416,23 +437,22 @@ class Strategy(models.Model):
         }
         headers = {'Content-Type': 'application/json'}
 
-        try:
-            response = requests.post(
-                'http://127.0.0.1:5000/get_price',
-                headers=headers,
-                data=json.dumps(data),
-                timeout=5)
-            resp_json = response.json()
-            if float(resp_json['price']) > -1:
-                self.currentRate = float(resp_json['price'])
-            else:
-                logger.error("No se ha podido obtener el precio de " + str(self.rateSymbol))
-        except Exception as e:
-            logger.error("Error al obtener precio de %s: %s", self.rateSymbol, e)
+        response = requests.post(
+            'http://127.0.0.1:5000/get_price',
+            headers=headers,
+            data=json.dumps(data))
+	
+        resp_json = response.json()
 
+        #resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
+        #resp_json = resp.json()
+        if float(resp_json['price']) > -1:
+            self.currentRate = float(resp_json['price'])
+        else:
+            logger.error("No se ha podido obtener el precio de " + str(self.rateSymbol))
         self.save()
 
-    # ── LÓGICA PRINCIPAL (reescrita, mantiene firma y modos) ─────────────────
+    # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
     def operation(self, isMarketOpen):
         logger.debug("Entering operation for " + str(self.rateSymbol))
 
@@ -442,17 +462,19 @@ class Strategy(models.Model):
 
             if self.estado == 2 and self.operID == 0:
             ## Operacion en curso, pero no tenemos OPERID
-                logger.error("MOT-00001: Open operation without operID at " + str(self.rateSymbol))
-                self.inError = True
-                self.save()
-                return
+                # logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
+                # self.inError = True
+                # self.save()
+                # return
+                raise MoTradeError(1, "MOT-00001: Open operation without operID at " + self.rateSymbol)
 
             if self.estado == 2 and self.bet == 0:
             ## Operacion en curso, pero no se ha cargado BET
-                logger.error ("MOT-00002: Bet can't be zero with an open operation at " + str(self.rateSymbol))
-                self.inError = True
-                self.save()
-                return
+                # logger.error ("MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
+                # self.inError=True
+                # self.save()
+                # return
+                raise MoTradeError(2, "MOT-00002: Bet can't be zero with an open operation at " + self.rateSymbol)
 
             if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
