@@ -190,7 +190,7 @@
         ATRPCT:    { fillAlpha: 0.2, 
                      strokeWidth: 3.0, },
         },
-      axes: { y1: { valueRange: [-1, 1], }, y2: { valueRange: [0, 1], } },
+      axes: { y2: { valueRange: [0, 1], }, x:  { drawAxis: false }, },
     }
 
     gs.push(new Dygraph(document.getElementById("chart4"), data4, options4 ));

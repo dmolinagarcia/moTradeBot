@@ -568,6 +568,8 @@ class Strategy(models.Model):
 
                         # Filtros de entrada
                         ## Primero hay que entrar por el limitOpen. ADX debe ser superior
+                        ## en caso contrario no entramos
+                        
                         if self.adx > self.limitOpen:
                             # Señal direccional junto a TV Recommend
                             side = None
