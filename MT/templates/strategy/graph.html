@@ -3,6 +3,7 @@
 <div id="chart1"></div>
 <div id="chart2"></div>
 <div id="chart3"></div>
+<div id="chart4"></div>
 
 <!-- Chart display -->
 <script type="text/javascript">
@@ -168,7 +169,32 @@
     }
         
     gs.push(new Dygraph(document.getElementById("chart3"), data3, options3 ));
- 
+
+    var data4 = google.visualization.arrayToDataTable(
+      {{ data4|safe }},
+    );
+          data4.insertColumn(0, 'date', data4.getColumnLabel(0));
+      // copy values from column 1 (old column 0) to column 0, converted to numbers
+    for (var i = 0; i < data4.getNumberOfRows(); i++) {
+      val = data4.getValue(i, 1);
+      data4.setValue(i, 0, new Date(val));
+    }
+        // remove column 1 (the old column 0)
+    data4.removeColumn(1);
+    var options4 = {
+      plugins: [ new Dygraph.Plugins.Crosshair({ direction: "both" })],
+      fillGraph: true,
+      showRangeSelector: true,
+      rangeSelectorHeight: 30,
+      series: {
+        ATRPCT:    { fillAlpha: 0.2, 
+                     strokeWidth: 3.0, },
+        },
+      axes: { y1: { valueRange: [-1, 1], }, y2: { valueRange: [0, 1], } },
+    }
+
+    gs.push(new Dygraph(document.getElementById("chart4"), data4, options4 ));
+
     var sync = Dygraph.synchronize(gs, {range: false} );
 
   }
