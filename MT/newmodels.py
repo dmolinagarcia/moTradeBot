@@ -571,9 +571,9 @@ class Strategy(models.Model):
                         if self.adx > self.limitOpen:
                             # Señal direccional junto a TV Recommend
                             side = None
-                            if (self.diffDI > self.limitBuy) and self.checkRecommend():
+                            if (self.diffDI > self.limitBuy) and self.checkRecommend() and isMarketOpen:
                                 side = "long"
-                            if (self.diffDI < self.limitSell) and self.checkRecommend():
+                            if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
 
                             vol_ok = False

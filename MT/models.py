@@ -571,22 +571,15 @@ class Strategy(models.Model):
                         if self.adx > self.limitOpen:
                             # Señal direccional junto a TV Recommend
                             side = None
-                            if (self.diffDI > self.limitBuy) and self.checkRecommend():
+                            if (self.diffDI > self.limitBuy) and self.checkRecommend() and isMarketOpen:
                                 side = "long"
-                            if (self.diffDI < self.limitSell) and self.checkRecommend():
+                            if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
-
-
-
-
-
-
 
                         ## Despues, el diffDI debe superar el limitBuy o el limitSell
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
                         ## isMarketOpen comprueba si el nasdaq esta abierto
                             ## Busca limitar ante bajo volumen
-
 
                             if (self.diffDI > self.limitBuy) : 
                                 if self.checkRecommend() and isMarketOpen :
@@ -608,35 +601,7 @@ class Strategy(models.Model):
                                         estadoNext = 2
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
+   
                     
                     
                     
