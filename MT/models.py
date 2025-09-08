@@ -45,7 +45,6 @@ BREAKEVEN_R = Decimal("0.7")       # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
-DAILY_DD_LIMIT_PCT = Decimal("5.0")  # Corte diario del sistema (% relativo, lógico)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Funciones Helpers
@@ -316,6 +315,8 @@ class Strategy(models.Model):
     atr = models.FloatField(null=True, blank=True)  # ATR para sizing/SL
     bars_in_trade = models.IntegerField(null=True, blank=True, default=0)
     partial_done = models.BooleanField(default=False)
+
+    # Campos nuevos no usados. Futura ampliacion
     last_trade_day = models.DateField(null=True, blank=True)
     day_pnl = models.DecimalField(default=Decimal("0"), max_digits=9, decimal_places=2)
 
@@ -487,6 +488,7 @@ class Strategy(models.Model):
                 logger.debug("Symbol is running so we evaluate")
                 estadoNext = self.estado
                 cierre=False
+
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
                     logger.debug("Symbol is in protected trading mode")
@@ -496,6 +498,7 @@ class Strategy(models.Model):
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
                         ## Abrimos si el ADX está por encima del mínimo limitOpen
+
                         if self.adx > self.limitOpen :
                             if self.diffDI > self.limitBuy :
                                 check = self.comprar()
@@ -504,7 +507,7 @@ class Strategy(models.Model):
                                     self.currentProfit = 0
                                     self.bet = self.amount
                                     self.maxCurrentRate = self.currentRate
-                            if self.diffDI < self.limitSel :
+                            if self.diffDI < self.limitSell :
                                 check = self.vender()
                                 if check:
                                     estadoNext = 2
@@ -512,49 +515,51 @@ class Strategy(models.Model):
                                     self.bet = self.amount
                                     self.maxCurrentRate = self.currentRate
                     if self.estado == 2:
-                        check,position=self.get_position(self.operID)
+                        check, position = self.get_position(self.operID)
                         if check:
                             # La orden se ha ejecutado
                             self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
                             if position['position']['sell_amount'] == 0 or position['position']['buy_amount'] == 0:
                                 # Y la orden sigue abierta
-                                if position['orders'][0]['side'] == "sell" :
-                                    self.accion="VENDER"
+                                if position['orders'][0]['side'] == "sell":
+                                    self.accion = "VENDER"
                                     if self.currentRate < self.maxCurrentRate :
                                         self.maxCurrentRate = self.currentRate
                                 else:
-                                    self.accion="COMPRAR"
+                                    self.accion = "COMPRAR"
                                     if self.currentRate > self.maxCurrentRate :
                                         self.maxCurrentRate = self.currentRate
                             else:
                                 # Y la orden se ha cerrado
-                                estadoNext=0
-                                self.sleep=60
-                                self.placedPrice=0
-                                self.accion="CERRAR"
-                                beneficio=position['position']['sell_amount']-position['position']['buy_amount']
-                                profit=beneficio*100/self.bet
-                                self.beneficioTotal=self.beneficioTotal+beneficio
-                                Noperation=StrategyOperation.objects.filter(operID__exact=self.operID)
+                                estadoNext = 0
+                                self.sleep = 60
+                                self.placedPrice = 0
+                                self.accion = "CERRAR"
+                                beneficio = position['position']['sell_amount']-position['position']['buy_amount']
+                                profit = beneficio * 100 / self.bet
+                                self.beneficioTotal = self.beneficioTotal+beneficio
+                                Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
                                 Noperation[0].close(float(beneficio), float(position['position']['buy_amount']), float(position['position']['sell_amount']), "AUTO",profit)
-                                self.operID=0
-                                self.bet=0
+                                self.operID = 0
+                                self.bet = 0
                         else:
-                            check=self.cancel_order(self.operID)
+                            check = self.cancel_order(self.operID)
                             if check:
-                                estadoNext=0
-                                self.sleep=60
-                                self.accion="WAIT"
+                                estadoNext = 0
+                                self.sleep = 60
+                                self.accion = "WAIT"
                                 StrategyOperation.objects.filter(operID=self.operID).delete()
-                                self.operID=0
+                                self.operID = 0
                 ## Fin de protected trade 
+                
+                # ── MODO NORMAL: lógica mejorada (ATR, sizing, trailing, time-stop) ──
                 else:
                     logger.debug ("Symbol is in normal operation mode")
                     if self.estado == 0:
                         logger.debug ("Symbol is in HOLD status")
-                        self.currentProfit=None
-                        self.maxCurrentRate=0
-                        self.accion="WAIT"
+                        self.currentProfit = None
+                        self.maxCurrentRate = 0
+                        self.accion = "WAIT"
     
                         ## Comprobacion de apertura de operacion
                         ## Primero hay que entrar por el limitOpen. ADX debe ser superior
@@ -597,10 +602,10 @@ class Strategy(models.Model):
                                         #bot = telegram.Bot(token=telegram_settings['bot_token'])
                                         #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
                                         #        text=self.__str__()+" Vender", parse_mode=telegram.ParseMode.HTML)
-                                        self.maxCurrentRate=self.currentRate
-                                        self.accion="VENDER"
-                                        self.currentProfit=0
-                                        estadoNext=2
+                                        self.maxCurrentRate = self.currentRate
+                                        self.accion = "VENDER"
+                                        self.currentProfit = 0
+                                        estadoNext = 2
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
                     if self.estado == 2 :
@@ -766,10 +771,11 @@ class Strategy(models.Model):
     def manualClose (self, reason) :
     # Used when closed is called from the web console
                             
-        self.cooldownUntil=timezone.now()+timedelta(days=1)
+        self.cooldownUntil = timezone.now() + timedelta(days=1)
             # Cooldown de 48 periodos. Igual que cierre por stoploss
+
         force = False
-        check = self.cerrar(reason,force)
+        check = self.cerrar(reason, force)
         if check:
             #payload = {"head": self.__str__(), "body": "Cerrar"}
             #send_group_notification(group_name="notificame", payload=payload, ttl=100000)      
@@ -777,7 +783,7 @@ class Strategy(models.Model):
             #bot = telegram.Bot(token=telegram_settings['bot_token'])
             #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
             #    text=self.__str__()+" Cerrar", parse_mode=telegram.ParseMode.HTML)
-            self.accion="CERRAR"
+            self.accion = "CERRAR"
             estadoNext = 3
             self.bet = 0
             self.adxClose = self.limitClose
@@ -789,7 +795,7 @@ class Strategy(models.Model):
 
     # ── LOG DE ESTADO ───────────────────────────────────────────────────────
     def log(self):
-        StrategyState(strategy=self, 
+        StrategyState(strategy=self,
             operID=self.operID,
             accion=self.accion,
             estado=self.estado,
@@ -819,9 +825,10 @@ class Strategy(models.Model):
             stopLossCurrent=self.stopLossCurrent,
             atr=self.atr).save()
 
+    # ── ÓRDENES DE ENTRADA (conserva interfaz; añade flag protected) ─────────
     def comprar(self):
         if self.protectedTrade :
-            check,order_id=self.buy_order(
+            check, order_id = self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
@@ -843,17 +850,16 @@ class Strategy(models.Model):
                 leverage=self.leverage,
                 type="market")
         if check:
-            self.operID=order_id
-#           check,position=self.get_position(self.operID)
-            self.placedPrice=self.currentRate
-            Noperation=StrategyOperation(strategy=self,operID=order_id,type="buy")
+            self.operID = order_id
+            self.placedPrice = self.currentRate
+            Noperation = StrategyOperation(strategy=self, operID=order_id, type="buy")
             Noperation.save()
         self.save()
         return check
 
     def vender(self):
-        if self.protectedTrade :
-            check,order_id=self.buy_order(
+        if self.protectedTrade:
+            check, order_id = self.buy_order(
                 instrument_type="crypto",
                 instrument_id=self.operSymbol,
                 instrument_id_bingx=self.operSymbolBingx,
