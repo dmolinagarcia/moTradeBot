@@ -518,7 +518,7 @@ class Strategy(models.Model):
                         check, position = self.get_position(self.operID)
                         if check:
                             # La orden se ha ejecutado
-                            self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
+                            self.currentProfit = round((position['position']['currentProfit'] / (self.bet or 1)) * 100, 2)
                             if position['position']['sell_amount'] == 0 or position['position']['buy_amount'] == 0:
                                 # Y la orden sigue abierta
                                 if position['orders'][0]['side'] == "sell":
@@ -535,11 +535,16 @@ class Strategy(models.Model):
                                 self.sleep = 60
                                 self.placedPrice = 0
                                 self.accion = "CERRAR"
-                                beneficio = position['position']['sell_amount']-position['position']['buy_amount']
+                                beneficio = position['position']['sell_amount'] - position['position']['buy_amount']
                                 profit = beneficio * 100 / self.bet
-                                self.beneficioTotal = self.beneficioTotal+beneficio
+                                self.beneficioTotal = self.beneficioTotal + beneficio
                                 Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
-                                Noperation[0].close(float(beneficio), float(position['position']['buy_amount']), float(position['position']['sell_amount']), "AUTO",profit)
+                                Noperation[0].close(float(beneficio),
+                                                    float(position['position']['buy_amount']),
+                                                    float(position['position']['sell_amount']),
+                                                    "AUTO",
+                                                    0,            ## Cuanto hace que esto no funciona?
+                                                    profit)
                                 self.operID = 0
                                 self.bet = 0
                         else:
@@ -554,62 +559,96 @@ class Strategy(models.Model):
                 
                 # ── MODO NORMAL: lógica mejorada (ATR, sizing, trailing, time-stop) ──
                 else:
-                    logger.debug ("Symbol is in normal operation mode")
-                    if self.estado == 0:
+                    logger.debug("Symbol is in normal operation mode")
+                    if self.estado == 0:  # HOLD
                         logger.debug ("Symbol is in HOLD status")
                         self.currentProfit = None
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
-    
-                        ## Comprobacion de apertura de operacion
+
+                        # Filtros de entrada
                         ## Primero hay que entrar por el limitOpen. ADX debe ser superior
+                        if self.adx > self.limitOpen:
+                            # Señal direccional junto a TV Recommend
+                            side = None
+                            if (self.diffDI > self.limitBuy) and self.checkRecommend():
+                                side = "long"
+                            if (self.diffDI < self.limitSell) and self.checkRecommend():
+                                side = "short"
+
+
+
+
+
+
+
                         ## Despues, el diffDI debe superar el limitBuy o el limitSell
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
                         ## isMarketOpen comprueba si el nasdaq esta abierto
                             ## Busca limitar ante bajo volumen
-                        logger.debug ("IF adx (" + str(self.adx) + ") > limitOpen (" + str(self.limitOpen) + ") we continue") 
-                        if self.adx > self.limitOpen :
-                            logger.debug ("IF diffDI (" + str(self.diffDI) + ") > limitBuy (" + str(self.limitBuy) + ") we continue")
+
+
                             if (self.diffDI > self.limitBuy) : 
-                                logger.debug ("IF checkRecommend (" + str(self.checkRecommend()) + ") and isMarketOpen (" + str(isMarketOpen) + ") we continue ")
                                 if self.checkRecommend() and isMarketOpen :
-                                    logger.debug ("Conditions OK, request to open LONG position")
                                     check=self.comprar()
                                     if check :
-                                        #payload = {"head": self.__str__(), "body": "Comprar"}
-                                        #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	
-                                        #telegram_settings = settings.TELEGRAM
-                                        #bot = telegram.Bot(token=telegram_settings['bot_token'])
-                                        #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
-                                        #        text=self.__str__()+" Comprar", parse_mode=telegram.ParseMode.HTML)
-                                    
                                         self.maxCurrentRate=self.currentRate
                                         self.accion="COMPRAR"
                                         self.currentProfit=0
                                         estadoNext=2
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
-                            logger.debug ("IF diffDI (" + str(self.diffDI) + ") < limitSell (" + str(self.limitSell) + ") we continue")
                             if (self.diffDI < self.limitSell) : 
-                                logger.debug ("IF checkRecommend (" + str(self.checkRecommend()) + ") and isMarketOpen (" + str(isMarketOpen) + ") we continue ")
                                 if self.checkRecommend() and isMarketOpen :
-                                    logger.debug ("Conditions OK, requet to open SHORT position")
                                     check=self.vender()
-                                    if check :
-                                        payload = {"head": self.__str__(), "body": "Vender"}
-                                        #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	
-                                        #telegram_settings = settings.TELEGRAM
-                                        #bot = telegram.Bot(token=telegram_settings['bot_token'])
-                                        #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
-                                        #        text=self.__str__()+" Vender", parse_mode=telegram.ParseMode.HTML)
+                                    if check:
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = "VENDER"
                                         self.currentProfit = 0
                                         estadoNext = 2
                                         self.bet=self.amount
                                         self.adxClose=self.limitClose
-                    if self.estado == 2 :
-                        logger.debug ("Symbol is in operation status")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if self.estado == 2:  # OPER
+                        logger.debug("Symbol is in operation status")
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force=False
@@ -715,7 +754,7 @@ class Strategy(models.Model):
     
                         if cierre :
                             check=self.cerrar(reason,force)
-                            if check :
+                            if check:
                                 # payload = {"head": self.__str__(), "body": "Cerrar"}
                                 #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	
                                 #telegram_settings = settings.TELEGRAM
@@ -729,29 +768,30 @@ class Strategy(models.Model):
                                 self.takeProfitCurrent = None
                                 self.currentProfit = None
                                 self.adxClose = self.limitClose or 0
-    
+
+                # ── COOLDOWN ──────────────────────────────────────────────────
                 if self.estado == 3:
                     logger.debug("Symbol is in cooldown mode")
                     self.currentProfit = None
                     ## Si el ADX esta por debajo del OPEN, salimos del cooldown
                     ## Si el limitOpen es 0, no hay cooldown y salimos
                     if self.adx < self.limitOpen or self.limitOpen==0 :
-                        estadoNext=0
-                        self.accion="WAIT"
-                    else :
-                        estadoNext=3
-                        self.accion="COOLDOWN"
-                        
+                        estadoNext = 0
+                        self.accion = "WAIT"
+                    else:
+                        estadoNext = 3
+                        self.accion = "COOLDOWN"
                     ## Si el cooldownUntil está en el futuro, esperamos
-                    if self.cooldownUntil < timezone.now() :
-                        estadoNext=0
-                        self.accion="WAIT"
-                    else :
-                        estadoNext=3
-                        self.accion="COOLDOWN"
-    
-                self.estado=estadoNext
-    
+                    if self.cooldownUntil < timezone.now():
+                        estadoNext = 0
+                        self.accion = "WAIT"
+                    else:
+                        estadoNext = 3
+                        self.accion = "COOLDOWN"
+
+                self.estado = estadoNext
+
+            # Log y persistencia final
             self.log()
             self.inError = False
             self.save()
@@ -765,12 +805,10 @@ class Strategy(models.Model):
             self.inError = True
             self.save()
             logger.exception("MOT-99999: Excepcion no controlada en " + self.rateSymbol)
-            
-            
 
-    def manualClose (self, reason) :
+    # ── CIERRE MANUAL (Llamada desde la consola) ───────────────
+    def manualClose(self, reason):
     # Used when closed is called from the web console
-                            
         self.cooldownUntil = timezone.now() + timedelta(days=1)
             # Cooldown de 48 periodos. Igual que cierre por stoploss
 
