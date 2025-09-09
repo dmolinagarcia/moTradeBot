@@ -572,12 +572,18 @@ class Strategy(models.Model):
                         
                         if self.adx > self.limitOpen:
                             # Señal direccional junto a TV Recommend
+                        ## Despues, el diffDI debe superar el limitBuy o el limitSell
+                        ## self.checkRecommend tiene en cuenta la recomendacion general de TV
+                        ## isMarketOpen comprueba si el nasdaq esta abierto
+                            ## Busca limitar ante bajo volumen
+
                             side = None
                             if (self.diffDI > self.limitBuy) and self.checkRecommend() and isMarketOpen:
                                 side = "long"
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
 
+                            # Volatilidad mínima (ATR% del precio)
                             vol_ok = False
                             if self.atr and self.currentRate:
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
@@ -609,7 +615,7 @@ class Strategy(models.Model):
                                     amount_calc = int(self.amount or 0)
 
                                 if amount_calc > 0:
-                                    # Abrimos con orden de mercado (conserva tu interfaz)
+                                    # Abrimos con orden de mercado
                                     check = self.comprar() if side == "long" else self.vender()
                                     if check:
                                         # Ajusta amount a lo calculado si difiere
@@ -619,8 +625,7 @@ class Strategy(models.Model):
                                         self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
                                         estadoNext = 2
-                                        # Inicializa adxClose con tu parámetro
-                                        self.adxClose = self.limitClose or 0
+                                        self.adxClose = self.limitClose
                                         # Inicialización de SL/TP actuales en % vs entry según ATR
                                         try:
                                             entry = _D(self.currentRate)
@@ -639,7 +644,8 @@ class Strategy(models.Model):
 
                     if self.estado == 2:  # OPER
                         logger.debug("Symbol is in operation status (normal mode)")
-                        # Setup
+                    # Estamos en OPERACION NOT PROTECTED
+                        # Setup INICIAL
                         force = False
                         reason = []
 

@@ -572,37 +572,59 @@ class Strategy(models.Model):
                         
                         if self.adx > self.limitOpen:
                             # Señal direccional junto a TV Recommend
+                        ## Despues, el diffDI debe superar el limitBuy o el limitSell
+                        ## self.checkRecommend tiene en cuenta la recomendacion general de TV
+                        ## isMarketOpen comprueba si el nasdaq esta abierto
+                            ## Busca limitar ante bajo volumen
+
                             side = None
                             if (self.diffDI > self.limitBuy) and self.checkRecommend() and isMarketOpen:
                                 side = "long"
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
 
-                        ## Despues, el diffDI debe superar el limitBuy o el limitSell
-                        ## self.checkRecommend tiene en cuenta la recomendacion general de TV
-                        ## isMarketOpen comprueba si el nasdaq esta abierto
-                            ## Busca limitar ante bajo volumen
+                            # Volatilidad mínima (ATR% del precio)
+                            vol_ok = False
+                            if self.atr and self.currentRate:
+                                atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
+                                vol_ok = atr_pct >= VOL_MIN_PCT
 
-                            if (self.diffDI > self.limitBuy) : 
-                                if self.checkRecommend() and isMarketOpen :
-                                    check=self.comprar()
-                                    if check :
-                                        self.maxCurrentRate=self.currentRate
-                                        self.accion="COMPRAR"
-                                        self.currentProfit=0
-                                        estadoNext=2
-                                        self.bet=self.amount
-                                        self.adxClose=self.limitClose
-                            if (self.diffDI < self.limitSell) : 
-                                if self.checkRecommend() and isMarketOpen :
-                                    check=self.vender()
+                            if side:
+                                # Sizing por volatilidad usando el “equity” que ya usas (Profile.configMaxBet del admin)
+
+
+
+
+
+
+
+
+
+                                # Distancia de stop por ATR (en precio)
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                if 1 > 0:
+                                    # Abrimos con orden de mercado
+                                    check = self.comprar() if side == "long" else self.vender()
                                     if check:
                                         self.maxCurrentRate = self.currentRate
-                                        self.accion = "VENDER"
+                                        self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
                                         estadoNext = 2
                                         self.bet=self.amount
-                                        self.adxClose=self.limitClose
+                                        self.adxClose = self.limitClose
+
    
                     
                     
@@ -614,11 +636,16 @@ class Strategy(models.Model):
                     
                     
                     
+
+
+
+
+
                     if self.estado == 2:  # OPER
-                        logger.debug("Symbol is in operation status")
+                        logger.debug("Symbol is in operation status (normal mode)")
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
-                        force=False
+                        force = False
                         reason=" "
     
                         # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
