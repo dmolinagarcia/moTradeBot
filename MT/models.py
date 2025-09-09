@@ -591,14 +591,14 @@ class Strategy(models.Model):
 
                             if side:
                                 # Sizing por volatilidad usando el “equity” que ya usas (Profile.configMaxBet del admin)
-
-
-
-
-
-
-
-
+                                equity = Decimal("10000")
+                                try:
+                                    from django.contrib.auth.models import User
+                                    adminUser = User.objects.filter(username='admin').first()
+                                    if adminUser:
+                                        equity = Decimal(str(adminUser.profile.configMaxBet))
+                                except Exception:
+                                    pass
 
                                 # Distancia de stop por ATR (en precio)
 
@@ -618,11 +618,11 @@ class Strategy(models.Model):
                                     # Abrimos con orden de mercado
                                     check = self.comprar() if side == "long" else self.vender()
                                     if check:
+                                        self.bet = self.amount
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
                                         estadoNext = 2
-                                        self.bet=self.amount
                                         self.adxClose = self.limitClose
 
    
@@ -647,12 +647,12 @@ class Strategy(models.Model):
                         # Setup INICIAL
                         force = False
                         reason=" "
-    
+
                         # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
-                        if self.stopLossCurrent is None :
+                        if self.stopLossCurrent is None:
                             self.stopLossCurrent = self.stopLoss
                             self.takeProfitCurrent = self.stopLoss + 50
-    
+
                         # Obtener estado de posicion
                         check,position=self.get_position(self.operID)
                         if check :
@@ -666,8 +666,8 @@ class Strategy(models.Model):
                                 self.operIDclose=position['position']['orderIDClose']
                                 cierre=True
                                 force=True
-                            else :
-                                self.currentProfit=round((position['position']['currentProfit']/self.bet)*100 ,2)
+                            else:
+                                self.currentProfit = round((position['position']['currentProfit']/self.bet)*100 ,2)
     
                         # Tenemos el currentProfit y los SL y TP, pero primero calculamos si hay que cerrar, antes de ejecutar
     

@@ -589,7 +589,7 @@ class Strategy(models.Model):
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
                                 vol_ok = atr_pct >= VOL_MIN_PCT
 
-                            if side and vol_ok and isMarketOpen:
+                            if side and vol_ok:
                                 # Sizing por volatilidad usando el “equity” que ya usas (Profile.configMaxBet del admin)
                                 equity = Decimal("10000")
                                 try:
@@ -620,7 +620,7 @@ class Strategy(models.Model):
                                     if check:
                                         # Ajusta amount a lo calculado si difiere
                                         self.amount = amount_calc
-                                        self.bet = amount_calc
+                                        self.bet = self.amount
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
@@ -649,12 +649,12 @@ class Strategy(models.Model):
                         force = False
                         reason = []
 
-                        # Asegura SL/TP actuales
+                        # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
                         if self.stopLossCurrent is None:
                             self.stopLossCurrent = self.stopLoss if self.stopLoss is not None else -10
                             self.takeProfitCurrent = (self.stopLossCurrent or -10) + 50
 
-                        # Estado de posición
+                        # Obtener estado de posicion
                         check, position = self.get_position(self.operID)
                         if check:
                             if position['position']['currentProfit'] == -9999:
