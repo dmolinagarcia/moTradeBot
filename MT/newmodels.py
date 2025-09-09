@@ -487,7 +487,6 @@ class Strategy(models.Model):
             if self.isRunning:
                 logger.debug("Symbol is running so we evaluate")
                 estadoNext = self.estado
-                cierre=False
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
@@ -662,7 +661,7 @@ class Strategy(models.Model):
                             if position['position']['currentProfit'] == -9999:
                             # Esta fealdad la puedo sustituir por el retorno isPositionOpen
                                 ## la posicion está cerrada
-                                reason.append("FORCED")
+                                reason.append("notOpen")
                                 self.cooldownUntil = timezone.now() + timedelta(days=2)
                                 self.operIDclose = position['position'].get('orderIDClose', 0)
                                 self._finalize_close(reason="+".join(reason), force=True)
@@ -757,7 +756,7 @@ class Strategy(models.Model):
 
                         # Ejecuta cierre si hay razones
                         if len(reason) > 0:
-                            check = self.cerrar("+".join(reason), forceClose=False)
+                            check = self.cerrar(" ".join(reason), force)
                             if check:
                                 # payload = {"head": self.__str__(), "body": "Cerrar"}
                                 #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	

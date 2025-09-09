@@ -487,7 +487,6 @@ class Strategy(models.Model):
             if self.isRunning:
                 logger.debug("Symbol is running so we evaluate")
                 estadoNext = self.estado
-                cierre=False
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
@@ -646,7 +645,7 @@ class Strategy(models.Model):
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force = False
-                        reason=" "
+                        reason = []
 
                         # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
                         if self.stopLossCurrent is None:
@@ -661,10 +660,9 @@ class Strategy(models.Model):
                             if position['position']['currentProfit'] == -9999:
                             # Esta fealdad la puedo sustituir por el retorno isPositionOpen
                                 ## la posicion está cerrada
-                                reason=reason+"notOpen "
-                                self.cooldownUntil=timezone.now()+timedelta(days=2)
-                                self.operIDclose=position['position']['orderIDClose']
-                                cierre=True
+                                reason.append("notOpen")
+                                self.cooldownUntil = timezone.now() + timedelta(days=2)
+                                self.operIDclose = position['position']['orderIDClose']
                                 force=True
                             else:
                                 self.currentProfit = round((position['position']['currentProfit']/self.bet)*100 ,2)
@@ -676,46 +674,40 @@ class Strategy(models.Model):
                         if self.limitClose==0:
                             self.adxClose=0
                         if self.adx<self.adxClose :
-                            cierre=True
-                            reason=reason+"limitClose "
+                            reason.append("limitClose")
                         if self.accion == "VENDER" :
                             if self.currentRate < self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
                             if self.diffDI > self.limitSell*0.85 :
-                                cierre=True
-                                reason=reason+"limitSell "
+                                reason.append("limitSell")
                             ### Ante un stopLoss, esperamos 48 periodos                            
                             ### If we are below stopLoss and checkRecommend Fails. Close!
                             if ( self.currentProfit < self.stopLossCurrent ) and not self.checkRecommend() :
-                                cierre=True
-                                reason=reason+"stopLoss "
+                                reason.append("stopLoss")
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
                             if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
                                 # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
                                 # Asumimos que seguimos subiendo
                                 # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
                                 # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
-                                cierre=True
-                                reason=reason+"takeProfit "
+                                reason.append("takeProfit")
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
     
                         else :
                             if self.currentRate > self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
                             if self.diffDI < self.limitBuy*0.85 :
-                                cierre=True
-                                reason=reason+"limitBuy "
+                                reason.append("limitBuy")
                             ### Ante un stopLoss, esperamos 48 periodos                            
                             if self.currentProfit < self.stopLossCurrent and not self.checkRecommend():
-                                cierre=True
-                                reason=reason+"stopLoss "
+                                reason.append("stopLoss")
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
                             if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
                                 # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
                                 # Asumimos que seguimos subiendo
                                 # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
-                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui                                cierre=True
-                                reason=reason+"takeProfit "
+                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
+                                reason.append("takeProfit")
                                 self.cooldownUntil=timezone.now()+timedelta(days=1)
     
                         # Now we update SLc and TPc
@@ -746,8 +738,26 @@ class Strategy(models.Model):
                         # Finalmente, siempre, takeProfitCurrent
                         self.takeProfitCurrent = self.stopLossCurrent + 40
     
-                        if cierre :
-                            check=self.cerrar(reason,force)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        # Ejecuta cierre si hay razones
+                        if len(reason) > 0:
+                            check = self.cerrar(" ".join(reason), force)
                             if check:
                                 # payload = {"head": self.__str__(), "body": "Cerrar"}
                                 #send_group_notification(group_name="notificame", payload=payload, ttl=100000)	
