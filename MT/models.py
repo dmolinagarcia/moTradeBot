@@ -589,7 +589,7 @@ class Strategy(models.Model):
                                 vol_ok = atr_pct >= VOL_MIN_PCT
 
                             if side:
-                                # Sizing por volatilidad usando el “equity” que ya usas (Profile.configMaxBet del admin)
+                                # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
                                 equity = Decimal("10000")
                                 try:
                                     from django.contrib.auth.models import User
@@ -600,6 +600,7 @@ class Strategy(models.Model):
                                     pass
 
                                 # Distancia de stop por ATR (en precio)
+                                amount_calc = self.amount
 
 
 
@@ -613,11 +614,24 @@ class Strategy(models.Model):
 
 
 
-                                if 1 > 0:
+
+
+
+
+
+
+
+
+
+                                if amount_calc > 0:
+                                    # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
+                                    self.amount = amount_calc
+
                                     # Abrimos con orden de mercado
+
                                     check = self.comprar() if side == "long" else self.vender()
                                     if check:
-                                        self.bet = self.amount
+                                        self.bet = amount_calc
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
@@ -672,7 +686,7 @@ class Strategy(models.Model):
                         if (self.adx*0.85) > self.adxClose :
                             self.adxClose=self.adx*0.85
                         if self.limitClose==0:
-                            self.adxClose=0
+                            self.adxClose = 0
                         if self.adx<self.adxClose :
                             reason.append("limitClose")
                         if self.accion == "VENDER" :
@@ -738,8 +752,6 @@ class Strategy(models.Model):
                         # Finalmente, siempre, takeProfitCurrent
                         self.takeProfitCurrent = self.stopLossCurrent + 40
     
-
-
 
 
 

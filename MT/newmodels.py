@@ -589,7 +589,7 @@ class Strategy(models.Model):
                                 vol_ok = atr_pct >= VOL_MIN_PCT
 
                             if side and vol_ok:
-                                # Sizing por volatilidad usando el “equity” que ya usas (Profile.configMaxBet del admin)
+                                # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
                                 equity = Decimal("10000")
                                 try:
                                     from django.contrib.auth.models import User
@@ -600,45 +600,58 @@ class Strategy(models.Model):
                                     pass
 
                                 # Distancia de stop por ATR (en precio)
+                                amount_calc = 0
                                 if self.atr and self.currentRate and self.atr > 0:
-                                    stop_dist = ATR_MULT_SL * _D(self.atr)
-                                    if stop_dist > 0:
-                                        risk_pct = Decimal("0.0075")  # 0.75% por operación
-                                        risk_amount = equity * risk_pct
-                                        # Unidades “teóricas” (nocional/stop); mapeamos a amount entero
-                                        units = risk_amount / stop_dist
-                                        amount_calc = int(max(units, 0))
-                                    else:
-                                        amount_calc = int(self.amount or 0)
+                                    atr_d = _D(self.atr)
+                                    entry = _D(self.currentRate)
+                                    stop_dist = ATR_MULT_SL * atr_d  # distancia al stop en precio (2xATR por defecto)
+
+                                    if stop_dist > 0 and entry and entry > 0:
+                                        risk_pct = Decimal("0.0075")     # 0.75% por operación
+                                        risk_amount = equity * risk_pct  # dinero que acepto arriesgar si salta el stop
+
+                                        # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
+                                        # amount_notional = units * entry = (risk_amount/stop_dist) * entry
+                                        amount_notional = (risk_amount * entry) / stop_dist
+
+                                        # ⚠️ Si tu broker esperase "margen" (no nocional), descomenta la línea siguiente:
+                                        # amount_notional = amount_notional / Decimal(str(self.leverage or 1))
+
+                                        # Redondeo a entero para mantener compatibilidad con IntegerField
+                                        amount_calc = int(max(amount_notional, 0))
                                 else:
+                                    # Fallback: sin ATR válido usamos el amount ya configurado
                                     amount_calc = int(self.amount or 0)
 
                                 if amount_calc > 0:
+                                    # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
+                                    self.amount = amount_calc
+
                                     # Abrimos con orden de mercado
+
                                     check = self.comprar() if side == "long" else self.vender()
                                     if check:
-                                        # Ajusta amount a lo calculado si difiere
-                                        self.amount = amount_calc
-                                        self.bet = self.amount
+                                        self.bet = amount_calc
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = "COMPRAR" if side == "long" else "VENDER"
                                         self.currentProfit = 0
                                         estadoNext = 2
                                         self.adxClose = self.limitClose
-                                        # Inicialización de SL/TP actuales en % vs entry según ATR
+
+                                        # SL/TP iniciales en % usando ATR
                                         try:
                                             entry = _D(self.currentRate)
                                             if self.atr and entry and entry > 0:
-                                                stop_init = ATR_MULT_SL * _D(self.atr)
-                                                sl_pct = (-(stop_init / entry) * Decimal("100"))
+                                                stop_init = ATR_MULT_SL * _D(self.atr)         # distancia en precio
+                                                sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
                                                 self.stopLossCurrent = float(sl_pct)
-                                                # TP inicial como 2xSL en % (aprox 2R)
-                                                self.takeProfitCurrent = float(-sl_pct * 2)
-                                            else:
-                                                # fallback a tus reglas antiguas
-                                                if self.stopLoss is not None:
-                                                    self.stopLossCurrent = self.stopLoss
-                                                    self.takeProfitCurrent = (self.stopLoss or -10) + 50
+                                                self.takeProfitCurrent = float(-sl_pct * 2)       # ≈ 2R
+                                            elif self.stopLoss is not None:
+                                                # Fallback a tu lógica previa
+                                                self.stopLossCurrent = self.stopLoss
+                                                self.takeProfitCurrent = (self.stopLoss or -10) + 50
+                                        except Exception:
+                                            pass
 
 
                     if self.estado == 2:  # OPER
@@ -676,7 +689,7 @@ class Strategy(models.Model):
                             if dyn > (self.adxClose or 0):
                                 self.adxClose = dyn
                         if (self.limitClose or 0) == 0:
-                            self.adxClose = 0.0
+                            self.adxClose = 0
 
                         # Señal de cierre por ADX débil
                         if (self.adxClose or 0) > 0 and (self.adx is not None) and (self.adx < self.adxClose):
