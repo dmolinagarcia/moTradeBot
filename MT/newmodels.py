@@ -657,8 +657,11 @@ class Strategy(models.Model):
                         # Obtener estado de posicion
                         check, position = self.get_position(self.operID)
                         if check:
+                            # if position['position']['close_at'] > 0 :
+                            # para IQoption, close_at is not None, pero nunca mas lo usaremos.
                             if position['position']['currentProfit'] == -9999:
-                                # Cerrada externamente
+                            # Esta fealdad la puedo sustituir por el retorno isPositionOpen
+                                ## la posicion está cerrada
                                 reason.append("FORCED")
                                 self.cooldownUntil = timezone.now() + timedelta(days=2)
                                 self.operIDclose = position['position'].get('orderIDClose', 0)

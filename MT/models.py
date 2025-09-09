@@ -654,11 +654,11 @@ class Strategy(models.Model):
                             self.takeProfitCurrent = self.stopLoss + 50
 
                         # Obtener estado de posicion
-                        check,position=self.get_position(self.operID)
-                        if check :
+                        check, position = self.get_position(self.operID)
+                        if check:
                             # if position['position']['close_at'] > 0 :
                             # para IQoption, close_at is not None, pero nunca mas lo usaremos.
-                            if position['position']['currentProfit'] == -9999 :
+                            if position['position']['currentProfit'] == -9999:
                             # Esta fealdad la puedo sustituir por el retorno isPositionOpen
                                 ## la posicion está cerrada
                                 reason=reason+"notOpen "
