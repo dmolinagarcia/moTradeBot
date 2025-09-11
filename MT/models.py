@@ -486,12 +486,12 @@ class Strategy(models.Model):
             self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning:
-                logger.debug("Symbol is running so we evaluate")
+                logger.debug("  Symbol is running so we evaluate")
                 estadoNext = self.estado
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
-                    logger.debug("Symbol is in protected trading mode")
+                    logger.debug("    Symbol is in protected trading mode")
                     ## Inicio proceso protected Trade
                     if self.estado == 0:
                         ## Estado HOLD. 
@@ -559,9 +559,9 @@ class Strategy(models.Model):
                 
                 # ── MODO NORMAL: lógica mejorada (ATR, sizing, trailing, time-stop) ──
                 else:
-                    logger.debug("Symbol is in normal operation mode")
+                    logger.debug("      Symbol is in normal operation mode")
                     if self.estado == 0:  # HOLD
-                        logger.debug ("Symbol is in HOLD status. Evaluate entry conditions... ")
+                        logger.debug ("        Symbol is in HOLD status. Evaluate entry conditions... ")
                         self.currentProfit = None
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
@@ -571,7 +571,7 @@ class Strategy(models.Model):
                         ## en caso contrario no entramos
                         
                         if self.adx > self.limitOpen:
-                            logger.debug(" - ADX > limitOpen (%s > %s)", self.adx, self.limitOpen)
+                            logger.debug("          - ADX > limitOpen (%s > %s)", self.adx, self.limitOpen)
                             # Señal direccional junto a TV Recommend
                         ## Despues, el diffDI debe superar el limitBuy o el limitSell
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
@@ -583,14 +583,14 @@ class Strategy(models.Model):
                                 side = "long"
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
-                            logger.debug(" - Side evaluated to %s", side)
+                            logger.debug("          - Side evaluated to %s", side)
 
                             # Volatilidad mínima (ATR% del precio)
                             vol_ok = False
                             if self.atr and self.currentRate:
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
                                 vol_ok = atr_pct >= VOL_MIN_PCT
-                            logger.debug(" Volatily ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
+                            logger.debug("          - Volatility ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
                     
                             if side and vol_ok:
                                 # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
@@ -602,7 +602,7 @@ class Strategy(models.Model):
                                         equity = Decimal(str(adminUser.profile.configMaxBet))
                                 except Exception:
                                     pass
-                                logger.debug(" Equity for sizing: %s", equity)
+                                logger.debug("            - Equity for sizing: %s", equity)
 
                                 # Distancia de stop por ATR (en precio)
                                 amount_calc = 0
@@ -624,7 +624,7 @@ class Strategy(models.Model):
                                 else:
                                     # Fallback: sin ATR válido usamos el amount ya configurado
                                     amount_calc = int(self.amount or 0)
-                                logger.debug(" Calculated amount for entry: %s", amount_calc)
+                                logger.debug("            - Calculated amount for entry: %s", amount_calc)
 
                                 if amount_calc > 0:
                                     # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
@@ -655,10 +655,10 @@ class Strategy(models.Model):
                                                 self.takeProfitCurrent = (self.stopLoss or -10) + 50
                                         except Exception:
                                             pass
-                                        logger.debug(" - Entry order placed successfully, operID=%s", self.operID)
-                                        logger.debug("   Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
+                                        logger.debug("              - Entry order placed successfully, operID=%s", self.operID)
+                                        logger.debug("              - Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
                         else:
-                            logger.debug(" - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
+                            logger.debug("          - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
                             
 
                     if self.estado == 2:  # OPER
