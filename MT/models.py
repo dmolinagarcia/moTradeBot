@@ -584,6 +584,8 @@ class Strategy(models.Model):
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
                             logger.debug("        - Side evaluated to %s", side)
+                            logger.debug("        > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
+                                         self.diffDI, self.limitBuy, self.limitSell, self.checkRecommend(), isMarketOpen)
 
                             # Volatilidad mínima (ATR% del precio)
                             vol_ok = False
