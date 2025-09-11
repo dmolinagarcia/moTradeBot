@@ -15,8 +15,9 @@
 		{% if request.user.is_staff %} 
 			<th>nextUpdate</th>
 			<th>View</th>
-			<th>xxView</th>
+			<th>Close</th>
 		{% endif %}
+		<th>Bet</th>
 		<th>Profit</th>
 
 	</tr>
@@ -78,6 +79,7 @@
 				<td><a href="/strategy/{{ strategy.id }}/{{ strategy.operID }}">VIEW</a></td>
 				<td><a onclick="return confirm('Cierre manual {{ strategy}}?')" href="/manualClose/{{ strategy.id }}">CLOSE</a></td>
 			{% endif %}
+			<td>{{ strategy.bet|floatformat:2 }}</td>
 			<td>{{ strategy.beneficioTotal|floatformat:2 }}</td>
 		</tr>
 	{% endfor %}
