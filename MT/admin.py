@@ -4,7 +4,7 @@ from .models import Strategy, StrategyState, StrategyOperation, Profile
 
 @admin.register(Strategy)
 class StrategyAdmin(admin.ModelAdmin):
-    list_display = ("utility", "cryptoTimeframeADX", "cryptoTimeframeDI", "limitOpen", "limitClose", "limitBuy", "limitSell", "stopLoss", "isRunning")
+    list_display = ("utility", "cryptoTimeframeADX", "cryptoTimeframeDI", "limitOpen", "limitClose", "limitBuy", "limitSell", "stopLoss", "isRunning","amount")
 
 
 admin.site.register(StrategyState)
