@@ -45,6 +45,7 @@ BREAKEVEN_R = Decimal("0.7")       # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
+RISK_PCT = Decimal("0.0150")       # Riesgo por operación (0.75% del equity) 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Funciones Helpers
@@ -588,7 +589,7 @@ class Strategy(models.Model):
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
                                 vol_ok = atr_pct >= VOL_MIN_PCT
 
-                            if side:
+                            if side and vol_ok:
                                 # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
                                 equity = Decimal("10000")
                                 try:
@@ -600,28 +601,25 @@ class Strategy(models.Model):
                                     pass
 
                                 # Distancia de stop por ATR (en precio)
-                                amount_calc = self.amount
+                                amount_calc = 0
+                                if self.atr and self.currentRate and self.atr > 0:
+                                    atr_d = _D(self.atr)
+                                    entry = _D(self.currentRate)
+                                    stop_dist = ATR_MULT_SL * atr_d  # distancia al stop en precio (2xATR por defecto)
 
+                                    if stop_dist > 0 and entry and entry > 0:
+                                        risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
 
+                                        # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
+                                        # amount_notional = units * entry = (risk_amount/stop_dist) * entry
+                                        # amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
+                                        amount_notional = (risk_amount * entry) / stop_dist
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                        # Redondeo a entero para mantener compatibilidad con IntegerField
+                                        amount_calc = int(max(amount_notional, 0))
+                                else:
+                                    # Fallback: sin ATR válido usamos el amount ya configurado
+                                    amount_calc = int(self.amount or 0)
 
                                 if amount_calc > 0:
                                     # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
@@ -638,20 +636,20 @@ class Strategy(models.Model):
                                         estadoNext = 2
                                         self.adxClose = self.limitClose
 
-   
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-
-
-
+                                        # SL/TP iniciales en % usando ATR
+                                        try:
+                                            entry = _D(self.currentRate)
+                                            if self.atr and entry and entry > 0:
+                                                stop_init = ATR_MULT_SL * _D(self.atr)         # distancia en precio
+                                                sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
+                                                self.stopLossCurrent = float(sl_pct)
+                                                self.takeProfitCurrent = float(-sl_pct * 2)       # ≈ 2R
+                                            elif self.stopLoss is not None:
+                                                # Fallback a tu lógica previa
+                                                self.stopLossCurrent = self.stopLoss
+                                                self.takeProfitCurrent = (self.stopLoss or -10) + 50
+                                        except Exception:
+                                            pass
 
 
                     if self.estado == 2:  # OPER
