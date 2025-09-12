@@ -304,7 +304,7 @@ def getGraphData (strategy, history) :
   
     data.append(["Time", "Rate","COMPRAR","VENDER","EMA","EMA20","EMA100"])
     data1.append(["Time", "ADX","+DI","-DI","DIFF","COMPRAR","VENDER"])
-    data2.append(["Time", "PROFIT", "STOPLOSS", "COMPRAR", "VENDER"])
+    data2.append(["Time", "PROFIT", "STOPLOSS", "TAKEPROFIT", "COMPRAR", "VENDER"])
     data3.append(["Time", "RECOMMEND", "RECOMMEND240", "COMPRAR", "VENDER"])
     data4.append(["Time", "ATR%","COMPRAR","VENDER"])
  
@@ -335,6 +335,12 @@ def getGraphData (strategy, history) :
             stopLossCurrent=0
         else :
             stopLossCurrent=entry.stopLossCurrent
+
+        takeProfitCurrent=0
+        if entry.takeProfitCurrent is None :
+            takeProfitCurrent=0
+        else :
+            takeProfitCurrent=entry.takeProfitCurrent
 
         ema100=entry.currentRate
         if entry.ema100 is None :
@@ -368,6 +374,7 @@ def getGraphData (strategy, history) :
         data2.append([(entry.timestamp).strftime('%m.%d.%y %H:%M'),
             currentProfit,
             stopLossCurrent,
+            takeProfitCurrent,
             comprar,
             vender,
             ])
