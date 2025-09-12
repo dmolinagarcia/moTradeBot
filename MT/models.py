@@ -606,27 +606,33 @@ class Strategy(models.Model):
                                     pass
                                 logger.debug("            - Equity for sizing: %s", equity)
 
+                                logger.debug("            - Entering amount calculation...")
                                 # Distancia de stop por ATR (en precio)
                                 amount_calc = 0
                                 if self.atr and self.currentRate and self.atr > 0:
                                     atr_d = _D(self.atr)
                                     entry = _D(self.currentRate)
                                     stop_dist = ATR_MULT_SL * atr_d  # distancia al stop en precio (2xATR por defecto)
+                                    logger.debug("              - ATR=%s, entry=%s, stop_dist=%s", 
+                                                 atr_d, entry, stop_dist)
 
                                     if stop_dist > 0 and entry and entry > 0:
                                         risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
+                                        logger.debug("              - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
+
 
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
                                         # amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
                                         amount_notional = (risk_amount * entry) / stop_dist
+                                        logger.debug("              - - Calculated notional amount: %s", amount_notional)
 
                                         # Redondeo a entero para mantener compatibilidad con IntegerField
                                         amount_calc = int(max(amount_notional, 0))
                                 else:
                                     # Fallback: sin ATR válido usamos el amount ya configurado
                                     amount_calc = int(self.amount or 0)
-                                logger.debug("            - Calculated amount for entry: %s", amount_calc)
+                                logger.debug("              - Calculated amount for entry: %s", amount_calc)
 
                                 if amount_calc > 0:
                                     # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
