@@ -654,8 +654,8 @@ class Strategy(models.Model):
                                             if self.atr and entry and entry > 0:
                                                 stop_init = ATR_MULT_SL * _D(self.atr)         # distancia en precio
                                                 sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
-                                                self.stopLossCurrent = float(sl_pct)
-                                                self.takeProfitCurrent = float(-sl_pct * 2)       # ≈ 2R
+                                                self.stopLossCurrent = float(sl_pct) * self.leverage
+                                                self.takeProfitCurrent = float(-sl_pct * 2) * self.leverage
                                             elif self.stopLoss is not None:
                                                 # Fallback a tu lógica previa
                                                 self.stopLossCurrent = self.stopLoss
@@ -674,11 +674,6 @@ class Strategy(models.Model):
                         # Setup INICIAL
                         force = False
                         reason = []
-
-                        # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
-                        if self.stopLossCurrent is None:
-                            self.stopLossCurrent = self.stopLoss
-                            self.takeProfitCurrent = self.stopLoss + 50
 
                         # Obtener estado de posicion
                         check, position = self.get_position(self.operID)
@@ -742,7 +737,9 @@ class Strategy(models.Model):
                         if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
                             # if Current Profit plus stopLoss (Which is always negative!) is higher that current stopLoss, 
                             # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
-                            self.stopLossCurrent = self.currentProfit + self.stopLoss
+                            # self.stopLossCurrent = self.currentProfit + self.stopLoss
+                            pass
+                            # anulado el trailing. Por ahora
     
                         if (self.stopLossCurrent < 1) and (self.currentProfit > 15):
                             # If profit reaches 15, set stopLoss to 0 to prevent Losses
@@ -754,7 +751,9 @@ class Strategy(models.Model):
                             # TODO
                             # I am searching for the perfect balance. I am being toooooo aggresive.
                             # 20/11/2024 changed from 0.01 to 0.008
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.002)
+                            # self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.002)
+                            pass
+                            # desactivado el hugging
 
                         # TODO
                         # Replace stopLoss in the bot with the BINGX stopLoss
@@ -764,7 +763,7 @@ class Strategy(models.Model):
                         # set new stopLossOrder (I have to calculate the price)!
     
                         # Finalmente, siempre, takeProfitCurrent
-                        self.takeProfitCurrent = self.stopLossCurrent + 40
+                        # self.takeProfitCurrent = self.stopLossCurrent + 40
     
 
 
