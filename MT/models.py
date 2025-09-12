@@ -623,8 +623,7 @@ class Strategy(models.Model):
 
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
-                                        # amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
-                                        amount_notional = (risk_amount * entry) / stop_dist
+                                        amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
                                         logger.debug("              - - Calculated notional amount: %s", amount_notional)
 
                                         # Redondeo a entero para mantener compatibilidad con IntegerField
