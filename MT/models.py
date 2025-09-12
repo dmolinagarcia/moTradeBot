@@ -886,6 +886,7 @@ class Strategy(models.Model):
             recommendMA240=self.recommendMA240,
             isRunning=self.isRunning,
             stopLossCurrent=self.stopLossCurrent,
+            takeProfitCurrent=self.takeProfitCurrent,
             atr=self.atr).save()
 
     # ── ÓRDENES DE ENTRADA (conserva interfaz; añade flag protected) ─────────
@@ -1049,6 +1050,7 @@ class StrategyState(models.Model):
     recommendMA = models.FloatField(default=0, null=True, blank=True)
     recommendMA240 = models.FloatField(default=0, null=True, blank=True)
     stopLossCurrent = models.FloatField(null=True, blank=True)
+    takeProfitCurrent = models.FloatField(null=True, blank=True)
     atr = models.FloatField(null=True, blank=True) # ATR actual
     
     def __str__(self):
