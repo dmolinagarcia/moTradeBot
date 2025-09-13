@@ -720,7 +720,7 @@ class Strategy(models.Model):
                         logger.debug("        - Adjusting SL/TP dynamically with ATR...")
                         stop_init = ATR_MULT_SL * _D(self.atr)
                         r_unity = stop_init / _D(self.placedPrice)
-                        pnl_r_est = ((self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
+                        pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
                         logger.debug("        - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
                         # Break-even
                         if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
