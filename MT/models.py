@@ -430,10 +430,11 @@ class Strategy(models.Model):
                 if candles and candles[-1].get("atr") is not None:
                     self.atr = float(candles[-1]["atr"])
                 else:
-                    self.atr = None
+                    logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
+                    self.atr = 5.0  # valor por defecto si no hay ATR
             except Exception as e:
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
-                self.atr = None
+                self.atr = 5.0  # valor por defecto si no se puede calcular ATR
 
         except Exception as e:
             logger.error("Error al leer datos de tradingview: %s", e)
