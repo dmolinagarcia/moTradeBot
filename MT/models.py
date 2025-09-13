@@ -65,6 +65,8 @@ def _to_roll_date(dttm, offset_minutes=0):
     return dttm_utc.date()
 
 def _compute_atr_wilder(candles, period=14):
+    logger.debug("ATR.wilder: n=%d, period=%d", len(candles), period)
+
     n = len(candles)
     if n == 0:
         return candles
@@ -79,6 +81,8 @@ def _compute_atr_wilder(candles, period=14):
             tr = max(h - l, abs(h - prev_close), abs(l - prev_close))
         trs.append(tr)
         prev_close = c
+
+    logger.debug("ATR.wilder: TR primeros=%s ultimos=%s", trs[:3], trs[-3:])
 
     atr = [None] * n
 
@@ -95,6 +99,10 @@ def _compute_atr_wilder(candles, period=14):
         for i in range(1, n):
             atr_val = (atr_val * (period - 1) + trs[i]) / period
             atr[i] = atr_val
+
+    first_idx = next((i for i,a in enumerate(atr) if a is not None), None)
+    last_val = next((atr[i] for i in range(len(atr)-1, -1, -1) if atr[i] is not None), None)
+    logger.debug("ATR.wilder: primer_idx_noNone=%s, ultima_atr=%s", first_idx, last_val)            
 
     for i in range(n):
         candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
@@ -211,6 +219,10 @@ class Strategy(models.Model):
           Lista de velas en orden ASC:
           [{"time":"YYYY-mm-ddT00:00:00Z","open":..,"high":..,"low":..,"close":.., "atr":..?}, ...]
         """
+
+        logger.debug("get_candle(limit=%s, tf=%s, with_atr=%s, period=%s)",
+             limit, timeframe, with_atr, atr_period)
+        
         if timeframe.lower() != "1d":
             # Puedes ampliar a 1h/4h si lo necesitas; por ahora forzamos 1d
             timeframe = "1d"
@@ -225,6 +237,8 @@ class Strategy(models.Model):
               .exclude(currentRate__isnull=True)
               .order_by('timestamp')
               .values('timestamp', 'currentRate'))
+
+        logger.debug("get_candle: muestras_10m=%d (>= %s)", qs.count(), (timezone.now() - timedelta(days=int(limit)+int(atr_period)+5)))
 
         # Agregación diaria
         daily_map = {}   # key: date  → dict con o/h/l/c
@@ -243,6 +257,9 @@ class Strategy(models.Model):
                 rec['low']  = min(rec['low'], px)
                 rec['close'] = px  # último del día
 
+        logger.debug("get_candle: dias_agregados=%d (keys=%s)",
+             len(daily_map), list(sorted(daily_map.keys()))[-5:])
+        
         # Ordena por fecha ASC y forma velas
         days_sorted = sorted(daily_map.keys())
         candles = [{
@@ -260,6 +277,11 @@ class Strategy(models.Model):
         # ATR opcional
         if with_atr:
             _compute_atr_wilder(candles, period=atr_period)
+
+        if with_atr:
+            count_atr = sum(1 for c in candles if c.get("atr") is not None)
+            logger.debug("get_candle: velas=%d, con_atr=%d, ultima_atr=%s",
+                         len(candles), count_atr, candles[-1].get("atr") if candles else None)            
 
         return candles
 
@@ -427,11 +449,22 @@ class Strategy(models.Model):
             try:
                 candles = self.get_candle(limit=200, timeframe=self.cryptoTimeframeADX or "1d",
                                           with_atr=True, atr_period=14, session_offset_minutes=0)
-                if candles and candles[-1].get("atr") is not None:
-                    self.atr = float(candles[-1]["atr"])
+                
+                # Diagnóstico básico de ATR
+                filled = sum(1 for c in candles if c.get("atr") is not None)
+                logger.debug("[ATR] velas=%d, con_atr=%d, atr_period=14", len(candles), filled)
+                if candles:
+                    logger.debug("[ATR] primera=%s última=%s",
+                                 candles[0], candles[-1])
+                    logger.debug("[ATR] última_atr=%s", candles[-1].get("atr"))
+                
+                if not candles or candles[-1].get("atr") is None:
+                    logger.warning("No se pudo calcular ATR desde StrategyState (última ATR=None).")
+                    # ⚠️ OJO: en tu fallback usa currentRate, no currentPrice
+                    self.atr = (self.currentRate or 0) * 0.05
                 else:
-                    logger.warning("No se pudo calcular ATR desde StrategyState: %s")
-                    self.atr = self.currentRate * 0.05 # valor por defecto si no hay ATR
+                    self.atr = float(candles[-1]["atr"])
+                
             except Exception as e:
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
                 self.atr = self.currentRate * 0.05  # valor por defecto si no se puede calcular ATR
