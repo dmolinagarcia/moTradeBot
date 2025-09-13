@@ -715,37 +715,34 @@ class Strategy(models.Model):
                             if self.diffDI < self.limitBuy*0.85 :
                                 reason.append("limitBuy")
 
+                        # BE y trailing por ATR en % (si tenemos ATR)
+                        # Ajustes de SL y TP de GPT
+                        logger.debug("        - Adjusting SL/TP dynamically with ATR...")
+                        stop_init = ATR_MULT_SL * self.atr
+                        r_unity = stop_init / self.placedPrice
+                        pnl_r_est = ((self.currentRate - self.placedPrice) / stop_init) if side == "long" else ((self.placedPrice - self.currentRate) / stop_init)
+                        logger.debug("        - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
+                        # Break-even
+                        if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
+                            logger.debug("        - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
+                            # self.stopLossCurrent = 0.0
 
+                        # Trailing tipo Chandelier
+                        extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
+                        if side == "long":
+                            new_stop_price = extreme - ATR_MULT_TSL * self.atr
+                            new_sl_pct = ((new_stop_price - self.placedPrice) / self.placedPrice) * Decimal("100")
+                        else:
+                            new_stop_price = extreme + ATR_MULT_TSL * self.atr
+                            new_sl_pct = ((self.placedPrice - new_stop_price) / self.placedPrice) * Decimal("100")
+                        cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
+                        if new_sl_pct > cur_sl:
+                            logger.debug("        - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
+                            # self.stopLossCurrent = float(new_sl_pct)
+                        # TP dinámico simple: SL + 2R (aprox)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                        logger.debug("        - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity))
+                        # self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
