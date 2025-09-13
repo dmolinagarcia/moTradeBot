@@ -729,12 +729,12 @@ class Strategy(models.Model):
 
                         # Trailing tipo Chandelier
                         extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
-                        if side == "long":
-                            new_stop_price = extreme - ATR_MULT_TSL * self.atr
-                            new_sl_pct = ((new_stop_price - self.placedPrice) / self.placedPrice) * Decimal("100")
+                        if self.accion == "COMPRAR": 
+                            new_stop_price = extreme - ATR_MULT_TSL * _D(self.atr)
+                            new_sl_pct = ((new_stop_price - _D(self.placedPrice)) / _D(self.placedPrice)) * Decimal("100")
                         else:
-                            new_stop_price = extreme + ATR_MULT_TSL * self.atr
-                            new_sl_pct = ((self.placedPrice - new_stop_price) / self.placedPrice) * Decimal("100")
+                            new_stop_price = extreme + ATR_MULT_TSL * _D(self.atr)
+                            new_sl_pct = ((_D(self.placedPrice) - new_stop_price) / _D(self.placedPrice)) * Decimal("100")
                         cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
                         if new_sl_pct > cur_sl:
                             logger.debug("        - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
