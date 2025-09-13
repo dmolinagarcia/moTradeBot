@@ -591,7 +591,7 @@ class Strategy(models.Model):
                             vol_ok = False
                             if self.atr and self.currentRate:
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
-                                vol_ok = atr_pct >= VOL_MIN_PCT
+                                vol_ok = (atr_pct or Decimal("5")) >= VOL_MIN_PCT
                             logger.debug("        - Volatility ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
                     
                             if side and vol_ok:
