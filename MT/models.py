@@ -584,7 +584,7 @@ class Strategy(models.Model):
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
                             logger.debug("        - Side evaluated to %s", side)
-                            logger.debug("        > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
+                            logger.debug("          > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
                                          self.diffDI, self.limitBuy, self.limitSell, self.checkRecommend(), isMarketOpen)
 
                             # Volatilidad mínima (ATR% del precio)
@@ -718,7 +718,7 @@ class Strategy(models.Model):
                         # BE y trailing por ATR en % (si tenemos ATR)
                         # Ajustes de SL y TP de GPT
                         logger.debug("        - Adjusting SL/TP dynamically with ATR...")
-                        stop_init = ATR_MULT_SL * self.atr
+                        stop_init = ATR_MULT_SL * _D(self.atr)
                         r_unity = stop_init / self.placedPrice
                         pnl_r_est = ((self.currentRate - self.placedPrice) / stop_init) if side == "long" else ((self.placedPrice - self.currentRate) / stop_init)
                         logger.debug("        - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
