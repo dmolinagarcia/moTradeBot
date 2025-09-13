@@ -65,14 +65,10 @@ def _to_roll_date(dttm, offset_minutes=0):
     return dttm_utc.date()
 
 def _compute_atr_wilder(candles, period=14):
-    """
-    Modifica in-place la lista de velas (orden ascendente), añadiendo 'atr' por barra.
-    candles: [{'open':..., 'high':..., 'low':..., 'close':..., 'time': 'YYYY-mm-ddT00:00:00Z'}, ...]
-    """
     n = len(candles)
     if n == 0:
         return candles
-    # True Range por barra
+
     trs = []
     prev_close = None
     for i in range(n):
@@ -83,13 +79,23 @@ def _compute_atr_wilder(candles, period=14):
             tr = max(h - l, abs(h - prev_close), abs(l - prev_close))
         trs.append(tr)
         prev_close = c
-    # RMA de Wilder
+
     atr = [None] * n
+
     if n >= period:
-        atr[period-1] = sum(trs[:period]) / period
+        # Wilder “estricto” a partir de la barra period-1
+        atr[period - 1] = sum(trs[:period]) / period
         for i in range(period, n):
-            atr[i] = (atr[i-1] * (period - 1) + trs[i]) / period
-    # Asigna
+            atr[i] = (atr[i - 1] * (period - 1) + trs[i]) / period
+    else:
+        # Fast-start: ATR definido aun con menos de ‘period’ barras
+        # Semilla inicial
+        atr_val = trs[0]
+        atr[0] = None  # si prefieres, puedes dejar None o poner atr_val; aquí lo dejamos None para no “pintar” la primera
+        for i in range(1, n):
+            atr_val = (atr_val * (period - 1) + trs[i]) / period
+            atr[i] = atr_val
+
     for i in range(n):
         candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
     return candles
