@@ -430,7 +430,7 @@ class Strategy(models.Model):
                 if candles and candles[-1].get("atr") is not None:
                     self.atr = float(candles[-1]["atr"])
                 else:
-                    logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
+                    logger.warning("No se pudo calcular ATR desde StrategyState: %s")
                     self.atr = self.currentPrice * 0.05 # valor por defecto si no hay ATR
             except Exception as e:
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
