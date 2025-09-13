@@ -667,7 +667,6 @@ class Strategy(models.Model):
                         else:
                             logger.debug("          - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
                             
-
                     if self.estado == 2:  # OPER
                         logger.debug("      Symbol is in operation status (normal mode)")
                     # Estamos en OPERACION NOT PROTECTED
@@ -688,58 +687,90 @@ class Strategy(models.Model):
                                 self.operIDclose = position['position']['orderIDClose']
                                 force=True
                             else:
-                                self.currentProfit = round((position['position']['currentProfit']/self.bet)*100 ,2)
-    
+                                self.currentProfit = round((position['position']['currentProfit'] / self.bet) * 100, 2)
+
                         # Tenemos el currentProfit y los SL y TP, pero primero calculamos si hay que cerrar, antes de ejecutar
-    
+                        # Trailing por ADX/DI (tus reglas) + ATR (mejora)
+                        # Ajuste dinámico ADXClose
                         if (self.adx*0.85) > self.adxClose :
                             self.adxClose=self.adx*0.85
-                        if self.limitClose==0:
+                        if self.limitClose == 0:
                             self.adxClose = 0
-                        if self.adx<self.adxClose :
+
+                        # Señal de cierre por ADX débil
+                        if self.adx < self.adxClose:
                             reason.append("limitClose")
+
+                        # Actualiza extremos y trailing en precio con ATR
                         if self.accion == "VENDER" :
                             if self.currentRate < self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
+                            # Reversión de momentum en short
                             if self.diffDI > self.limitSell*0.85 :
                                 reason.append("limitSell")
-                            ### Ante un stopLoss, esperamos 48 periodos                            
-                            ### If we are below stopLoss and checkRecommend Fails. Close!
-                            if ( self.currentProfit < self.stopLossCurrent ) and not self.checkRecommend() :
-                                reason.append("stopLoss")
-                                self.cooldownUntil=timezone.now()+timedelta(days=1)
-                            if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
-                                # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
-                                # Asumimos que seguimos subiendo
-                                # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
-                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
-                                reason.append("takeProfit")
-                                self.cooldownUntil=timezone.now()+timedelta(days=1)
-    
-                        else :
+                        else:
                             if self.currentRate > self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
+                            # Reversión de momentum en long
                             if self.diffDI < self.limitBuy*0.85 :
                                 reason.append("limitBuy")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        # Reglas de SL/TP gobernadas por recomendación (como tenías)
+                        if not self.checkRecommend():
+                        # Solo si no es recomendable seguir, evaluamos SL/TP
                             ### Ante un stopLoss, esperamos 48 periodos                            
-                            if self.currentProfit < self.stopLossCurrent and not self.checkRecommend():
+                            ### If we are below stopLoss and checkRecommend Fails. Close!
+                            if self.currentProfit < self.stopLossCurrent:
                                 reason.append("stopLoss")
-                                self.cooldownUntil=timezone.now()+timedelta(days=1)
-                            if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend() :
-                                # Si excedemos el takeProfit, pero el check recommend es TRUE no entramos
-                                # Asumimos que seguimos subiendo
-                                # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
-                                # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
+
+                            # Si excedemos el takeProfit, pero el check recommend es TRUE no salimos
+                            # Asumimos que seguimos subiendo
+                            # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
+                            # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
+                            if self.currentProfit > self.takeProfitCurrent:
                                 reason.append("takeProfit")
-                                self.cooldownUntil=timezone.now()+timedelta(days=1)
-    
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
+
                         # Now we update SLc and TPc
                         if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
                             # if Current Profit plus stopLoss (Which is always negative!) is higher that current stopLoss, 
                             # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
                             # self.stopLossCurrent = self.currentProfit + self.stopLoss
                             pass
-                            # anulado el trailing. Por ahora
+                            # anulado el trailing. Por ahora. Necesito stoploss que seguir
     
                         if (self.stopLossCurrent < 1) and (self.currentProfit > 15):
                             # If profit reaches 15, set stopLoss to 0 to prevent Losses
@@ -761,10 +792,12 @@ class Strategy(models.Model):
                         # if stopLossorderID is not -1
                         # cancel orderId stopLossOrderID
                         # set new stopLossOrder (I have to calculate the price)!
-    
+                         
                         # Finalmente, siempre, takeProfitCurrent
                         # self.takeProfitCurrent = self.stopLossCurrent + 40
-    
+                        # anulado el trailing TP. Por ahora    
+
+
 
 
 
