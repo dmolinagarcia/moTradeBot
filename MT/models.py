@@ -431,10 +431,10 @@ class Strategy(models.Model):
                     self.atr = float(candles[-1]["atr"])
                 else:
                     logger.warning("No se pudo calcular ATR desde StrategyState: %s")
-                    self.atr = self.currentPrice * 0.05 # valor por defecto si no hay ATR
+                    self.atr = self.currentRate * 0.05 # valor por defecto si no hay ATR
             except Exception as e:
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
-                self.atr = self.currentPrice * 0.05  # valor por defecto si no se puede calcular ATR
+                self.atr = self.currentRate * 0.05  # valor por defecto si no se puede calcular ATR
 
         except Exception as e:
             logger.error("Error al leer datos de tradingview: %s", e)
