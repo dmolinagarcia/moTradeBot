@@ -65,16 +65,22 @@ def _to_roll_date(dttm, offset_minutes=0):
     return dttm_utc.date()
 
 def _compute_atr_wilder(candles, period=14):
-    logger.debug("ATR.wilder: n=%d, period=%d", len(candles), period)
-
+    """
+    Añade 'atr' in-place a la lista de velas (orden ascendente).
+    Fast-start: si n < period, usa la media simple de TR disponibles para cada barra.
+    A partir de 'period-1' usa la RMA de Wilder estándar.
+    """
     n = len(candles)
     if n == 0:
         return candles
 
+    # True Range por barra
     trs = []
     prev_close = None
     for i in range(n):
-        h, l, c = float(candles[i]["high"]), float(candles[i]["low"]), float(candles[i]["close"])
+        h = float(candles[i]["high"])
+        l = float(candles[i]["low"])
+        c = float(candles[i]["close"])
         if prev_close is None:
             tr = h - l
         else:
@@ -82,30 +88,25 @@ def _compute_atr_wilder(candles, period=14):
         trs.append(tr)
         prev_close = c
 
-    logger.debug("ATR.wilder: TR primeros=%s ultimos=%s", trs[:3], trs[-3:])
-
     atr = [None] * n
 
-    if n >= period:
-        # Wilder “estricto” a partir de la barra period-1
-        atr[period - 1] = sum(trs[:period]) / period
+    if n < period:
+        # FAST-START: para cada i, ATR = media simple de TR[0..i]
+        running_sum = 0.0
+        for i in range(n):
+            running_sum += trs[i]
+            atr[i] = running_sum / (i + 1)
+    else:
+        # Wilder "clásico"
+        first = sum(trs[:period]) / period
+        atr[period - 1] = first
         for i in range(period, n):
             atr[i] = (atr[i - 1] * (period - 1) + trs[i]) / period
-    else:
-        # Fast-start: ATR definido aun con menos de ‘period’ barras
-        # Semilla inicial
-        atr_val = trs[0]
-        atr[0] = None  # si prefieres, puedes dejar None o poner atr_val; aquí lo dejamos None para no “pintar” la primera
-        for i in range(1, n):
-            atr_val = (atr_val * (period - 1) + trs[i]) / period
-            atr[i] = atr_val
 
-    first_idx = next((i for i,a in enumerate(atr) if a is not None), None)
-    last_val = next((atr[i] for i in range(len(atr)-1, -1, -1) if atr[i] is not None), None)
-    logger.debug("ATR.wilder: primer_idx_noNone=%s, ultima_atr=%s", first_idx, last_val)            
-
+    # Asigna a las velas
     for i in range(n):
         candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
+
     return candles
 
 # ──────────────────────────────────────────────────────────────────────────────
