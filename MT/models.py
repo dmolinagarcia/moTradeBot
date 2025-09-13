@@ -719,7 +719,7 @@ class Strategy(models.Model):
                         # Ajustes de SL y TP de GPT
                         logger.debug("        - Adjusting SL/TP dynamically with ATR...")
                         stop_init = ATR_MULT_SL * _D(self.atr)
-                        r_unity = stop_init / self.placedPrice
+                        r_unity = stop_init / _D(self.placedPrice)
                         pnl_r_est = ((self.currentRate - self.placedPrice) / stop_init) if side == "long" else ((self.placedPrice - self.currentRate) / stop_init)
                         logger.debug("        - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
                         # Break-even
