@@ -732,16 +732,18 @@ class Strategy(models.Model):
                         if self.accion == "COMPRAR": 
                             new_stop_price = extreme - ATR_MULT_TSL * _D(self.atr)
                             new_sl_pct = ((new_stop_price - _D(self.placedPrice)) / _D(self.placedPrice)) * Decimal("100")
+                            new_sl_pct = new_sl_pct * _D(self.leverage)
                         else:
                             new_stop_price = extreme + ATR_MULT_TSL * _D(self.atr)
                             new_sl_pct = ((_D(self.placedPrice) - new_stop_price) / _D(self.placedPrice)) * Decimal("100")
+                            new_sl_pct = new_sl_pct * _D(self.leverage)
                         cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
                         if new_sl_pct > cur_sl:
                             logger.debug("        - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
                             # self.stopLossCurrent = float(new_sl_pct)
                         # TP dinámico simple: SL + 2R (aprox)
 
-                        logger.debug("        - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity))
+                        logger.debug("        - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
                         # self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
