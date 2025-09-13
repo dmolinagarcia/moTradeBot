@@ -465,6 +465,12 @@ class Strategy(models.Model):
                     self.atr = (self.currentRate or 0) * 0.05
                 else:
                     self.atr = float(candles[-1]["atr"])
+
+                if self.atr == 0:
+                    self.atr = (self.currentRate) * 0.05
+                    # Fallback
+
+                logger.debug ("[ATR] Calculated atr %d", self.atr)
                 
             except Exception as e:
                 logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
