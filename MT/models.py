@@ -360,6 +360,7 @@ class Strategy(models.Model):
         self.beneficioTotal = 0
         self.takeProfitCurrent = None
         self.stopLossCurrent = None
+        self.currentProfit = None
         self.isRunning = True
         self.operID = 0
         self.estado = 3
