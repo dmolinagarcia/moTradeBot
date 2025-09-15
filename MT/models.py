@@ -38,13 +38,14 @@ class MoTradeError(Exception):
 # ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
+# TODO. Esto deben ser opciones!
 ATR_MULT_SL = Decimal("2.0")       # Stop inicial: 2xATR
 ATR_MULT_TSL = Decimal("2.5")      # Trailing: 2.5xATR desde el extremo
 TP1_R_MULT = Decimal("1.0")        # (lógico) Toma parcial en 1R (marcado por flag)
 BREAKEVEN_R = Decimal("0.7")       # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
-VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
+VOL_MIN_PCT = Decimal("2.0")      # Volatilidad mínima (ATR% del precio) para operar
 RISK_PCT = Decimal("0.0150")       # Riesgo por operación (0.75% del equity) 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -357,6 +358,8 @@ class Strategy(models.Model):
     # ── MODIFICADORES ────────────────────────────────────────────────────────
     def clear(self):
         self.beneficioTotal = 0
+        self.takeProfitCurrent = None
+        self.stopLossCurrent = None
         self.isRunning = True
         self.operID = 0
         self.estado = 3
@@ -465,10 +468,6 @@ class Strategy(models.Model):
                     self.atr = (self.currentRate or 0) * 0.05
                 else:
                     self.atr = float(candles[-1]["atr"])
-
-                if self.atr == 0:
-                    self.atr = (self.currentRate) * 0.05
-                    # Fallback
 
                 logger.debug ("[ATR] Calculated atr %d", self.atr)
                 
