@@ -369,6 +369,7 @@ class Strategy(models.Model):
         self.nextUpdate = timezone.now()
         self.bet = 0
         self.comments = ""
+        self.cooldownUntil = timezone.now()
         self.save()
         self.getOperations().delete()
         StrategyState.objects.filter(strategy=self).delete()
