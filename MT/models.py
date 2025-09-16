@@ -149,8 +149,7 @@ class Strategy(models.Model):
         try:
             salida = (response.json())
         except Exception:
-            logger.error(' -- ' + str(self.operSymbolBingx))
-            logger.error('Error en get_position al leer el response.json()')
+            logger.error(str(self.rateSymbol) + ': Error en get_position al leer el response.json()')
             logger.error(response.text)
 
         return response.json()[0], response.json()[1]
@@ -222,7 +221,7 @@ class Strategy(models.Model):
           [{"time":"YYYY-mm-ddT00:00:00Z","open":..,"high":..,"low":..,"close":.., "atr":..?}, ...]
         """
 
-        logger.debug("get_candle(limit=%s, tf=%s, with_atr=%s, period=%s)",
+        logger.debug(str(self.rateSymbol) + ": get_candle(limit=%s, tf=%s, with_atr=%s, period=%s)",
              limit, timeframe, with_atr, atr_period)
         
         if timeframe.lower() != "1d":
@@ -240,7 +239,7 @@ class Strategy(models.Model):
               .order_by('timestamp')
               .values('timestamp', 'currentRate'))
 
-        logger.debug("get_candle: muestras_10m=%d (>= %s)", qs.count(), (timezone.now() - timedelta(days=int(limit)+int(atr_period)+5)))
+        logger.debug(str(self.rateSymbol) + ": get_candle: muestras_10m=%d (>= %s)", qs.count(), (timezone.now() - timedelta(days=int(limit)+int(atr_period)+5)))
 
         # Agregación diaria
         daily_map = {}   # key: date  → dict con o/h/l/c
@@ -259,7 +258,7 @@ class Strategy(models.Model):
                 rec['low']  = min(rec['low'], px)
                 rec['close'] = px  # último del día
 
-        logger.debug("get_candle: dias_agregados=%d (keys=%s)",
+        logger.debug(str(self.rateSymbol) + ": get_candle: dias_agregados=%d (keys=%s)",
              len(daily_map), list(sorted(daily_map.keys()))[-5:])
         
         # Ordena por fecha ASC y forma velas
@@ -282,7 +281,7 @@ class Strategy(models.Model):
 
         if with_atr:
             count_atr = sum(1 for c in candles if c.get("atr") is not None)
-            logger.debug("get_candle: velas=%d, con_atr=%d, ultima_atr=%s",
+            logger.debug(str(self.rateSymbol) + ": get_candle: velas=%d, con_atr=%d, ultima_atr=%s",
                          len(candles), count_atr, candles[-1].get("atr") if candles else None)            
 
         return candles
@@ -458,11 +457,11 @@ class Strategy(models.Model):
                 
                 # Diagnóstico básico de ATR
                 filled = sum(1 for c in candles if c.get("atr") is not None)
-                logger.debug("[ATR] velas=%d, con_atr=%d, atr_period=14", len(candles), filled)
+                logger.debug(str(self.rateSymbol) + ": [ATR] velas=%d, con_atr=%d, atr_period=14", len(candles), filled)
                 if candles:
-                    logger.debug("[ATR] primera=%s última=%s",
+                    logger.debug(str(self.rateSymbol) + ": [ATR] primera=%s última=%s",
                                  candles[0], candles[-1])
-                    logger.debug("[ATR] última_atr=%s", candles[-1].get("atr"))
+                    logger.debug(str(self.rateSymbol) + ": [ATR] última_atr=%s", candles[-1].get("atr"))
                 
                 if not candles or candles[-1].get("atr") is None:
                     logger.warning("No se pudo calcular ATR desde StrategyState (última ATR=None).")
@@ -534,12 +533,12 @@ class Strategy(models.Model):
             self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning:
-                logger.debug("  Symbol is running so we evaluate")
+                logger.debug(str(self.rateSymbol) + ":   Symbol is running so we evaluate")
                 estadoNext = self.estado
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
-                    logger.debug("    Symbol is in protected trading mode")
+                    logger.debug(str(self.rateSymbol) + ":     Symbol is in protected trading mode")
                     ## Inicio proceso protected Trade
                     if self.estado == 0:
                         ## Estado HOLD. 
@@ -607,9 +606,9 @@ class Strategy(models.Model):
                 
                 # ── MODO NORMAL: lógica mejorada (ATR, sizing, trailing, time-stop) ──
                 else:
-                    logger.debug("    Symbol is in normal operation mode")
+                    logger.debug(str(self.rateSymbol) + ":     Symbol is in normal operation mode")
                     if self.estado == 0:  # HOLD
-                        logger.debug ("      Symbol is in HOLD status. Evaluate entry conditions... ")
+                        logger.debug(str(self.rateSymbol) + ":       Symbol is in HOLD status. Evaluate entry conditions... ")
                         self.currentProfit = None
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
@@ -619,7 +618,7 @@ class Strategy(models.Model):
                         ## en caso contrario no entramos
                         
                         if self.adx > self.limitOpen:
-                            logger.debug("        - ADX > limitOpen (%s > %s)", self.adx, self.limitOpen)
+                            logger.debug(str(self.rateSymbol) + ":         - ADX > limitOpen (%s > %s)", self.adx, self.limitOpen)
                             # Señal direccional junto a TV Recommend
                         ## Despues, el diffDI debe superar el limitBuy o el limitSell
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
@@ -631,8 +630,8 @@ class Strategy(models.Model):
                                 side = "long"
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
-                            logger.debug("        - Side evaluated to %s", side)
-                            logger.debug("          > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
+                            logger.debug(str(self.rateSymbol) + ":         - Side evaluated to %s", side)
+                            logger.debug(str(self.rateSymbol) + ":          > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
                                          self.diffDI, self.limitBuy, self.limitSell, self.checkRecommend(), isMarketOpen)
 
                             # Volatilidad mínima (ATR% del precio)
@@ -640,7 +639,7 @@ class Strategy(models.Model):
                             if self.atr and self.currentRate:
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
                                 vol_ok = atr_pct >= VOL_MIN_PCT
-                            logger.debug("        - Volatility ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
+                            logger.debug(str(self.rateSymbol) + ":         - Volatility ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
                     
                             if side and vol_ok:
                                 # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
@@ -652,34 +651,34 @@ class Strategy(models.Model):
                                         equity = Decimal(str(adminUser.profile.configMaxBet))
                                 except Exception:
                                     pass
-                                logger.debug("            - Equity for sizing: %s", equity)
+                                logger.debug(str(self.rateSymbol) + ":             - Equity for sizing: %s", equity)
 
-                                logger.debug("            - Entering amount calculation...")
+                                logger.debug(str(self.rateSymbol) + ":             - Entering amount calculation...")
                                 # Distancia de stop por ATR (en precio)
                                 amount_calc = 0
                                 if self.atr and self.currentRate and self.atr > 0:
                                     atr_d = _D(self.atr)
                                     entry = _D(self.currentRate)
                                     stop_dist = ATR_MULT_SL * atr_d  # distancia al stop en precio (2xATR por defecto)
-                                    logger.debug("              - ATR=%s, entry=%s, stop_dist=%s", 
+                                    logger.debug(str(self.rateSymbol) + ":               - ATR=%s, entry=%s, stop_dist=%s", 
                                                  atr_d, entry, stop_dist)
 
                                     if stop_dist > 0 and entry and entry > 0:
                                         risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
-                                        logger.debug("              - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
+                                        logger.debug(str(self.rateSymbol) + ":               - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
 
 
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
                                         amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
-                                        logger.debug("              - - Calculated notional amount: %s", amount_notional)
+                                        logger.debug(str(self.rateSymbol) + ":               - - Calculated notional amount: %s", amount_notional)
 
                                         # Redondeo a entero para mantener compatibilidad con IntegerField
                                         amount_calc = int(max(amount_notional, 0))
                                 else:
                                     # Fallback: sin ATR válido usamos el amount ya configurado
                                     amount_calc = int(self.amount or 0)
-                                logger.debug("              - Calculated amount for entry: %s", amount_calc)
+                                logger.debug(str(self.rateSymbol) + ":               - Calculated amount for entry: %s", amount_calc)
 
                                 if amount_calc > 0:
                                     # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
@@ -710,13 +709,13 @@ class Strategy(models.Model):
                                                 self.takeProfitCurrent = (self.stopLoss or -10) + 50
                                         except Exception:
                                             pass
-                                        logger.debug("              - Entry order placed successfully, operID=%s", self.operID)
-                                        logger.debug("              - Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
+                                        logger.debug(str(self.rateSymbol) + ":               - Entry order placed successfully, operID=%s", self.operID)
+                                        logger.debug(str(self.rateSymbol) + ":               - Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
                         else:
-                            logger.debug("          - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
+                            logger.debug(str(self.rateSymbol) + ":           - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
                             
                     if self.estado == 2:  # OPER
-                        logger.debug("      Symbol is in operation status (normal mode)")
+                        logger.debug(str(self.rateSymbol) + ":       Symbol is in operation status (normal mode)")
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force = False
@@ -765,14 +764,14 @@ class Strategy(models.Model):
 
                         # BE y trailing por ATR en % (si tenemos ATR)
                         # Ajustes de SL y TP de GPT
-                        logger.debug("        - Adjusting SL/TP dynamically with ATR...")
+                        logger.debug(str(self.rateSymbol) + ":         - Adjusting SL/TP dynamically with ATR...")
                         stop_init = ATR_MULT_SL * _D(self.atr)
                         r_unity = stop_init / _D(self.placedPrice)
                         pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
-                        logger.debug("        - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
+                        logger.debug(str(self.rateSymbol) + ":         - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
                         # Break-even
                         if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
-                            logger.debug("        - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
+                            logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
                             self.stopLossCurrent = 0.0
 
                         # Trailing tipo Chandelier
@@ -787,11 +786,11 @@ class Strategy(models.Model):
                             new_sl_pct = new_sl_pct * _D(self.leverage)
                         cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
                         if new_sl_pct > cur_sl:
-                            logger.debug("        - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
+                            logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
                             self.stopLossCurrent = float(new_sl_pct)
 
                         # TP dinámico simple: SL + 2R (aprox)
-                        logger.debug("        - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
+                        logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
                         self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
@@ -880,7 +879,7 @@ class Strategy(models.Model):
 
                 # ── COOLDOWN ──────────────────────────────────────────────────
                 if self.estado == 3:
-                    logger.debug("Symbol is in cooldown mode")
+                    logger.debug(str(self.rateSymbol) + ": Symbol is in cooldown mode")
                     self.currentProfit = None
                     ## Si el ADX esta por debajo del OPEN, salimos del cooldown
                     ## Si el limitOpen es 0, no hay cooldown y salimos
@@ -906,14 +905,14 @@ class Strategy(models.Model):
             self.save()
 
         except MoTradeError as e:
-            logger.error("Excepcion conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
+            logger.error(str(self.rateSymbol) + ": Excepcion conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
             self.inError = True
             self.save()                
 
         except Exception as e:
             self.inError = True
             self.save()
-            logger.exception("MOT-99999: Excepcion no controlada en " + self.rateSymbol)
+            logger.exception(str(self.rateSymbol) + ": MOT-99999: Excepcion no controlada en " + self.rateSymbol)
 
     # ── CIERRE MANUAL (Llamada desde la consola) ───────────────
     def manualClose(self, reason):
