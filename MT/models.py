@@ -371,8 +371,9 @@ class Strategy(models.Model):
         self.cooldownUntil = timezone.now()
         self.save()
         self.getOperations().delete()
-        StrategyState.objects.filter(strategy=self).delete()
-
+        # StrategyState.objects.filter(strategy=self).delete()
+        # Mantenemos histórico,
+        
     def toggleIsRunning(self):
         if self.isRunning:
             self.isRunning = False
@@ -464,20 +465,20 @@ class Strategy(models.Model):
                     logger.debug(str(self.rateSymbol) + ": [ATR] última_atr=%s", candles[-1].get("atr"))
                 
                 if not candles or candles[-1].get("atr") is None:
-                    logger.warning("No se pudo calcular ATR desde StrategyState (última ATR=None).")
+                    logger.warning(str(self.rateSymbol) + ": No se pudo calcular ATR desde StrategyState (última ATR=None).")
                     # ⚠️ OJO: en tu fallback usa currentRate, no currentPrice
                     self.atr = (self.currentRate or 0) * 0.05
                 else:
                     self.atr = float(candles[-1]["atr"])
 
-                logger.debug ("[ATR] Calculated atr %d", self.atr)
+                logger.debug (str(self.rateSymbol) + ": [ATR] Calculated atr %d", self.atr)
                 
             except Exception as e:
-                logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
+                logger.warning(str(self.rateSymbol) + ": No se pudo calcular ATR desde StrategyState: %s", e)
                 self.atr = self.currentRate * 0.05  # valor por defecto si no se puede calcular ATR
 
         except Exception as e:
-            logger.error("Error al leer datos de tradingview: %s", e)
+            logger.error(str(self.rateSymbol) + ": Error al leer datos de tradingview: %s", e)
             logger.error(response.content)
             raise e
 
@@ -498,12 +499,12 @@ class Strategy(models.Model):
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
-            logger.error("No se ha podido obtener el precio de " + str(self.rateSymbol))
+            logger.error(str(self.rateSymbol) + ": No se ha podido obtener el precio"))
         self.save()
 
     # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
     def operation(self, isMarketOpen):
-        logger.debug("Entering operation for " + str(self.rateSymbol))
+        logger.debug(str(self.rateSymbol) + ": Entering operation")
 
         try:
             # Sanity Checks
@@ -842,6 +843,13 @@ class Strategy(models.Model):
                         # Finalmente, siempre, takeProfitCurrent
                         # self.takeProfitCurrent = self.stopLossCurrent + 40
                         # anulado el trailing TP. Por ahora    
+
+
+
+
+
+
+
 
 
 
