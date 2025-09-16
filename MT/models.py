@@ -791,7 +791,7 @@ class Strategy(models.Model):
 
                         # TP dinámico simple: SL + 2R (aprox)
                         logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
-                        self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
+                        self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage)))
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
