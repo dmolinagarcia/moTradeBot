@@ -499,7 +499,7 @@ class Strategy(models.Model):
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
-            logger.error(str(self.rateSymbol) + ": No se ha podido obtener el precio"))
+            logger.error(str(self.rateSymbol) + ": No se ha podido obtener el precio")
         self.save()
 
     # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
