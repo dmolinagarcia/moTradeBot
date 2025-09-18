@@ -38,13 +38,15 @@ class MoTradeError(Exception):
 # ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
+# TODO. Esto deben ser opciones!
 ATR_MULT_SL = Decimal("2.0")       # Stop inicial: 2xATR
 ATR_MULT_TSL = Decimal("2.5")      # Trailing: 2.5xATR desde el extremo
 TP1_R_MULT = Decimal("1.0")        # (lógico) Toma parcial en 1R (marcado por flag)
 BREAKEVEN_R = Decimal("0.7")       # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
-VOL_MIN_PCT = Decimal("0.30")      # Volatilidad mínima (ATR% del precio) para operar
+VOL_MIN_PCT = Decimal("2.0")      # Volatilidad mínima (ATR% del precio) para operar
+RISK_PCT = Decimal("0.0150")       # Riesgo por operación (0.75% del equity) 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Funciones Helpers
@@ -65,32 +67,47 @@ def _to_roll_date(dttm, offset_minutes=0):
 
 def _compute_atr_wilder(candles, period=14):
     """
-    Modifica in-place la lista de velas (orden ascendente), añadiendo 'atr' por barra.
-    candles: [{'open':..., 'high':..., 'low':..., 'close':..., 'time': 'YYYY-mm-ddT00:00:00Z'}, ...]
+    Añade 'atr' in-place a la lista de velas (orden ascendente).
+    Fast-start: si n < period, usa la media simple de TR disponibles para cada barra.
+    A partir de 'period-1' usa la RMA de Wilder estándar.
     """
     n = len(candles)
     if n == 0:
         return candles
+
     # True Range por barra
     trs = []
     prev_close = None
     for i in range(n):
-        h, l, c = float(candles[i]["high"]), float(candles[i]["low"]), float(candles[i]["close"])
+        h = float(candles[i]["high"])
+        l = float(candles[i]["low"])
+        c = float(candles[i]["close"])
         if prev_close is None:
             tr = h - l
         else:
             tr = max(h - l, abs(h - prev_close), abs(l - prev_close))
         trs.append(tr)
         prev_close = c
-    # RMA de Wilder
+
     atr = [None] * n
-    if n >= period:
-        atr[period-1] = sum(trs[:period]) / period
+
+    if n < period:
+        # FAST-START: para cada i, ATR = media simple de TR[0..i]
+        running_sum = 0.0
+        for i in range(n):
+            running_sum += trs[i]
+            atr[i] = running_sum / (i + 1)
+    else:
+        # Wilder "clásico"
+        first = sum(trs[:period]) / period
+        atr[period - 1] = first
         for i in range(period, n):
-            atr[i] = (atr[i-1] * (period - 1) + trs[i]) / period
-    # Asigna
+            atr[i] = (atr[i - 1] * (period - 1) + trs[i]) / period
+
+    # Asigna a las velas
     for i in range(n):
         candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
+
     return candles
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -132,8 +149,7 @@ class Strategy(models.Model):
         try:
             salida = (response.json())
         except Exception:
-            logger.error(' -- ' + str(self.operSymbolBingx))
-            logger.error('Error en get_position al leer el response.json()')
+            logger.error(str(self.rateSymbol) + ': Error en get_position al leer el response.json()')
             logger.error(response.text)
 
         return response.json()[0], response.json()[1]
@@ -204,6 +220,10 @@ class Strategy(models.Model):
           Lista de velas en orden ASC:
           [{"time":"YYYY-mm-ddT00:00:00Z","open":..,"high":..,"low":..,"close":.., "atr":..?}, ...]
         """
+
+        logger.debug(str(self.rateSymbol) + ": get_candle(limit=%s, tf=%s, with_atr=%s, period=%s)",
+             limit, timeframe, with_atr, atr_period)
+        
         if timeframe.lower() != "1d":
             # Puedes ampliar a 1h/4h si lo necesitas; por ahora forzamos 1d
             timeframe = "1d"
@@ -218,6 +238,8 @@ class Strategy(models.Model):
               .exclude(currentRate__isnull=True)
               .order_by('timestamp')
               .values('timestamp', 'currentRate'))
+
+        logger.debug(str(self.rateSymbol) + ": get_candle: muestras_10m=%d (>= %s)", qs.count(), (timezone.now() - timedelta(days=int(limit)+int(atr_period)+5)))
 
         # Agregación diaria
         daily_map = {}   # key: date  → dict con o/h/l/c
@@ -236,6 +258,9 @@ class Strategy(models.Model):
                 rec['low']  = min(rec['low'], px)
                 rec['close'] = px  # último del día
 
+        logger.debug(str(self.rateSymbol) + ": get_candle: dias_agregados=%d (keys=%s)",
+             len(daily_map), list(sorted(daily_map.keys()))[-5:])
+        
         # Ordena por fecha ASC y forma velas
         days_sorted = sorted(daily_map.keys())
         candles = [{
@@ -253,6 +278,11 @@ class Strategy(models.Model):
         # ATR opcional
         if with_atr:
             _compute_atr_wilder(candles, period=atr_period)
+
+        if with_atr:
+            count_atr = sum(1 for c in candles if c.get("atr") is not None)
+            logger.debug(str(self.rateSymbol) + ": get_candle: velas=%d, con_atr=%d, ultima_atr=%s",
+                         len(candles), count_atr, candles[-1].get("atr") if candles else None)            
 
         return candles
 
@@ -327,6 +357,9 @@ class Strategy(models.Model):
     # ── MODIFICADORES ────────────────────────────────────────────────────────
     def clear(self):
         self.beneficioTotal = 0
+        self.takeProfitCurrent = None
+        self.stopLossCurrent = None
+        self.currentProfit = None
         self.isRunning = True
         self.operID = 0
         self.estado = 3
@@ -335,9 +368,11 @@ class Strategy(models.Model):
         self.nextUpdate = timezone.now()
         self.bet = 0
         self.comments = ""
+        self.cooldownUntil = timezone.now()
         self.save()
         self.getOperations().delete()
-        StrategyState.objects.filter(strategy=self).delete()
+        # StrategyState.objects.filter(strategy=self).delete()
+        # Mantenemos histórico,
 
     def toggleIsRunning(self):
         if self.isRunning:
@@ -420,16 +455,30 @@ class Strategy(models.Model):
             try:
                 candles = self.get_candle(limit=200, timeframe=self.cryptoTimeframeADX or "1d",
                                           with_atr=True, atr_period=14, session_offset_minutes=0)
-                if candles and candles[-1].get("atr") is not None:
-                    self.atr = float(candles[-1]["atr"])
+                
+                # Diagnóstico básico de ATR
+                filled = sum(1 for c in candles if c.get("atr") is not None)
+                logger.debug(str(self.rateSymbol) + ": [ATR] velas=%d, con_atr=%d, atr_period=14", len(candles), filled)
+                if candles:
+                    logger.debug(str(self.rateSymbol) + ": [ATR] primera=%s última=%s",
+                                 candles[0], candles[-1])
+                    logger.debug(str(self.rateSymbol) + ": [ATR] última_atr=%s", candles[-1].get("atr"))
+                
+                if not candles or candles[-1].get("atr") is None:
+                    logger.warning(str(self.rateSymbol) + ": No se pudo calcular ATR desde StrategyState (última ATR=None).")
+                    # ⚠️ OJO: en tu fallback usa currentRate, no currentPrice
+                    self.atr = (self.currentRate or 0) * 0.05
                 else:
-                    self.atr = None
+                    self.atr = float(candles[-1]["atr"])
+
+                logger.debug (str(self.rateSymbol) + ": [ATR] Calculated atr %d", self.atr)
+                
             except Exception as e:
-                logger.warning("No se pudo calcular ATR desde StrategyState: %s", e)
-                self.atr = None
+                logger.warning(str(self.rateSymbol) + ": No se pudo calcular ATR desde StrategyState: %s", e)
+                self.atr = self.currentRate * 0.05  # valor por defecto si no se puede calcular ATR
 
         except Exception as e:
-            logger.error("Error al leer datos de tradingview: %s", e)
+            logger.error(str(self.rateSymbol) + ": Error al leer datos de tradingview: %s", e)
             logger.error(response.content)
             raise e
 
@@ -450,12 +499,12 @@ class Strategy(models.Model):
         if float(resp_json['price']) > -1:
             self.currentRate = float(resp_json['price'])
         else:
-            logger.error("No se ha podido obtener el precio de " + str(self.rateSymbol))
+            logger.error(str(self.rateSymbol) + ": No se ha podido obtener el precio")
         self.save()
 
     # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
     def operation(self, isMarketOpen):
-        logger.debug("Entering operation for " + str(self.rateSymbol))
+        logger.debug(str(self.rateSymbol) + ": Entering operation")
 
         try:
             # Sanity Checks
@@ -485,12 +534,12 @@ class Strategy(models.Model):
             self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning:
-                logger.debug("Symbol is running so we evaluate")
+                logger.debug(str(self.rateSymbol) + ":   Symbol is running so we evaluate")
                 estadoNext = self.estado
 
                 # ── PROTECTED TRADE: conserva tu lógica anterior (mínimo cambio) ──
                 if self.protectedTrade:
-                    logger.debug("Symbol is in protected trading mode")
+                    logger.debug(str(self.rateSymbol) + ":     Symbol is in protected trading mode")
                     ## Inicio proceso protected Trade
                     if self.estado == 0:
                         ## Estado HOLD. 
@@ -558,9 +607,9 @@ class Strategy(models.Model):
                 
                 # ── MODO NORMAL: lógica mejorada (ATR, sizing, trailing, time-stop) ──
                 else:
-                    logger.debug("Symbol is in normal operation mode")
+                    logger.debug(str(self.rateSymbol) + ":     Symbol is in normal operation mode")
                     if self.estado == 0:  # HOLD
-                        logger.debug ("Symbol is in HOLD status")
+                        logger.debug(str(self.rateSymbol) + ":       Symbol is in HOLD status. Evaluate entry conditions... ")
                         self.currentProfit = None
                         self.maxCurrentRate = 0
                         self.accion = "WAIT"
@@ -570,6 +619,7 @@ class Strategy(models.Model):
                         ## en caso contrario no entramos
                         
                         if self.adx > self.limitOpen:
+                            logger.debug(str(self.rateSymbol) + ":         - ADX > limitOpen (%s > %s)", self.adx, self.limitOpen)
                             # Señal direccional junto a TV Recommend
                         ## Despues, el diffDI debe superar el limitBuy o el limitSell
                         ## self.checkRecommend tiene en cuenta la recomendacion general de TV
@@ -581,13 +631,17 @@ class Strategy(models.Model):
                                 side = "long"
                             if (self.diffDI < self.limitSell) and self.checkRecommend() and isMarketOpen:
                                 side = "short"
+                            logger.debug(str(self.rateSymbol) + ":         - Side evaluated to %s", side)
+                            logger.debug(str(self.rateSymbol) + ":          > diffDI=%s, limitBuy=%s, limitSell=%s, Recommend=%s, MarketOpen=%s",
+                                         self.diffDI, self.limitBuy, self.limitSell, self.checkRecommend(), isMarketOpen)
 
                             # Volatilidad mínima (ATR% del precio)
                             vol_ok = False
                             if self.atr and self.currentRate:
                                 atr_pct = _D(self.atr) * Decimal("100") / _D(self.currentRate)
                                 vol_ok = atr_pct >= VOL_MIN_PCT
-
+                            logger.debug(str(self.rateSymbol) + ":         - Volatility ok is %s (atr_pct=%s, min=%s)", vol_ok, atr_pct if self.atr else None, VOL_MIN_PCT)
+                    
                             if side and vol_ok:
                                 # --- Sizing por riesgo (amount en MONEDA / NO en unidades) ---
                                 equity = Decimal("10000")
@@ -598,30 +652,34 @@ class Strategy(models.Model):
                                         equity = Decimal(str(adminUser.profile.configMaxBet))
                                 except Exception:
                                     pass
+                                logger.debug(str(self.rateSymbol) + ":             - Equity for sizing: %s", equity)
 
+                                logger.debug(str(self.rateSymbol) + ":             - Entering amount calculation...")
                                 # Distancia de stop por ATR (en precio)
                                 amount_calc = 0
                                 if self.atr and self.currentRate and self.atr > 0:
                                     atr_d = _D(self.atr)
                                     entry = _D(self.currentRate)
                                     stop_dist = ATR_MULT_SL * atr_d  # distancia al stop en precio (2xATR por defecto)
+                                    logger.debug(str(self.rateSymbol) + ":               - ATR=%s, entry=%s, stop_dist=%s", 
+                                                 atr_d, entry, stop_dist)
 
                                     if stop_dist > 0 and entry and entry > 0:
-                                        risk_pct = Decimal("0.0075")     # 0.75% por operación
-                                        risk_amount = equity * risk_pct  # dinero que acepto arriesgar si salta el stop
+                                        risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
+                                        logger.debug(str(self.rateSymbol) + ":               - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
+
 
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
-                                        amount_notional = (risk_amount * entry) / stop_dist
-
-                                        # ⚠️ Si tu broker esperase "margen" (no nocional), descomenta la línea siguiente:
-                                        # amount_notional = amount_notional / Decimal(str(self.leverage or 1))
+                                        amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
+                                        logger.debug(str(self.rateSymbol) + ":               - - Calculated notional amount: %s", amount_notional)
 
                                         # Redondeo a entero para mantener compatibilidad con IntegerField
                                         amount_calc = int(max(amount_notional, 0))
                                 else:
                                     # Fallback: sin ATR válido usamos el amount ya configurado
                                     amount_calc = int(self.amount or 0)
+                                logger.debug(str(self.rateSymbol) + ":               - Calculated amount for entry: %s", amount_calc)
 
                                 if amount_calc > 0:
                                     # IMPORTANTE: fija amount/bet ANTES de enviar la orden (buy_order usa self.amount)
@@ -644,27 +702,25 @@ class Strategy(models.Model):
                                             if self.atr and entry and entry > 0:
                                                 stop_init = ATR_MULT_SL * _D(self.atr)         # distancia en precio
                                                 sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
-                                                self.stopLossCurrent = float(sl_pct)
-                                                self.takeProfitCurrent = float(-sl_pct * 2)       # ≈ 2R
+                                                self.stopLossCurrent = float(sl_pct) * self.leverage
+                                                self.takeProfitCurrent = float(-sl_pct * 2) * self.leverage
                                             elif self.stopLoss is not None:
                                                 # Fallback a tu lógica previa
                                                 self.stopLossCurrent = self.stopLoss
                                                 self.takeProfitCurrent = (self.stopLoss or -10) + 50
                                         except Exception:
                                             pass
-
-
+                                        logger.debug(str(self.rateSymbol) + ":               - Entry order placed successfully, operID=%s", self.operID)
+                                        logger.debug(str(self.rateSymbol) + ":               - Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
+                        else:
+                            logger.debug(str(self.rateSymbol) + ":           - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
+                            
                     if self.estado == 2:  # OPER
-                        logger.debug("Symbol is in operation status (normal mode)")
+                        logger.debug(str(self.rateSymbol) + ":       Symbol is in operation status (normal mode)")
                     # Estamos en OPERACION NOT PROTECTED
                         # Setup INICIAL
                         force = False
                         reason = []
-
-                        # Si no se ha fijado el SLCurrent y el TPCurrent, hacerlo ahora
-                        if self.stopLossCurrent is None:
-                            self.stopLossCurrent = self.stopLoss if self.stopLoss is not None else -10
-                            self.takeProfitCurrent = (self.stopLossCurrent or -10) + 50
 
                         # Obtener estado de posicion
                         check, position = self.get_position(self.operID)
@@ -676,96 +732,142 @@ class Strategy(models.Model):
                                 ## la posicion está cerrada
                                 reason.append("notOpen")
                                 self.cooldownUntil = timezone.now() + timedelta(days=2)
-                                self.operIDclose = position['position'].get('orderIDClose', 0)
-                                self._finalize_close(reason="+".join(reason), force=True)
-                                return
+                                self.operIDclose = position['position']['orderIDClose']
+                                force=True
                             else:
-                                self.currentProfit = round((position['position']['currentProfit'] / (self.bet or 1)) * 100, 2)
+                                self.currentProfit = round((position['position']['currentProfit'] / self.bet) * 100, 2)
 
+                        # Tenemos el currentProfit y los SL y TP, pero primero calculamos si hay que cerrar, antes de ejecutar
                         # Trailing por ADX/DI (tus reglas) + ATR (mejora)
                         # Ajuste dinámico ADXClose
-                        if (self.adx is not None) and (self.adxClose is not None):
-                            dyn = float(_D(self.adx) * Decimal("0.85"))
-                            if dyn > (self.adxClose or 0):
-                                self.adxClose = dyn
-                        if (self.limitClose or 0) == 0:
+                        if (self.adx*0.85) > self.adxClose :
+                            self.adxClose=self.adx*0.85
+                        if self.limitClose == 0:
                             self.adxClose = 0
 
                         # Señal de cierre por ADX débil
-                        if (self.adxClose or 0) > 0 and (self.adx is not None) and (self.adx < self.adxClose):
+                        if self.adx < self.adxClose:
                             reason.append("limitClose")
 
                         # Actualiza extremos y trailing en precio con ATR
-                        side = "short" if self.accion == "VENDER" else "long"
-                        if side == "short":
-                            if (self.maxCurrentRate is None) or (self.currentRate < self.maxCurrentRate):
+                        if self.accion == "VENDER" :
+                            if self.currentRate < self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
                             # Reversión de momentum en short
-                            if (self.limitSell is not None) and (self.diffDI is not None) and (self.diffDI > self.limitSell * 0.85):
+                            if self.diffDI > self.limitSell*0.85 :
                                 reason.append("limitSell")
                         else:
-                            if (self.maxCurrentRate is None) or (self.currentRate > self.maxCurrentRate):
+                            if self.currentRate > self.maxCurrentRate :
                                 self.maxCurrentRate = self.currentRate
                             # Reversión de momentum en long
-                            if (self.limitBuy is not None) and (self.diffDI is not None) and (self.diffDI < self.limitBuy * 0.85):
+                            if self.diffDI < self.limitBuy*0.85 :
                                 reason.append("limitBuy")
 
                         # BE y trailing por ATR en % (si tenemos ATR)
-                        try:
-                            if self.atr and self.currentRate and self.placedPrice:
-                                atr = _D(self.atr)
-                                px = _D(self.currentRate)
-                                entry = _D(self.placedPrice)
-                                stop_init = ATR_MULT_SL * atr
-                                r_unity = stop_init / entry if entry > 0 else Decimal("1")
-                                pnl_r_est = ((px - entry) / stop_init) if side == "long" else ((entry - px) / stop_init)
+                        # Ajustes de SL y TP de GPT
+                        logger.debug(str(self.rateSymbol) + ":         - Adjusting SL/TP dynamically with ATR...")
+                        stop_init = ATR_MULT_SL * _D(self.atr)
+                        r_unity = stop_init / _D(self.placedPrice)
+                        pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
+                        logger.debug(str(self.rateSymbol) + ":         - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
+                        # Break-even
+                        if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
+                            logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
+                            self.stopLossCurrent = 0.0
 
-                                # Break-even
-                                if pnl_r_est >= BREAKEVEN_R and (self.stopLossCurrent or 0) < 0:
-                                    self.stopLossCurrent = 0.0
+                        # Trailing tipo Chandelier
+                        extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
+                        if self.accion == "COMPRAR": 
+                            new_stop_price = extreme - ATR_MULT_TSL * _D(self.atr)
+                            new_sl_pct = ((new_stop_price - _D(self.placedPrice)) / _D(self.placedPrice)) * Decimal("100")
+                            new_sl_pct = new_sl_pct * _D(self.leverage)
+                        else:
+                            new_stop_price = extreme + ATR_MULT_TSL * _D(self.atr)
+                            new_sl_pct = ((_D(self.placedPrice) - new_stop_price) / _D(self.placedPrice)) * Decimal("100")
+                            new_sl_pct = new_sl_pct * _D(self.leverage)
+                        cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
+                        if new_sl_pct > cur_sl:
+                            logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
+                            self.stopLossCurrent = float(new_sl_pct)
+                        else:
+                            logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
 
-                                # Trailing tipo Chandelier
-                                extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
-                                if side == "long":
-                                    new_stop_price = extreme - ATR_MULT_TSL * atr
-                                    new_sl_pct = ((new_stop_price - entry) / entry) * Decimal("100")
-                                else:
-                                    new_stop_price = extreme + ATR_MULT_TSL * atr
-                                    new_sl_pct = ((entry - new_stop_price) / entry) * Decimal("100")
-
-                                cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
-                                if new_sl_pct > cur_sl:
-                                    self.stopLossCurrent = float(new_sl_pct)
-
-                                # TP dinámico simple: SL + 2R (aprox)
-                                self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
-                        except Exception:
-                            pass
+                        # TP dinámico simple: SL + 2R (aprox)
+                        logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
+                        self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage))))
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
-                        if self.accion == "VENDER":
-                            if (self.currentProfit is not None) and (self.stopLossCurrent is not None):
-                                if (self.currentProfit < self.stopLossCurrent) and not self.checkRecommend():
-                                    reason.append("stopLoss")
-                                    self.cooldownUntil = timezone.now() + timedelta(days=1)
-                            if (self.currentProfit is not None) and (self.takeProfitCurrent is not None):
-                                if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend():
-                                    reason.append("takeProfit")
-                                    self.cooldownUntil = timezone.now() + timedelta(days=1)
-                        else:
-                            if (self.currentProfit is not None) and (self.stopLossCurrent is not None):
-                                if (self.currentProfit < self.stopLossCurrent) and not self.checkRecommend():
-                                    reason.append("stopLoss")
-                                    self.cooldownUntil = timezone.now() + timedelta(days=1)
-                            if (self.currentProfit is not None) and (self.takeProfitCurrent is not None):
-                                if (self.currentProfit > self.takeProfitCurrent) and not self.checkRecommend():
-                                    reason.append("takeProfit")
-                                    self.cooldownUntil = timezone.now() + timedelta(days=1)
+                        if not self.checkRecommend():
+                        # Solo si no es recomendable seguir, evaluamos SL/TP
+                            ### Ante un stopLoss, esperamos 48 periodos                            
+                            ### If we are below stopLoss and checkRecommend Fails. Close!
+                            if self.currentProfit < self.stopLossCurrent:
+                                reason.append("stopLoss")
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
 
-                        # Time-stop
-                        self.bars_in_trade = (self.bars_in_trade or 0) + 1
-                        if self.bars_in_trade >= MAX_BARS_IN_TRADE:
-                            reason.append("timeStop")
+                            # Si excedemos el takeProfit, pero el check recommend es TRUE no salimos
+                            # Asumimos que seguimos subiendo
+                            # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
+                            # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
+                            if self.currentProfit > self.takeProfitCurrent:
+                                reason.append("takeProfit")
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
+
+                            # Time-stop condicional por falta de progreso + BE forzado
+                            try:
+                                # Parámetros (ajusta si quieres)
+                                N_DAYS_STAGNATION = 3                            # nº de velas diarias a esperar
+                                R_BAND = Decimal("0.3")                          # banda [-0.3R, +0.3R]
+                                R_BE_THRESH = Decimal("0.7")                     # BE si no se alcanzó +0.7R
+                                ADX_STAGNATION_MAX = _D(self.limitOpen or 0)     # umbral ADX para "falta de tendencia"
+
+                                op = StrategyOperation.objects.filter(strategy=self, operID=self.operID).first()
+                                if op and self.placedPrice and self.atr:
+                                    entry = _D(self.placedPrice)
+                                    atr_d = _D(self.atr)
+                                    lev   = Decimal(str(self.leverage or 1))
+                                    stop_init = ATR_MULT_SL * atr_d  # distancia stop en precio (k*ATR)
+
+                                    if entry and entry > 0 and stop_init and stop_init > 0:
+                                        # Días en la operación (por vela diaria real)
+                                        open_day  = _to_roll_date(op.timestampOpen)
+                                        today_day = _to_roll_date(timezone.now())
+                                        days_in_trade = (today_day - open_day).days + 1
+                                        # Guarda para UI si quieres ver días reales en vez de ticks
+                                        self.bars_in_trade = days_in_trade
+
+                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop/entry)*100*leverage
+                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
+
+                                        # PnL actual en R
+                                        pnl_R = None
+                                        if R_pct_on_bet > 0 and self.currentProfit is not None:
+                                            pnl_R = _D(self.currentProfit) / R_pct_on_bet
+
+                                        # Máximo R alcanzado usando el extremo registrado
+                                        side = "short" if self.accion == "VENDER" else "long"
+                                        extreme_price = _D(self.maxCurrentRate or self.currentRate or self.placedPrice)
+                                        if side == "long":
+                                            delta_ext = max(Decimal("0"), (extreme_price - entry))
+                                        else:
+                                            delta_ext = max(Decimal("0"), (entry - extreme_price))
+                                        max_R = (delta_ext / stop_init) * lev  # R sobre bet
+
+                                        if days_in_trade >= N_DAYS_STAGNATION:
+                                            # (a) Cierre por falta de progreso: |pnl_R| <= 0.3R y ADX bajo
+                                            adx_ok = (self.adx is not None) and (_D(self.adx) < (ADX_STAGNATION_MAX or Decimal("0")))
+                                            if (pnl_R is not None) and (-R_BAND <= pnl_R <= R_BAND) and adx_ok:
+                                                reason.append("timeStopNoProgress")
+
+                                            # (b) BE forzado: si no alcanzó +0.7R en N días, sube SL a BE
+                                            if (max_R is not None) and (max_R < R_BE_THRESH):
+                                                if (self.stopLossCurrent is None) or (self.stopLossCurrent < 0.0):
+                                                    self.stopLossCurrent = 0.0  # breakeven
+                                                    # (opcional) marca el motivo para auditoría
+                                                    # reason.append("forceBE")
+                            except Exception:
+                                # No rompas la operativa si algo falla en este bloque auxiliar
+                                pass
 
                         # Ejecuta cierre si hay razones
                         if len(reason) > 0:
@@ -787,7 +889,7 @@ class Strategy(models.Model):
 
                 # ── COOLDOWN ──────────────────────────────────────────────────
                 if self.estado == 3:
-                    logger.debug("Symbol is in cooldown mode")
+                    logger.debug(str(self.rateSymbol) + ": Symbol is in cooldown mode")
                     self.currentProfit = None
                     ## Si el ADX esta por debajo del OPEN, salimos del cooldown
                     ## Si el limitOpen es 0, no hay cooldown y salimos
@@ -813,14 +915,14 @@ class Strategy(models.Model):
             self.save()
 
         except MoTradeError as e:
-            logger.error("Excepcion conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
+            logger.error(str(self.rateSymbol) + ": Excepcion conocida (%s) en %s: %s", e.code, self.rateSymbol, e.message)
             self.inError = True
             self.save()                
 
         except Exception as e:
             self.inError = True
             self.save()
-            logger.exception("MOT-99999: Excepcion no controlada en " + self.rateSymbol)
+            logger.exception(str(self.rateSymbol) + ": MOT-99999: Excepcion no controlada en " + self.rateSymbol)
 
     # ── CIERRE MANUAL (Llamada desde la consola) ───────────────
     def manualClose(self, reason):
@@ -877,6 +979,7 @@ class Strategy(models.Model):
             recommendMA240=self.recommendMA240,
             isRunning=self.isRunning,
             stopLossCurrent=self.stopLossCurrent,
+            takeProfitCurrent=self.takeProfitCurrent,
             atr=self.atr).save()
 
     # ── ÓRDENES DE ENTRADA (conserva interfaz; añade flag protected) ─────────
@@ -1040,6 +1143,7 @@ class StrategyState(models.Model):
     recommendMA = models.FloatField(default=0, null=True, blank=True)
     recommendMA240 = models.FloatField(default=0, null=True, blank=True)
     stopLossCurrent = models.FloatField(null=True, blank=True)
+    takeProfitCurrent = models.FloatField(null=True, blank=True)
     atr = models.FloatField(null=True, blank=True) # ATR actual
     
     def __str__(self):
