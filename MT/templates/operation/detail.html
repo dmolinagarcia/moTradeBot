@@ -18,13 +18,13 @@
 	</tr>
 	{% for strategy in strategy_list %}
 		<tr
-		   {% ifequal strategy.accion "VENDER" %}
+		   {% if strategy.accion == "VENDER" %}
 			style="background-color:aqua"
 		   {% endifequal %}
-		   {% ifequal strategy.accion "COMPRAR" %}
+		   {% if strategy.accion == "COMPRAR" %}
             style="background-color:aqua"
            {% endifequal %}
-		   {% ifequal strategy.accion "COOLDOWN" %}
+		   {% if strategy.accion == "COOLDOWN" %}
             style="background-color:yellow"
            {% endifequal %}
 		>
