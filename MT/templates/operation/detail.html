@@ -20,13 +20,13 @@
 		<tr
 		   {% if strategy.accion == "VENDER" %}
 			style="background-color:aqua"
-		   {% endifequal %}
+		   {% endif %}
 		   {% if strategy.accion == "COMPRAR" %}
             style="background-color:aqua"
-           {% endifequal %}
+           {% endif %}
 		   {% if strategy.accion == "COOLDOWN" %}
             style="background-color:yellow"
-           {% endifequal %}
+           {% endif %}
 		>
 	        <td><a href="/strategy/{{ strategy.id }}">{{ strategy }}</a></td>
 			<td><a href="/toggle/{{ strategy.id }}">{{ strategy.isRunning }}</a></td>
