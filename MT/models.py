@@ -371,7 +371,8 @@ class Strategy(models.Model):
         self.cooldownUntil = timezone.now()
         self.save()
         self.getOperations().delete()
-        # StrategyState.objects.filter(strategy=self).delete()
+        # Clear status from operations
+        StrategyState.objects.filter(strategy=self).delete()
         # Mantenemos histórico,
         
     def toggleIsRunning(self):
@@ -1157,7 +1158,12 @@ class StrategyState(models.Model):
     
     def __str__(self):
         return str(self.strategy.utility + ":" + str(self.timestamp))
-
+    
+    def clear(self):
+        self.stopLossCurrent = None
+        self.takeProfitCurrent = None
+        self.estado = 0
+        self.save
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STRATEGY OPERATION 
