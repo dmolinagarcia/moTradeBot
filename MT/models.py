@@ -258,9 +258,9 @@ class Strategy(models.Model):
                 rec['low']  = min(rec['low'], px)
                 rec['close'] = px  # último del día
 
-        logger.debug(str(self.rateSymbol) + ": get_candle: dias_agregados=%d (keys=%s)",
-             len(daily_map), list(sorted(daily_map.keys()))[-5:])
-        
+        logger.debug(str(self.rateSymbol) + ": get_candle: dias_agregados=%d",
+             len(daily_map) )
+
         # Ordena por fecha ASC y forma velas
         days_sorted = sorted(daily_map.keys())
         candles = [{
@@ -706,6 +706,8 @@ class Strategy(models.Model):
                                                 sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
                                                 self.stopLossCurrent = float(sl_pct) * self.leverage
                                                 self.takeProfitCurrent = float(-sl_pct * 2) * self.leverage
+                                                # Save initial stopLoss
+                                                self.stopLoss = self.stopLossCurrent
                                             elif self.stopLoss is not None:
                                                 # Fallback a tu lógica previa
                                                 self.stopLossCurrent = self.stopLoss
@@ -794,6 +796,10 @@ class Strategy(models.Model):
                         logger.debug(str(self.rateSymbol) + ":           > new_stop_price %s", new_stop_price)
                         logger.debug(str(self.rateSymbol) + ":           > new_sl_pct %s", new_sl_pct)
 
+                        # Catch ALL
+                        # Stop Loss is current profit minus original ST
+                        new_sl_pct = self.currentProfit + self.stopLoss
+
                         cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
                         if new_sl_pct > cur_sl:
                             logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
@@ -801,8 +807,8 @@ class Strategy(models.Model):
                         else:
                             logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
 
-                        # TP dinámico simple: SL + 2R (aprox)
-                        new_tp_pct = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
+                        # TP dinamico. Current profit - self.stopLoss (which is negative)
+                        new_tp_pct = self.currentProfit - self.stopLoss 
                         if new_tp_pct > _D(self.takeProfitCurrent):
                             self.takeProfitCurrent = float(new_tp_pct)
                             logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
@@ -842,43 +848,61 @@ class Strategy(models.Model):
                             self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.002)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#                           # Time-stop condicional por falta de progreso + BE forzado
+#                           try:
+#                               # Parámetros (ajusta si quieres)
+#                               N_DAYS_STAGNATION = 3                            # nº de velas diarias a esperar
+#                               R_BAND = Decimal("0.3")                          # banda [-0.3R, +0.3R]
+#                               R_BE_THRESH = Decimal("0.7")                     # BE si no se alcanzó +0.7R
+#                               ADX_STAGNATION_MAX = _D(self.limitOpen or 0)     # umbral ADX para "falta de tendencia"
+#
+#                                op = StrategyOperation.objects.filter(strategy=self, operID=self.operID).first()
+#                                if op and self.placedPrice and self.atr:
+#                                    entry = _D(self.placedPrice)
+#                                    atr_d = _D(self.atr)
+#                                    lev   = Decimal(str(self.leverage or 1))
+#                                    stop_init = ATR_MULT_SL * atr_d  # distancia stop en precio (k*ATR)
+#
+#                                    if entry and entry > 0 and stop_init and stop_init > 0:
+#                                        # Días en la operación (por vela diaria real)
+#                                        open_day  = _to_roll_date(op.timestampOpen)
+#                                        today_day = _to_roll_date(timezone.now())
+#                                        days_in_trade = (today_day - open_day).days + 1
+#                                        # Guarda para UI si quieres ver días reales en vez de ticks
+#                                        self.bars_in_trade = days_in_trade
+#
+#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop/entry)*100*leverage
+#                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
+#
+#                                        # PnL actual en R
+#                                        pnl_R = None
+#                                        if R_pct_on_bet > 0 and self.currentProfit is not None:
+#                                            pnl_R = _D(self.currentProfit) / R_pct_on_bet
+#
+#                                        # Máximo R alcanzado usando el extremo registrado
+#                                        side = "short" if self.accion == "VENDER" else "long"
+#                                        extreme_price = _D(self.maxCurrentRate or self.currentRate or self.placedPrice)
+#                                        if side == "long":
+#                                            delta_ext = max(Decimal("0"), (extreme_price - entry))
+#                                        else:
+#                                            delta_ext = max(Decimal("0"), (entry - extreme_price))
+#                                        max_R = (delta_ext / stop_init) * lev  # R sobre bet
+#
+#                                        if days_in_trade >= N_DAYS_STAGNATION:
+#                                            # (a) Cierre por falta de progreso: |pnl_R| <= 0.3R y ADX bajo
+#                                            adx_ok = (self.adx is not None) and (_D(self.adx) < (ADX_STAGNATION_MAX or Decimal("0")))
+#                                            if (pnl_R is not None) and (-R_BAND <= pnl_R <= R_BAND) and adx_ok:
+#                                                reason.append("timeStopNoProgress")
+#
+#                                            # (b) BE forzado: si no alcanzó +0.7R en N días, sube SL a BE
+#                                            if (max_R is not None) and (max_R < R_BE_THRESH):
+#                                                if (self.stopLossCurrent is None) or (self.stopLossCurrent < 0.0):
+#                                                    self.stopLossCurrent = 0.0  # breakeven
+#                                                    # (opcional) marca el motivo para auditoría
+#                                                    # reason.append("forceBE")
+#                            except Exception:
+#                                # No rompas la operativa si algo falla en este bloque auxiliar
+#                                pass
 
                         # Ejecuta cierre si hay razones
                         if len(reason) > 0:
