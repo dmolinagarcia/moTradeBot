@@ -71,7 +71,8 @@
                              P: {{ strategy.placedPrice|floatformat:4 }} <br/>
                              H: {{ strategy.maxCurrentRate|floatformat:4 }} <br/>
                         </td>
-                        <td> {{ strategy.currentProfit|floatformat:2 }} <br/>
+                        <td> {{ strategy.takeProfitCurrent|floatformat:2 }} <br/>
+							 {{ strategy.currentProfit|floatformat:2 }} <br/>
                              {{ strategy.stopLossCurrent|floatformat:2 }} </td>
 			{% if request.user.is_staff %} 
 				<td>{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }} <br/>
