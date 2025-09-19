@@ -372,7 +372,8 @@ class Strategy(models.Model):
         self.save()
         self.getOperations().delete()
         # Clear status from operations
-        StrategyState.objects.filter(strategy=self).delete()
+        for state in StrategyState.objects.filter(strategy=self):
+            state.clear()
         # Mantenemos histórico,
         
     def toggleIsRunning(self):
