@@ -862,6 +862,22 @@ class Strategy(models.Model):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                         # Ejecuta cierre si hay razones
                         if len(reason) > 0:
                             check = self.cerrar(" ".join(reason), force)

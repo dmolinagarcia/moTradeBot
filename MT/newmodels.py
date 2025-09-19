@@ -766,10 +766,18 @@ class Strategy(models.Model):
                         # BE y trailing por ATR en % (si tenemos ATR)
                         # Ajustes de SL y TP de GPT
                         logger.debug(str(self.rateSymbol) + ":         - Adjusting SL/TP dynamically with ATR...")
+
+                        # Mi stop init es 2x ATR. Es mucho!
                         stop_init = ATR_MULT_SL * _D(self.atr)
+                        # Cambiamos a 1x ATR a ver que tal
+                        stop_init = _D(self.atr)
+
                         r_unity = stop_init / _D(self.placedPrice)
                         pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
-                        logger.debug(str(self.rateSymbol) + ":         - Initial stop distance: %s (%.2f%%), pnl: %s", stop_init, r_unity * 100, pnl_r_est                                     )
+                        logger.debug(str(self.rateSymbol) + ":         - Values used in calculation") 
+                        logger.debug(str(self.rateSymbol) + ":           > stop_init %s", stop_init)
+                        logger.debug(str(self.rateSymbol) + ":           > r_unity (es un pct) (%.2f%%)", r_unity*100)
+                        logger.debug(str(self.rateSymbol) + ":           > pnl_r_est %s", pnl_r_est)
                         # Break-even
                         if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
                             logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
@@ -778,13 +786,14 @@ class Strategy(models.Model):
                         # Trailing tipo Chandelier
                         extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
                         if self.accion == "COMPRAR": 
-                            new_stop_price = extreme - ATR_MULT_TSL * _D(self.atr)
+                            new_stop_price = extreme - stop_init
                             new_sl_pct = ((new_stop_price - _D(self.placedPrice)) / _D(self.placedPrice)) * Decimal("100")
-                            new_sl_pct = new_sl_pct * _D(self.leverage)
                         else:
-                            new_stop_price = extreme + ATR_MULT_TSL * _D(self.atr)
+                            new_stop_price = extreme + stop_init
                             new_sl_pct = ((_D(self.placedPrice) - new_stop_price) / _D(self.placedPrice)) * Decimal("100")
-                            new_sl_pct = new_sl_pct * _D(self.leverage)
+                        logger.debug(str(self.rateSymbol) + ":           > new_stop_price %s", new_stop_price)
+                        logger.debug(str(self.rateSymbol) + ":           > new_sl_pct %s", new_sl_pct)
+
                         cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
                         if new_sl_pct > cur_sl:
                             logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
@@ -793,8 +802,8 @@ class Strategy(models.Model):
                             logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
 
                         # TP dinámico simple: SL + 2R (aprox)
-                        logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", (Decimal("200") * r_unity * _D(self.leverage)))
                         self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage))))
+                        logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
