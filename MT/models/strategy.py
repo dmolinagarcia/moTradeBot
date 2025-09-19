@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from django.utils import timezone
-from django.db.models import Max, Min
-# DISABLE WEBPUSH from webpush import send_user_notification, send_group_notification
-# DISABLE TELEGRAM import telegram
-from django.conf import settings
 
-import pytz
+from .strategyOperation import StrategyOperation
+from .strategyState import StrategyState
+from .lib.moTradeError import MoTradeError
+from .lib.helpers import D as _D
+from .lib.helpers import to_roll_date as _to_roll_date
+from .lib.helpers import compute_atr_wilder as _compute_atr_wilder
+
+from django.utils import timezone
+from decimal import Decimal
+
 import requests
 import json
 import time
@@ -15,25 +19,9 @@ import threading
 import sys
 from datetime import datetime, timedelta
 import traceback
-from decimal import Decimal
+import logging
 
-logger = logging.getLogger(__name__)
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Gestión de excepciones
-# ──────────────────────────────────────────────────────────────────────────────
-
-class MoTradeError(Exception):
-    """Excepción unificada con código de error y mensaje."""
-
-    def __init__(self, code: int, message: str, *args):
-        super().__init__(message, *args)
-        self.code = code
-        self.message = message
-
-    def __str__(self):
-        return f"[{self.code}] {self.message}"
-
+logger = logging.getLogger("MT.models")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Parámetros mejorados de gestión (seguros por defecteo)
@@ -47,68 +35,6 @@ MAX_BARS_IN_TRADE = 240            # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")     # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("2.0")      # Volatilidad mínima (ATR% del precio) para operar
 RISK_PCT = Decimal("0.0150")       # Riesgo por operación (0.75% del equity) 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Funciones Helpers
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _D(x):
-    return Decimal(str(x)) if x is not None else None
-
-def _to_roll_date(dttm, offset_minutes=0):
-    """Convierte un datetime a fecha (UTC) aplicando un 'rollover' por minutos (p.ej. sesión)."""
-    if dttm is None:
-        return None
-    # Asegura zona
-    if timezone.is_naive(dttm):
-        dttm = timezone.make_aware(dttm, timezone.utc)
-    dttm_utc = dttm.astimezone(timezone.utc) + timedelta(minutes=offset_minutes)
-    return dttm_utc.date()
-
-def _compute_atr_wilder(candles, period=14):
-    """
-    Añade 'atr' in-place a la lista de velas (orden ascendente).
-    Fast-start: si n < period, usa la media simple de TR disponibles para cada barra.
-    A partir de 'period-1' usa la RMA de Wilder estándar.
-    """
-    n = len(candles)
-    if n == 0:
-        return candles
-
-    # True Range por barra
-    trs = []
-    prev_close = None
-    for i in range(n):
-        h = float(candles[i]["high"])
-        l = float(candles[i]["low"])
-        c = float(candles[i]["close"])
-        if prev_close is None:
-            tr = h - l
-        else:
-            tr = max(h - l, abs(h - prev_close), abs(l - prev_close))
-        trs.append(tr)
-        prev_close = c
-
-    atr = [None] * n
-
-    if n < period:
-        # FAST-START: para cada i, ATR = media simple de TR[0..i]
-        running_sum = 0.0
-        for i in range(n):
-            running_sum += trs[i]
-            atr[i] = running_sum / (i + 1)
-    else:
-        # Wilder "clásico"
-        first = sum(trs[:period]) / period
-        atr[period - 1] = first
-        for i in range(period, n):
-            atr[i] = (atr[i - 1] * (period - 1) + trs[i]) / period
-
-    # Asigna a las velas
-    for i in range(n):
-        candles[i]["atr"] = float(atr[i]) if atr[i] is not None else None
-
-    return candles
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STRATEGY
@@ -1136,159 +1062,3 @@ class Strategy(models.Model):
                 resultado = True
 
         return resultado
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# STRATEGY STATE 
-# ──────────────────────────────────────────────────────────────────────────────
-class StrategyState(models.Model):
-    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now=False, auto_now_add=True)
-    operID = models.IntegerField(null=True)
-    accion = models.CharField(max_length=10, null=True)
-
-    class StrategyStateStates(models.IntegerChoices):
-        HOLD = 0
-        PREOPER = 1
-        OPER = 2
-        PRECIERRE = 3
-
-    estado = models.IntegerField(choices=StrategyStateStates.choices, null=True)
-    ema = models.FloatField(null=True)
-    ema20 = models.FloatField(null=True)
-    ema100 = models.FloatField(null=True)
-    adx = models.FloatField(null=True)
-    plusDI = models.FloatField(null=True)
-    minusDI = models.FloatField(null=True)
-    diffDI = models.FloatField(null=True)
-    currentRate = models.FloatField(null=True)
-    currentProfit = models.FloatField(null=True)
-    maxCurrentRate = models.FloatField(null=True)
-    stopLoss = models.FloatField(null=True)
-    sleep = models.IntegerField(null=True)
-    amount = models.IntegerField(null=True)
-    beneficioTotal = models.FloatField(null=True)
-    limitOpen = models.IntegerField(null=True)
-    limitClose = models.IntegerField(null=True)
-    limitBuy = models.IntegerField(null=True)
-    limitSell = models.IntegerField(null=True)
-    cryptoTimeframeADX = models.CharField(max_length=4, null=True)
-    cryptoTimeframeDI = models.CharField(max_length=4, null=True)
-    isRunning = models.BooleanField(null=True)
-    recommendMA = models.FloatField(default=0, null=True, blank=True)
-    recommendMA240 = models.FloatField(default=0, null=True, blank=True)
-    stopLossCurrent = models.FloatField(null=True, blank=True)
-    takeProfitCurrent = models.FloatField(null=True, blank=True)
-    atr = models.FloatField(null=True, blank=True) # ATR actual
-    
-    def __str__(self):
-        return str(self.strategy.utility + ":" + str(self.timestamp))
-    
-    def clear(self):
-        self.stopLossCurrent = None
-        self.takeProfitCurrent = None
-        self.currentProfit = None
-        self.estado = 0
-        self.accion = "WAIT"
-        self.save()
-
-# ──────────────────────────────────────────────────────────────────────────────
-# STRATEGY OPERATION 
-# ──────────────────────────────────────────────────────────────────────────────
-class StrategyOperation(models.Model):
-    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
-    operID = models.IntegerField()
-    type = models.CharField(max_length=4)
-    timestampOpen = models.DateTimeField(auto_now=False, auto_now_add=True)
-    timestampClose = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
-    beneficio = models.FloatField(null=True, blank=True)
-    buyAmount = models.FloatField(null=True)
-    sellAmount = models.FloatField(null=True, blank=True)
-    reasonClose = models.CharField(max_length=128, null=True, blank=True)
-    operIDClose = models.IntegerField(null=True)
-    profit = models.FloatField(null=True, blank=True)
-
-    def __str__(self):
-        return str(self.strategy.utility + ":" + str(self.operID))
-
-    def close(self, beneficio, buyAmount, sellAmount, reasonClose, operIDClose, profit):
-        self.timestampClose = timezone.now()
-        self.beneficio = beneficio
-        self.buyAmount = buyAmount
-        self.sellAmount = sellAmount
-        self.reasonClose = reasonClose
-        self.operIDClose = operIDClose
-        self.profit = profit
-        self.save()
-
-    def getHistory(self):
-        history = self.strategy.getHistory()
-        startTS = self.strategy.getHistory().exclude(timestamp__gt=self.timestampOpen).order_by('-timestamp')[:20].aggregate(Min('timestamp'))['timestamp__min']
-
-        if startTS:
-            history = history.filter(timestamp__gt=startTS)
-
-        if self.timestampClose:
-            endTS = self.strategy.getHistory().filter(timestamp__gte=self.timestampClose).order_by('timestamp')[:20].aggregate(Max('timestamp'))['timestamp__max']
-            history = history.exclude(timestamp__gt=endTS)
-
-        return history
-
-    def getStrategy(self):
-        return self.strategy
-
-    def deleteOperation(self):
-        # Clear History
-        history = self.strategy.getHistory()
-        history = history.filter(timestamp__gte=self.timestampOpen)
-        if self.timestampClose:
-            history = history.exclude(timestamp__gt=self.timestampClose)
-
-        for entry in history:
-            entry.accion = "WAIT"
-            entry.currentProfit = 0
-            entry.save()
-
-        if self.beneficio:
-            self.strategy.beneficioTotal = (self.strategy.beneficioTotal or 0) - self.beneficio
-            self.strategy.save()
-
-        # Update Strategy beneficioTotal
-        
-        # Self.delete
-# ──────────────────────────────────────────────────────────────────────────────
-# USER PROFILE 
-# ──────────────────────────────────────────────────────────────────────────────
-from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    timezoneChoices = [(x, x) for x in pytz.common_timezones]
-    timezone = models.CharField(
-        max_length=100,
-        choices=timezoneChoices,
-    )
-    configMaxBet = models.DecimalField(default=0, max_digits=14, decimal_places=2)
-    configProcessEnabled = models.BooleanField(default=False)
-    configTest = models.BooleanField(default=False)
-
-    configGlobalTPEnabled = models.BooleanField(default=True)
-    configGlobalTPThreshold = models.DecimalField(default=0, max_digits=5, decimal_places=2)
-    configGlobalTPSleepdown = models.IntegerField(default=100)
-    configGlobalTPWakeUp = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
-
-    configLegacyGraph = models.BooleanField(default=True)
-
-    def __str__(self):
-        return (self.user.username)
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
