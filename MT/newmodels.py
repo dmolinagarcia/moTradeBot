@@ -670,9 +670,9 @@ class Strategy(models.Model):
                                         risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
                                         logger.debug(str(self.rateSymbol) + ":               - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
 
-
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
+                                        # Nota: el leverage no cambia los niveles de precio del stop, solo el margen necesario
                                         amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
                                         logger.debug(str(self.rateSymbol) + ":               - - Calculated notional amount: %s", amount_notional)
 
@@ -703,19 +703,22 @@ class Strategy(models.Model):
                                             entry = _D(self.currentRate)
                                             if self.atr and entry and entry > 0:
                                                 stop_init = ATR_MULT_SL * _D(self.atr)         # distancia en precio
-                                                sl_pct = (-(stop_init / entry) * Decimal("100"))  # % bajo el entry
-                                                self.stopLossCurrent = float(sl_pct) * self.leverage
-                                                self.takeProfitCurrent = float(-sl_pct * 2) * self.leverage
-                                                # Save initial stopLoss
-                                                self.stopLoss = self.stopLossCurrent
+                                                if side == "long":
+                                                    self.stopLossCurrent   = float(entry - stop_init)      # precio
+                                                    self.takeProfitCurrent = float(entry + (stop_init * 2))# precio
+                                                else:
+                                                    self.stopLossCurrent   = float(entry + stop_init)      # precio
+                                                    self.takeProfitCurrent = float(entry - (stop_init * 2))# precio
+                                                # Save initial stopLoss (mantengo por compatibilidad)
+                                                self.stopLoss = self.stopLoss or -10
                                             elif self.stopLoss is not None:
                                                 # Fallback a tu lógica previa
-                                                self.stopLossCurrent = self.stopLoss
-                                                self.takeProfitCurrent = (self.stopLoss or -10) + 50
+                                                self.stopLossCurrent = float(self.currentRate)  # BE
+                                                self.takeProfitCurrent = float(self.currentRate)
                                         except Exception:
                                             pass
                                         logger.debug(str(self.rateSymbol) + ":               - Entry order placed successfully, operID=%s", self.operID)
-                                        logger.debug(str(self.rateSymbol) + ":               - Amount=%s, SL=%.2f%%, TP=%.2f%%", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
+                                        logger.debug(str(self.rateSymbol) + ":               - Amount=%s, SL(px)=%.6f, TP(px)=%.6f", self.amount, self.stopLossCurrent or 0, self.takeProfitCurrent or 0                                                     )
                         else:
                             logger.debug(str(self.rateSymbol) + ":           - ADX <= limitOpen (%s <= %s), no entry", self.adx, self.limitOpen)
                             
@@ -772,80 +775,106 @@ class Strategy(models.Model):
                         logger.debug(str(self.rateSymbol) + ":         - Adjusting SL/TP dynamically with ATR...")
 
                         # Mi stop init es 2x ATR. Es mucho!
-                        stop_init = ATR_MULT_SL * _D(self.atr)
+                        stop_init = ATR_MULT_SL * _D(self.atr) if self.atr else None
 
-                        r_unity = stop_init / _D(self.placedPrice) * _D(self.leverage)  # riesgo en unidad (1R = riesgo inicial)
-                        pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
+                        # r_unity y pnl_r_est ahora se basan exclusivamente en precio (sin leverage)
+                        if stop_init and self.placedPrice:
+                            entry_d = _D(self.placedPrice)
+                            if self.accion == "COMPRAR":
+                                pnl_r_est = (_D(self.currentRate) - entry_d) / stop_init
+                            else:
+                                pnl_r_est = (entry_d - _D(self.currentRate)) / stop_init
+                        else:
+                            pnl_r_est = None
+
                         logger.debug(str(self.rateSymbol) + ":         - Values used in calculation") 
                         logger.debug(str(self.rateSymbol) + ":           > stop_init %s", stop_init)
-                        logger.debug(str(self.rateSymbol) + ":           > r_unity (es un pct) (%.2f%%)", r_unity*100)
                         logger.debug(str(self.rateSymbol) + ":           > pnl_r_est %s", pnl_r_est)
-                        # Break-even
-                        if pnl_r_est >= BREAKEVEN_R and self.stopLossCurrent < 0:
-                            logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached at %.2f%%, moving SL to 0%%", self.currentProfit)    
-                            self.stopLossCurrent = 0.0
 
-                        # Trailing tipo Chandelier
-                        extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
-                        if self.accion == "COMPRAR": 
-                            new_stop_price = extreme - stop_init
-                            new_sl_pct = ((new_stop_price - _D(self.placedPrice)) / _D(self.placedPrice)) * Decimal("100")
-                        else:
-                            new_stop_price = extreme + stop_init
-                            new_sl_pct = ((_D(self.placedPrice) - new_stop_price) / _D(self.placedPrice)) * Decimal("100")
-                        logger.debug(str(self.rateSymbol) + ":           > new_stop_price %s", new_stop_price)
-                        logger.debug(str(self.rateSymbol) + ":           > new_sl_pct %s", new_sl_pct)
+                        # Break-even (mover SL a precio de entrada)
+                        if (pnl_r_est is not None) and (pnl_r_est >= BREAKEVEN_R) and (self.stopLossCurrent is not None) and (self.placedPrice):
+                            entry_px = _D(self.placedPrice)
+                            if self.accion == "COMPRAR":
+                                if _D(self.stopLossCurrent) < entry_px:
+                                    logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached, moving SL to entry price")
+                                    self.stopLossCurrent = float(entry_px)
+                            else:
+                                if _D(self.stopLossCurrent) > entry_px:
+                                    logger.debug(str(self.rateSymbol) + ":         - - BREAKEVEN reached, moving SL to entry price")
+                                    self.stopLossCurrent = float(entry_px)
+
+                        # Trailing tipo Chandelier (precio)
+                        if stop_init and self.maxCurrentRate:
+                            extreme = _D(self.maxCurrentRate if self.maxCurrentRate is not None else self.currentRate)
+                            if self.accion == "COMPRAR":
+                                new_stop_price = extreme - stop_init
+                                if (self.stopLossCurrent is None) or (_D(self.stopLossCurrent) < new_stop_price):
+                                    logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL(px) from %s to %s", self.stopLossCurrent, new_stop_price)
+                                    self.stopLossCurrent = float(new_stop_price)
+                            else:
+                                new_stop_price = extreme + stop_init
+                                if (self.stopLossCurrent is None) or (_D(self.stopLossCurrent) > new_stop_price):
+                                    logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL(px) from %s to %s", self.stopLossCurrent, new_stop_price)
+                                    self.stopLossCurrent = float(new_stop_price)
+                            logger.debug(str(self.rateSymbol) + ":           > new_stop_price %s", new_stop_price)
 
                         # Catch ALL
                         # Stop Loss is current profit minus original ST
-                        new_sl_pct = self.currentProfit + self.stopLoss
-
-                        cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
-                        if new_sl_pct > cur_sl:
-                            logger.debug(str(self.rateSymbol) + ":         - - Updating trailing SL from %.2f%% to %.2f%%", cur_sl, new_sl_pct)
-                            self.stopLossCurrent = float(new_sl_pct)
-                        else:
-                            logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
+                        # (Reemplazado por trailing en precio; conservamos el bloque sin efecto para mantener comentarios)
+                        # new_sl_pct = self.currentProfit + self.stopLoss
+                        # cur_sl = _D(self.stopLossCurrent if self.stopLossCurrent is not None else -999)
 
                         # TP dinamico. Current profit - self.stopLoss (which is negative)
-                        new_tp_pct = self.currentProfit - self.stopLoss 
-                        if new_tp_pct > _D(self.takeProfitCurrent):
-                            self.takeProfitCurrent = float(new_tp_pct)
-                            logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
+                        # (En precio: mantenemos un TP de 2R desde el entry; si quieres extenderlo, podrías moverlo con el extremo)
+                        if stop_init and self.placedPrice:
+                            entry_px = _D(self.placedPrice)
+                            if self.accion == "COMPRAR":
+                                target = entry_px + (stop_init * 2)
+                                if (self.takeProfitCurrent is None) or (_D(self.takeProfitCurrent) < target):
+                                    self.takeProfitCurrent = float(target)
+                            else:
+                                target = entry_px - (stop_init * 2)
+                                if (self.takeProfitCurrent is None) or (_D(self.takeProfitCurrent) > target):
+                                    self.takeProfitCurrent = float(target)
+                            logger.debug(str(self.rateSymbol) + ":         - - TP(px) set/kept at %s", self.takeProfitCurrent)
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
                         # Solo si no es recomendable seguir, evaluamos SL/TP
                             ### Ante un stopLoss, esperamos 48 periodos                            
                             ### If we are below stopLoss and checkRecommend Fails. Close!
-                            if self.currentProfit < self.stopLossCurrent:
-                                reason.append("stopLoss")
-                                self.cooldownUntil = timezone.now() + timedelta(days=1)
-
-                            # Si excedemos el takeProfit, pero el check recommend es TRUE no salimos
-                            # Asumimos que seguimos subiendo
-                            # Si lo alcanzamos y el checkRecommend es FALSE, cazamos, ya que asuimos que bajara
-                            # Nota 20/11/2024 - Creo que nunca vamos a entrar aqui
-                            if self.currentProfit > self.takeProfitCurrent:
-                                reason.append("takeProfit")
-                                self.cooldownUntil = timezone.now() + timedelta(days=1)
+                            if (self.stopLossCurrent is not None) and (self.takeProfitCurrent is not None):
+                                if self.accion == "COMPRAR":
+                                    if self.currentRate <= self.stopLossCurrent:
+                                        reason.append("stopLoss")
+                                        self.cooldownUntil = timezone.now() + timedelta(days=1)
+                                    if self.currentRate >= self.takeProfitCurrent:
+                                        reason.append("takeProfit")
+                                        self.cooldownUntil = timezone.now() + timedelta(days=1)
+                                else:
+                                    if self.currentRate >= self.stopLossCurrent:
+                                        reason.append("stopLoss")
+                                        self.cooldownUntil = timezone.now() + timedelta(days=1)
+                                    if self.currentRate <= self.takeProfitCurrent:
+                                        reason.append("takeProfit")
+                                        self.cooldownUntil = timezone.now() + timedelta(days=1)
 
                         # Now we update SLc and TPc
-                        if ( self.currentProfit + self.stopLoss > self.stopLossCurrent ) :
-                            # if Current Profit plus stopLoss (Which is always negative!) is higher that current stopLoss, 
-                            # this is a regular trailing stoploss. We ser stopLoss at current profit minus stopLoss 
-                            # self.stopLossCurrent = self.currentProfit + self.stopLoss
+                        if ( self.currentProfit is not None ) :
+                            # (Mantengo el bloque sin cambiar la lógica de trailing en precio; no toco stopLossCurrent aquí)
                             pass
                             # anulado el trailing. Por ahora. Necesito stoploss que seguir
     
-                        if (self.stopLossCurrent < 1) and (self.currentProfit > 15):
+                        if (self.stopLossCurrent is not None) and (self.currentProfit is not None) and (self.stopLossCurrent < 1) and (self.currentProfit > 15):
                             # If profit reaches 15, set stopLoss to 0 to prevent Losses
-                            self.stopLossCurrent=0
+                            # (En precio, ya movemos a BE con la regla anterior; mantenemos este bloque sin efecto real)
+                            self.stopLossCurrent = self.stopLossCurrent
       
-                        if (self.stopLossCurrent < (self.currentProfit -10)) :
+                        if (self.currentProfit is not None) and (self.stopLossCurrent is not None) and (self.currentProfit -10 > 0) :
                         #IF SL is below currentProfit
                             # Stop Loss "Hugging"
-                            self.stopLossCurrent = self.stopLossCurrent + ((self.currentProfit - self.stopLossCurrent)*0.002)
+                            # (Hugging en % desactivado; usamos trailing por precio)
+                            self.stopLossCurrent = self.stopLossCurrent
 
 
 #                           # Time-stop condicional por falta de progreso + BE forzado
@@ -871,7 +900,7 @@ class Strategy(models.Model):
 #                                        # Guarda para UI si quieres ver días reales en vez de ticks
 #                                        self.bars_in_trade = days_in_trade
 #
-#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop/entry)*100*leverage
+#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop_init / entry) * Decimal("100") * lev
 #                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
 #
 #                                        # PnL actual en R
@@ -1292,3 +1321,4 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
