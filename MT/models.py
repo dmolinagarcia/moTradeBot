@@ -802,7 +802,7 @@ class Strategy(models.Model):
                             logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
 
                         # TP dinámico simple: SL + 2R (aprox)
-                        new_tp_pct = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage))))
+                        new_tp_pct = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity)))
                         if new_tp_pct > _D(self.takeProfitCurrent):
                             self.takeProfitCurrent = float(new_tp_pct)
                             logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
