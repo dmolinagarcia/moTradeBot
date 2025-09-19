@@ -1163,6 +1163,7 @@ class StrategyState(models.Model):
     def clear(self):
         self.stopLossCurrent = None
         self.takeProfitCurrent = None
+        self.currentProfit = None
         self.estado = 0
         self.accion = "WAIT"
         self.save()
