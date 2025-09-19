@@ -771,10 +771,8 @@ class Strategy(models.Model):
 
                         # Mi stop init es 2x ATR. Es mucho!
                         stop_init = ATR_MULT_SL * _D(self.atr)
-                        # Cambiamos a 1x ATR a ver que tal
-                        stop_init = _D(self.atr)
 
-                        r_unity = stop_init / _D(self.placedPrice)
+                        r_unity = stop_init / _D(self.placedPrice) * _D(self.leverage)  # riesgo en unidad (1R = riesgo inicial)
                         pnl_r_est = (_D(self.currentRate - self.placedPrice) / stop_init) if self.accion == "COMPRAR" else ((self.placedPrice - self.currentRate) / stop_init)
                         logger.debug(str(self.rateSymbol) + ":         - Values used in calculation") 
                         logger.debug(str(self.rateSymbol) + ":           > stop_init %s", stop_init)
@@ -804,8 +802,10 @@ class Strategy(models.Model):
                             logger.debug(str(self.rateSymbol) + ":         - - Trailing SL would move down from %.2f%% to %.2f%%, not changing", cur_sl, new_sl_pct)
 
                         # TP dinámico simple: SL + 2R (aprox)
-                        self.takeProfitCurrent = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage))))
-                        logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
+                        new_tp_pct = float((_D(self.stopLossCurrent or 0) + (Decimal("200") * r_unity * _D(self.leverage))))
+                        if new_tp_pct > _D(self.takeProfitCurrent):
+                            self.takeProfitCurrent = float(new_tp_pct)
+                            logger.debug(str(self.rateSymbol) + ":         - - Updating TP to +2R (%.2f%%)", self.takeProfitCurrent)
 
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
