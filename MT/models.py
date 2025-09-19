@@ -1164,6 +1164,7 @@ class StrategyState(models.Model):
         self.stopLossCurrent = None
         self.takeProfitCurrent = None
         self.estado = 0
+        self.accion = "WAIT"
         self.save()
 
 # ──────────────────────────────────────────────────────────────────────────────
