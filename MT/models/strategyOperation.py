@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.db.models import Max, Min
+from django.utils import timezone
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STRATEGY OPERATION 

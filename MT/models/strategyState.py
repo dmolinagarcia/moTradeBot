@@ -48,9 +48,10 @@ class StrategyState(models.Model):
         return str(self.strategy.utility + ":" + str(self.timestamp))
     
     def clear(self):
-        self.stopLossCurrent = None
-        self.takeProfitCurrent = None
-        self.currentProfit = None
-        self.estado = 0
-        self.accion = "WAIT"
-        self.save()
+        if self.accion != "WAIT":
+            self.stopLossCurrent = None
+            self.takeProfitCurrent = None
+            self.currentProfit = None
+            self.estado = 0
+            self.accion = "WAIT"
+            self.save()
