@@ -596,7 +596,6 @@ class Strategy(models.Model):
                                         risk_amount = equity * RISK_PCT  # dinero que acepto arriesgar si salta el stop
                                         logger.debug(str(self.rateSymbol) + ":               - - Risk amount per trade: %s (%.2f%% of equity)", risk_amount, RISK_PCT * 100)
 
-
                                         # NOCIONAL que hace que la pérdida ~ risk_amount si el precio recorre stop_dist
                                         # amount_notional = units * entry = (risk_amount/stop_dist) * entry
                                         amount_notional = (risk_amount * entry) / stop_dist / Decimal(str(self.leverage or 1))
@@ -797,7 +796,7 @@ class Strategy(models.Model):
 #                                        # Guarda para UI si quieres ver días reales en vez de ticks
 #                                        self.bars_in_trade = days_in_trade
 #
-#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop/entry)*100*leverage
+#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop_init / entry) * Decimal("100") * lev
 #                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
 #
 #                                        # PnL actual en R
