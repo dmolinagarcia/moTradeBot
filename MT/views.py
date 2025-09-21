@@ -306,40 +306,43 @@ def getGraphData (strategy, history) :
   
     data.append(["Time", "Rate","COMPRAR","VENDER","EMA","EMA20","EMA100"])
     data1.append(["Time", "ADX","+DI","-DI","DIFF","COMPRAR","VENDER"])
-    data2.append(["Time", "PRICE", "STOPLOSS", "TAKEPROFIT", "COMPRAR", "VENDER"])
+    data2.append(["Time", "PROFIT", "STOPLOSS", "TAKEPROFIT", "COMPRAR", "VENDER"])
     data3.append(["Time", "RECOMMEND", "RECOMMEND240", "COMPRAR", "VENDER"])
     data4.append(["Time", "ATR%","COMPRAR","VENDER"])
  
     estado=0
     estadoNext=0
     avg240=0
+    entryPrice=0
+    isInOper=False
 
     for entry in history:
 
-        currentRate=0
         if entry.accion=="COMPRAR" :
+            if not isInOper:
+                entryPrice=entry.currentRate
+            isInOper = True
             comprar=500000
             vender=0
-            currentRate=entry.currentRate
+            stopLossCurrent   = ((entry.stopLossCurrent   - entryPrice) / entryPrice ) * strategy.leverage * 100
+            takeProfitCurrent = ((entry.takeProfitCurrent - entryPrice) / entryPrice ) * strategy.leverage * 100
         elif entry.accion=="VENDER" :
+            if not isInOper:
+                entryPrice=entry.currentRate
+            isInOper = True
             comprar=0
             vender=500000
-            currentRate=entry.currentRate
+            stopLossCurrent   = ((entryPrice - entry.stopLossCurrent) / entryPrice ) * strategy.leverage * 100
+            takeProfitCurrent = ((entryPrice - entry.takeProfitCurrent) / entryPrice ) * strategy.leverage * 100
         else:
+            isInOper = False
+            entryPrice = 0
             comprar=0
             vender=0
-
-        stopLossCurrent=0
-        if entry.stopLossCurrent is None :
+            currentProfit=0
             stopLossCurrent=0
-        else :
-            stopLossCurrent=entry.stopLossCurrent
+            takeProfitCurrent=0            
 
-        takeProfitCurrent=0
-        if entry.takeProfitCurrent is None :
-            takeProfitCurrent=0
-        else :
-            takeProfitCurrent=entry.takeProfitCurrent
 
         ema100=entry.currentRate
         if entry.ema100 is None :
@@ -371,7 +374,7 @@ def getGraphData (strategy, history) :
             ])
 
         data2.append([(entry.timestamp).strftime('%m.%d.%y %H:%M'),
-            currentRate,
+            entry.currentProfit or 0, #currentRate,
             stopLossCurrent,
             takeProfitCurrent,
             comprar,
