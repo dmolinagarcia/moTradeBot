@@ -452,22 +452,11 @@ class Strategy(models.Model):
             # Comprobaciones de que todo es correcto. Si no, cancelamos llamada a operation
 
             if self.estado == 2 and self.operID == 0:
-                ## Operacion en curso, pero no tenemos OPERID
-                # logger.error("MOT-00001: Open operation without operID at " + self.rateSymbol)
-                # self.inError = True
-                # self.save()
-                # return
                 raise MoTradeError(
                     1, "MOT-00001: Open operation without operID at " + self.rateSymbol
                 )
 
             if self.estado == 2 and self.bet == 0:
-                ## Operacion en curso, pero no se ha cargado BET
-                # logger.error ("MOT-00002: Bet can't be zero with an open operation at "
-                #               + self.rateSymbol)
-                # self.inError=True
-                # self.save()
-                # return
                 raise MoTradeError(
                     2, "MOT-00002: Bet can't be zero with an open operation at "
                     + self.rateSymbol
