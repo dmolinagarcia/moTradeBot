@@ -7,6 +7,7 @@ from .lib.moTradeError import MoTradeError
 from .lib.helpers import D as _D
 from .lib.helpers import to_roll_date as _to_roll_date
 from .lib.helpers import compute_atr_wilder as _compute_atr_wilder
+from .lib.api     import get_position
 
 from django.utils import timezone
 from decimal import Decimal
@@ -60,32 +61,6 @@ class Strategy(models.Model):
         return statusUtility + " " + statusOperation + " " + f"{profit:3.2f}" + "%"
 
     # ── INTERFAZ CON EL SERVICIO LOCAL (sin cambios funcionales) ─────────────
-    def get_position(self, position_id):
-        if self.operIDclose is None:
-            operIDclose = 0
-        else:
-            operIDclose = self.operIDclose
-
-        data = {
-            "order_id": position_id,
-            "order_id_close": operIDclose,
-            "instrument_id_bingx": self.operSymbolBingx,
-        }
-
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(
-            "http://127.0.0.1:5000/get_position", headers=headers, data=json.dumps(data)
-        )
-
-        try:
-            salida = response.json()
-        except Exception:
-            logger.error(
-                str(self.rateSymbol) + ": Error en get_position al leer el response.json()"
-            )
-            logger.error(response.text)
-
-        return response.json()[0], response.json()[1]
 
     def buy_order(
         self,
@@ -588,7 +563,9 @@ class Strategy(models.Model):
                                     self.bet = self.amount
                                     self.maxCurrentRate = self.currentRate
                     if self.estado == 2:
-                        check, position = self.get_position(self.operID)
+                        check, position = get_position(self.operID, 
+                                                       self.operIDclose, 
+                                                       self.operSymbolBingx)
                         if check:
                             # La orden se ha ejecutado
                             self.currentProfit = round(
@@ -864,7 +841,9 @@ class Strategy(models.Model):
                         reason = []
 
                         # Obtener estado de posicion
-                        check, position = self.get_position(self.operID)
+                        check, position = get_position(self.operID, 
+                                                       self.operIDclose, 
+                                                       self.operSymbolBingx)
                         if check:
                             # if position['position']['close_at'] > 0 :
                             # para IQoption, close_at is not None, pero nunca mas lo
@@ -1333,7 +1312,9 @@ class Strategy(models.Model):
             self.placedPrice = 0
             if not forceClose:
                 self.operIDclose = orderIDClose
-            check, position = self.get_position(self.operID)
+                check, position = get_position(self.operID, 
+                                               self.operIDclose, 
+                                               self.operSymbolBingx)
             beneficio = (
                 position["position"]["sell_amount"]
                 - position["position"]["buy_amount"]
