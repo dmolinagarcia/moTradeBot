@@ -90,9 +90,10 @@ def strategyListView(request):
     strategy_list = Strategy.objects.filter(isRunning=True).order_by('-currentProfit')
     #  = Strategy.objects.order_by('-beneficioTotal')
     template = loader.get_template('strategy/list.html')
-    for strategy in strategy_list :
-        if strategy.isRunning :
-            beneficio=beneficio+(strategy.beneficioTotal if strategy.beneficioTotal is not None else 0)
+    for s in strategy_list:
+        if s.isRunning:
+            beneficio += (s.beneficioTotal or 0)
+        s.diffDI = (s.plusDI or 0) - (s.minusDI or 0)   # <<--- aquí
     context = {
         'strategy_list': strategy_list,
         'beneficio': beneficio,

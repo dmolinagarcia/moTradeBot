@@ -23,7 +23,6 @@ class StrategyState(models.Model):
     adx = models.FloatField(null=True)
     plusDI = models.FloatField(null=True)
     minusDI = models.FloatField(null=True)
-    diffDI = models.FloatField(null=True)
     currentRate = models.FloatField(null=True)
     currentProfit = models.FloatField(null=True)
     maxCurrentRate = models.FloatField(null=True)

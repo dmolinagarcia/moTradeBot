@@ -225,7 +225,6 @@ class Strategy(models.Model):
     adx = models.FloatField(null=True, blank=True)
     plusDI = models.FloatField(null=True, blank=True)
     minusDI = models.FloatField(null=True, blank=True)
-    diffDI = models.FloatField(null=True, blank=True)
     currentRate = models.FloatField(null=True, blank=True)
     maxCurrentRate = models.FloatField(null=True, blank=True)
     stopLoss = models.FloatField(null=True)
@@ -339,7 +338,6 @@ class Strategy(models.Model):
             self.ema = indicators[3]
             self.ema20 = indicators[4]
             self.ema100 = indicators[5]
-            self.diffDI = self.plusDI - self.minusDI
             self.recommendMA = indicators[6]
             self.recommendMA240 = indicators[7]
 
@@ -441,14 +439,14 @@ class Strategy(models.Model):
                         ## Abrimos si el ADX está por encima del mínimo limitOpen
 
                         if self.adx > self.limitOpen:
-                            if self.diffDI > self.limitBuy:
+                            if ( self.plusDI - self.minusDI ) > self.limitBuy:
                                 check = self.comprar()
                                 if check:
                                     estadoNext = 2
                                     self.currentProfit = 0
                                     self.bet = self.amount
                                     self.maxCurrentRate = self.currentRate
-                            if self.diffDI < self.limitSell:
+                            if ( self.plusDI - self.minusDI ) < self.limitSell:
                                 check = self.vender()
                                 if check:
                                     estadoNext = 2
@@ -551,13 +549,13 @@ class Strategy(models.Model):
 
                             side = None
                             if (
-                                (self.diffDI > self.limitBuy)
+                                (( self.plusDI - self.minusDI ) > self.limitBuy)
                                 and self.checkRecommend()
                                 and isMarketOpen
                             ):
                                 side = "long"
                             if (
-                                (self.diffDI < self.limitSell)
+                                (( self.plusDI - self.minusDI ) < self.limitSell)
                                 and self.checkRecommend()
                                 and isMarketOpen
                             ):
@@ -570,7 +568,7 @@ class Strategy(models.Model):
                                 str(self.rateSymbol)
                                 + ":          > diffDI=%s, limitBuy=%s, limitSell=%s, "
                                 + "Recommend=%s, MarketOpen=%s",
-                                self.diffDI,
+                                self.plusDI - self.minusDI,
                                 self.limitBuy,
                                 self.limitSell,
                                 self.checkRecommend(),
@@ -774,13 +772,13 @@ class Strategy(models.Model):
                             if self.currentRate < self.maxCurrentRate:
                                 self.maxCurrentRate = self.currentRate
                             # Reversión de momentum en short
-                            if self.diffDI > self.limitSell * 0.85:
+                            if (self.plusDI - self.minusDI) > self.limitSell * 0.85:
                                 reason.append("limitSell")
                         else:
                             if self.currentRate > self.maxCurrentRate:
                                 self.maxCurrentRate = self.currentRate
                             # Reversión de momentum en long
-                            if self.diffDI < self.limitBuy * 0.85:
+                            if (self.plusDI - self.minusDI) < self.limitBuy * 0.85:
                                 reason.append("limitBuy")
 
                         # BE y trailing por ATR en % (si tenemos ATR)
@@ -1102,7 +1100,6 @@ class Strategy(models.Model):
             adx=self.adx,
             plusDI=self.plusDI,
             minusDI=self.minusDI,
-            diffDI=self.diffDI,
             currentRate=self.currentRate,
             currentProfit=self.currentProfit,
             maxCurrentRate=self.maxCurrentRate,
@@ -1254,18 +1251,18 @@ class Strategy(models.Model):
         ## direccion!
 
         if (
-            (self.diffDI is not None)
+            ((self.plusDI - self.minusDI) is not None)
             and (self.limitBuy is not None)
-            and (self.diffDI > self.limitBuy)
+            and ((self.plusDI - self.minusDI) > self.limitBuy)
         ):
             # Comprar
             if recomendacionTV > 1.5:
                 resultado = True
 
         if (
-            (self.diffDI is not None)
+            ((self.plusDI - self.minusDI) is not None)
             and (self.limitSell is not None)
-            and (self.diffDI < self.limitSell)
+            and ((self.plusDI - self.minusDI) < self.limitSell)
         ):
             # Vender
             if recomendacionTV < -1.5:
