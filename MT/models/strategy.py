@@ -874,9 +874,6 @@ class Strategy(models.Model):
                         # Reglas de SL/TP gobernadas por recomendación (como tenías)
                         if not self.checkRecommend():
                             # Solo si no es recomendable seguir, evaluamos SL/TP
-                            ### Ante un stopLoss, esperamos 48 periodos
-                            ### If we are below stopLoss and checkRecommend Fails. Close!
-                            # >>> Cambios: comparación por PRECIO <<<
                             if self.accion == "COMPRAR":
                                 if (
                                     self.stopLossCurrent is not None
@@ -923,13 +920,7 @@ class Strategy(models.Model):
 #                           # self.stopLossCurrent = self.currentProfit + self.stopLoss
 #                           pass
 #                           # anulado el trailing. Por ahora. Necesito stoploss que seguir
-#
-#                       if (self.stopLossCurrent is not None) and (self.currentProfit > 15):
-#                           ### Basic Breakeven. Implemented above
-#                           # If profit reaches 15, set stopLoss to 0 to prevent Losses
-#                           # >>> Cambios: mover SL al PRECIO de entrada
-#                           self.stopLossCurrent = float(self.placedPrice)
-#
+
 #                       if (self.stopLossCurrent is not None):
 #                           ### SL Hugging. Deactivated for same reasons as above
 #                           #IF SL is below currentProfit
