@@ -120,7 +120,18 @@ Each cycle, the gap between profit and stop loss is reduces by 40%. So, if profi
 
 <a name="errorcodes"></a>
 ## Error Codes
-TO-DO
+
+### MOT-001xx 
+These are prechecks errors. If any known situation is detected before procesing a crypto, a MOT-001xx is raised
+
+* MOT-00101. Open operation without operID. A position is currently open, but no operID is registered. Check your bingx account and update the symbol.
+* MOT-00102. Bet can't be zero with an open operation. A position is open, but placed bet is unknown. Check your bingx account and update the symbol.
+* MOT-00103. Protected Trade not implemented in API! Protected trade is activated for the symbol. However, protected trade is not available at the moment, as the API does not support it-
+
+### MOT-002xx
+These are API errors. Raised when response from an API call can´t be properly handled.
+
+* MOT-00201. No data from TradingView. Call to Trading View to retrieve indicators came back empty. Check Symbol availability.
 
 <a name="uninstall"></a>
 ## Uninstall

@@ -6,6 +6,8 @@ import logging
 
 logger = logging.getLogger("MT.models")
 
+## No exception handling here. All exceptions are handled in the strategy.
+
 # ── GETS ──────────────────────────────────────────────────────────────────────────────────────────
 def get_position(position_id, order_id_close, instrument_id_bingx):
     """Gets the current position from the local API"""
@@ -23,11 +25,7 @@ def get_position(position_id, order_id_close, instrument_id_bingx):
         "http://127.0.0.1:5000/get_position", headers=headers, data=json.dumps(data)
     )
 
-    try:
-        salida = response.json()
-    except Exception:
-        logger.error( str(self.rateSymbol) + ": Error en get_position al leer el response.json()")
-        return None, None
+    salida = response.json()
 
     return salida[0], salida[1]
 

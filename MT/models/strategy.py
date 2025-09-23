@@ -329,7 +329,7 @@ class Strategy(models.Model):
                                                 self.cryptoTimeframeADX )
 
         if total_count == 0:
-            raise MoTradeError(3, "MOT-00003: No data from TradingView for " + self.rateSymbol)
+            raise MoTradeError(3, "MOT-00201: No data from TradingView for " + self.rateSymbol)
 
         try:
             self.adx = indicators[0]
@@ -406,14 +406,21 @@ class Strategy(models.Model):
 
             if self.estado == 2 and self.operID == 0:
                 raise MoTradeError(
-                    1, "MOT-00001: Open operation without operID at " + self.rateSymbol
+                    1, "MOT-00101: Open operation without operID at " + self.rateSymbol
                 )
 
             if self.estado == 2 and self.bet == 0:
                 raise MoTradeError(
-                    2, "MOT-00002: Bet can't be zero with an open operation at "
+                    2, "MOT-00102: Bet can't be zero with an open operation at "
                     + self.rateSymbol
                 )
+
+            if self.protectedTrade:
+                raise MoTradeError(
+                    2, "MOT-00103: Protected Trade not implemented in API! For "
+                    + self.rateSymbol
+                )
+
 
             if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
