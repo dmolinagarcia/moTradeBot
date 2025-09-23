@@ -142,15 +142,6 @@ class Strategy(models.Model):
             "atr":..?}, ...]
         """
 
-        # logger.debug(
-        #     str(self.rateSymbol)
-        #     + ": get_candle(limit=%s, tf=%s, with_atr=%s, period=%s)",
-        #     limit,
-        #     timeframe,
-        #     with_atr,
-        #     atr_period,
-        # )
-
         if timeframe.lower() != "1d":
             # Puedes ampliar a 1h/4h si lo necesitas; por ahora forzamos 1d
             timeframe = "1d"
@@ -166,13 +157,6 @@ class Strategy(models.Model):
             .order_by("timestamp")
             .values("timestamp", "currentRate")
         )
-
-        # logger.debug(
-        #     str(self.rateSymbol)
-        #     + ": get_candle: muestras_10m=%d (>= %s)",
-        #     qs.count(),
-        #     (timezone.now() - timedelta(days=int(limit) + int(atr_period) + 5)),
-        # )
 
         # Agregación diaria
         daily_map = {}  # key: date  → dict con o/h/l/c
@@ -190,10 +174,6 @@ class Strategy(models.Model):
                 rec["high"] = max(rec["high"], px)
                 rec["low"] = min(rec["low"], px)
                 rec["close"] = px  # último del día
-
-        # logger.debug(
-        #     str(self.rateSymbol) + ": get_candle: dias_agregados=%d", len(daily_map)
-        # )
 
         # Ordena por fecha ASC y forma velas
         days_sorted = sorted(daily_map.keys())
@@ -215,16 +195,6 @@ class Strategy(models.Model):
         # ATR opcional
         if with_atr:
             _compute_atr_wilder(candles, period=atr_period)
-
-        if with_atr:
-            count_atr = sum(1 for c in candles if c.get("atr") is not None)
-            # logger.debug(
-            #     str(self.rateSymbol)
-            #     + ": get_candle: velas=%d, con_atr=%d, ultima_atr=%s",
-            #     len(candles),
-            #     count_atr,
-            #     candles[-1].get("atr") if candles else None,
-            # )
 
         return candles
 
@@ -427,27 +397,6 @@ class Strategy(models.Model):
                     atr_period=14,
                     session_offset_minutes=0,
                 )
-
-                # Diagnóstico básico de ATR
-                filled = sum(1 for c in candles if c.get("atr") is not None)
-                # logger.debug(
-                #     str(self.rateSymbol)
-                #     + ": [ATR] velas=%d, con_atr=%d, atr_period=14",
-                #     len(candles),
-                #     filled,
-                # )
-                # if candles:
-                #     logger.debug(
-                #         str(self.rateSymbol)
-                #         + ": [ATR] first=%s last=%s",
-                #         candles[0],
-                #         candles[-1],
-                #     )
-                #     logger.debug(
-                #         str(self.rateSymbol)
-                #         + ": [ATR] ultima_atr=%s",
-                #         candles[-1].get("atr"),
-                #     )
 
                 if not candles or candles[-1].get("atr") is None:
                     logger.warning(
