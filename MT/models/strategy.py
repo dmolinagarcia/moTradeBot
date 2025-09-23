@@ -7,7 +7,7 @@ from .lib.moTradeError import MoTradeError
 from .lib.helpers import D as _D
 from .lib.helpers import to_roll_date as _to_roll_date
 from .lib.helpers import compute_atr_wilder as _compute_atr_wilder
-from .lib.api     import get_position
+from .lib.api     import get_position, get_indicator
 
 from django.utils import timezone
 from decimal import Decimal
@@ -324,69 +324,24 @@ class Strategy(models.Model):
     # ── Operation ────────────────────────────────────────────────────────────
     # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
-        cryptoDataraw = (
-            '{"symbols":{"tickers":["'
-            + self.tickSymbol
-            + '"],"query":{"types":[]}},"columns":['
-            + '"ADX'                 + str(self.cryptoTimeframeADX or "") + '",'
-            + '"ADX+DI'              + str(self.cryptoTimeframeDI or "")  + '",'
-            + '"ADX-DI'              + str(self.cryptoTimeframeDI or "")  + '",'
-            + '"EMA10'               + str(self.cryptoTimeframeADX or "") + '",'
-            + '"EMA20'               + str(self.cryptoTimeframeADX or "") + '",'
-            + '"EMA100'              + str(self.cryptoTimeframeADX or "") + '",'
-            + '"Recommend.MA'        + str(self.cryptoTimeframeADX or "") + '",'
-            + '"Recommend.MA|240"'
-            + "]}"""
-        )
 
-        headers = {
-            "authority": "scanner.tradingview.com",
-            "user-agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-            ),
-            "content-type": "application/x-www-form-urlencoded",
-            "accept": "*/*",
-            "origin": "https://www.tradingview.com",
-            "sec-fetch-site": "same-site",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-dest": "empty",
-            "referer": "https://www.tradingview.com/",
-            "accept-language": "en,es;q=0.9",
-            "cookie": (
-                "_ga=GA1.2.526459883.1610099096; __gads=ID=8f36aef99159e559:"
-                "T=1610100101:S=ALNI_Mars83GB1m6Wd227WWiChIcow2RpQ; "
-                "sessionid=8pzntqn1e9y9p347mq5y54mo5yvb8zqq; "
-                "tv_ecuid=41f8c020-6882-40d1-a729-c638b361d4b3; "
-                "_sp_id.cf1a=18259830-0041-4e5d-bbec-2f481ebd9b76.1610099095.44."
-                "1613162553.1612699115.1f98354c-1841-47fc-ab5d-d7113cfa5090; "
-                "_sp_ses.cf1a=*; _gid=GA1.2.1715043600.1613162554; "
-                "_gat_gtag_UA_24278967_1=1"
-            ),
-        }
+        total_count, indicators = get_indicator(self.tickSymbol, 
+                                                self.cryptoTimeframeDI, 
+                                                self.cryptoTimeframeADX )
 
-        response = requests.post(
-            "https://scanner.tradingview.com/crypto/scan",
-            headers=headers,
-            data=cryptoDataraw,
-        )
-
-        if response.json()["totalCount"] == 0:
-            raise MoTradeError(
-                3, "MOT-00003: No data from TradingView for " + self.rateSymbol
-            )
+        if total_count == 0:
+            raise MoTradeError(3, "MOT-00003: No data from TradingView for " + self.rateSymbol)
 
         try:
-            d = response.json()["data"][0]["d"]
-            self.adx = d[0]
-            self.plusDI = d[1]
-            self.minusDI = d[2]
-            self.ema = d[3]
-            self.ema20 = d[4]
-            self.ema100 = d[5]
+            self.adx = indicators[0]
+            self.plusDI = indicators[1]
+            self.minusDI = indicators[2]
+            self.ema = indicators[3]
+            self.ema20 = indicators[4]
+            self.ema100 = indicators[5]
             self.diffDI = self.plusDI - self.minusDI
-            self.recommendMA = d[6]
-            self.recommendMA240 = d[7]
+            self.recommendMA = indicators[6]
+            self.recommendMA240 = indicators[7]
 
             # --- ATR desde tus propias muestras (StrategyState) ---
             try:
