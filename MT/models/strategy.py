@@ -1235,30 +1235,14 @@ class Strategy(models.Model):
 
     # ── FILTRO MACRO ─────────────────────────────────────────────────────────
     def checkRecommend(self):
-        resultado = False
-        recomendacionTV = self.recommendMA + self.recommendMA240
-        ## Resultado por defecto False
-        ## recomendacionTV es la suma de recommendMA y recommendMA240
-        ## La suma debe ser mayor a 1, en la direccion adecuada
-        ## Es decir, como no puede superar 1, al menos deben estar en la misma
-        ## direccion!
+        recommendTV = self.recommendMA + self.recommendMA240
 
-        if (
-            ((self.plusDI - self.minusDI) is not None)
-            and (self.limitBuy is not None)
-            and ((self.plusDI - self.minusDI) > self.limitBuy)
-        ):
-            # Comprar
-            if recomendacionTV > 1.5:
-                resultado = True
+        # side:  1 if plusDI > minusDI, LONG
+        #       -1 if minusDI > plusDI, SHORT 
+        #        0 if they match
+        
+        side = 1 if self.plusDI > self.minusDI else (-1 if self.minusDI > self.plusDI else 0)
+        if side == 0:
+            return False  # sin dirección
 
-        if (
-            ((self.plusDI - self.minusDI) is not None)
-            and (self.limitSell is not None)
-            and ((self.plusDI - self.minusDI) < self.limitSell)
-        ):
-            # Vender
-            if recomendacionTV < -1.5:
-                resultado = True
-
-        return resultado
+        return (recommendTV * side) > 1.5
