@@ -311,8 +311,7 @@ class Strategy(models.Model):
 
     # ── GETS ─────────────────────────────────────────────────────────────────
     def getHistory(self):
-        history = StrategyState.objects.filter(strategy=self).order_by("timestamp")
-        return history
+        return StrategyState.objects.filter(strategy=self).order_by("timestamp")
 
     def getOperations(self):
         return StrategyOperation.objects.filter(strategy=self)
@@ -321,7 +320,6 @@ class Strategy(models.Model):
         return self.comments
 
     # ── Operation ────────────────────────────────────────────────────────────
-    # ── UPDATE: Añadimos calculo del ATR a partir de las velas ───────────────
     def update(self):
 
         total_count, indicators = get_indicator(self.tickSymbol, 
@@ -362,8 +360,6 @@ class Strategy(models.Model):
                 else:
                     self.atr = float(candles[-1]["atr"])
 
-                # logger.debug(str(self.rateSymbol) + ": [ATR] Calculated atr %d", self.atr)
-
             except Exception as e:
                 logger.warning(
                     str(self.rateSymbol) + ": No se pudo calcular ATR desde StrategyState: %s",
@@ -394,6 +390,8 @@ class Strategy(models.Model):
             self.currentRate = float(resp_json["price"])
         else:
             logger.error(str(self.rateSymbol) + ": No se ha podido obtener el precio")
+
+        self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
         self.save()
 
     # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
@@ -402,7 +400,6 @@ class Strategy(models.Model):
 
         try:
             # Sanity Checks
-            # Comprobaciones de que todo es correcto. Si no, cancelamos llamada a operation
 
             if self.estado == 2 and self.operID == 0:
                 raise MoTradeError(
@@ -421,13 +418,11 @@ class Strategy(models.Model):
                     + self.rateSymbol
                 )
 
-
             if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
 
             # Refresca datos
             self.update()
-            self.nextUpdate = timezone.now() + timedelta(seconds=self.sleep)
 
             if self.isRunning:
                 logger.debug(str(self.rateSymbol) + ":   Symbol is running so we evaluate")
