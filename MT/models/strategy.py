@@ -355,7 +355,6 @@ class Strategy(models.Model):
                         + ": No se pudo calcular ATR desde StrategyState "
                         + "(ultima ATR=None)."
                     )
-                    # ⚠️ OJO: en tu fallback usa currentRate, no currentPrice
                     self.atr = (self.currentRate or 0) * 0.05
                 else:
                     self.atr = float(candles[-1]["atr"])
@@ -384,8 +383,6 @@ class Strategy(models.Model):
 
         resp_json = response.json()
 
-        # resp = requests.get('https://api.binance.com/api/v1/ticker/price?symbol='+self.rateSymbol)
-        # resp_json = resp.json()
         if float(resp_json["price"]) > -1:
             self.currentRate = float(resp_json["price"])
         else:
@@ -421,7 +418,6 @@ class Strategy(models.Model):
             if self.cooldownUntil is None:
                 self.cooldownUntil = timezone.now()
 
-            # Refresca datos
             self.update()
 
             if self.isRunning:
@@ -442,14 +438,14 @@ class Strategy(models.Model):
 
                         if self.adx > self.limitOpen:
                             if ( self.plusDI - self.minusDI ) > self.limitBuy:
-                                check = self.comprar()
+                                check = self.placeOrder("buy")
                                 if check:
                                     estadoNext = 2
                                     self.currentProfit = 0
                                     self.bet = self.amount
                                     self.maxCurrentRate = self.currentRate
                             if ( self.plusDI - self.minusDI ) < self.limitSell:
-                                check = self.vender()
+                                check = self.placeOrder("sell")
                                 if check:
                                     estadoNext = 2
                                     self.currentProfit = 0
@@ -555,13 +551,13 @@ class Strategy(models.Model):
                                 and self.checkRecommend()
                                 and isMarketOpen
                             ):
-                                side = "long"
+                                side = "buy"
                             if (
                                 (( self.plusDI - self.minusDI ) < self.limitSell)
                                 and self.checkRecommend()
                                 and isMarketOpen
                             ):
-                                side = "short"
+                                side = "sell"
                             logger.debug(
                                 str(self.rateSymbol) + ":         - Side evaluated to %s",
                                 side,
@@ -674,12 +670,13 @@ class Strategy(models.Model):
                                     self.amount = amount_calc
 
                                     # Abrimos con orden de mercado
-                                    check = self.comprar() if side == "long" else self.vender()
+                                    check = self.placeOrder(side)
+
                                     if check:
                                         self.bet = amount_calc
                                         self.maxCurrentRate = self.currentRate
                                         self.accion = (
-                                            "COMPRAR" if side == "long" else "VENDER"
+                                            "COMPRAR" if side == "buy" else "VENDER"
                                         )
                                         self.currentProfit = 0
                                         estadoNext = 2
@@ -911,18 +908,6 @@ class Strategy(models.Model):
                                         timezone.now() + timedelta(days=1)
                                     )
 
-                        # Now we update SLc and TPc
-#                       if (self.currentProfit + self.stopLoss > self.stopLossCurrent):
-#                           ### This is a basic trailing SL. It is commented out
-#                           ### because we're using a chandelier trailing type before this!
-#                           # if Current Profit plus stopLoss (Which is always negative!)
-#                           # is higher that current stopLoss,
-#                           # this is a regular trailing stoploss. We ser stopLoss at
-#                           # current profit minus stopLoss
-#                           # self.stopLossCurrent = self.currentProfit + self.stopLoss
-#                           pass
-#                           # anulado el trailing. Por ahora. Necesito stoploss que seguir
-
 #                       if (self.stopLossCurrent is not None):
 #                           ### SL Hugging. Deactivated for same reasons as above
 #                           #IF SL is below currentProfit
@@ -1064,12 +1049,6 @@ class Strategy(models.Model):
         force = False
         check = self.cerrar(reason, force)
         if check:
-            #payload = {"head": self.__str__(), "body": "Cerrar"}
-            #send_group_notification(group_name="notificame", payload=payload, ttl=100000)
-            #telegram_settings = settings.TELEGRAM
-            #bot = telegram.Bot(token=telegram_settings['bot_token'])
-            #bot.send_message(chat_id="@%s" % telegram_settings['channel_name'],
-            #    text=self.__str__()+" Cerrar", parse_mode=telegram.ParseMode.HTML)
             self.accion = "CERRAR"
             estadoNext = 3
             self.bet = 0
@@ -1114,76 +1093,45 @@ class Strategy(models.Model):
             atr=self.atr,
         ).save()
 
-    # ── ÓRDENES DE ENTRADA (conserva interfaz; añade flag protected) ─────────
-    def comprar(self):
-        if self.protectedTrade:
-            check, order_id = self.buy_order(
-                instrument_type="crypto",
-                instrument_id=self.operSymbol,
-                instrument_id_bingx=self.operSymbolBingx,
-                side="buy",
-                amount=self.amount,
-                leverage=self.leverage,
-                # type="limit", limit_price=self.ema,
-                type="market",
-                stop_lose_kind="percent",
-                stop_lose_value=self.stopLoss,
-                use_trail_stop=True,
-            )
-            self.placedPrice = self.ema
-        else:
-            check, order_id = self.buy_order(
-                instrument_type="crypto",
-                instrument_id=self.operSymbol,
-                instrument_id_bingx=self.operSymbolBingx,
-                side="buy",
-                amount=self.amount,
-                leverage=self.leverage,
-                type="market",
-            )
-        if check:
-            self.operID = order_id
-            self.placedPrice = self.currentRate
-            Noperation = StrategyOperation(
-                strategy=self, operID=order_id, type="buy"
-            )
-            Noperation.save()
-        self.save()
-        return check
+    # ── Order placement ──────────────────────────────────────────────────────
 
-    def vender(self):
+    def placeOrder(self, side):
+        """
+        Calls internal API to place order 
+        side: "buy" | "sell"
+        """
+
+        logger.debug(side)
+
+        # Common parameters for protected / unprotected
+        params = {
+            "instrument_type": "crypto",
+            "instrument_id": self.operSymbol,
+            "instrument_id_bingx": self.operSymbolBingx,
+            "side": side,              
+            "amount": self.amount,
+            "leverage": self.leverage,
+            "type": "market",
+        }
+
+        # Protected trade (trail + SL %) aditional parmeters
         if self.protectedTrade:
-            check, order_id = self.buy_order(
-                instrument_type="crypto",
-                instrument_id=self.operSymbol,
-                instrument_id_bingx=self.operSymbolBingx,
-                side="sell",
-                amount=self.amount,
-                leverage=self.leverage,
-                # type="limit", limit_price=self.ema,
-                type="market",
-                stop_lose_kind="percent",
-                stop_lose_value=self.stopLoss,
-                use_trail_stop=True,
-            )
-            self.placedPrice = self.ema
+            params.update({
+                "stop_lose_kind": "percent",
+                "stop_lose_value": self.stopLoss,
+                "use_trail_stop": True,
+            })
+            price_to_save = self.ema
         else:
-            check, order_id = self.buy_order(
-                instrument_type="crypto",
-                instrument_id=self.operSymbol,
-                instrument_id_bingx=self.operSymbolBingx,
-                side="sell",
-                amount=self.amount,
-                leverage=self.leverage,
-                type="market",
-            )
+            price_to_save = self.currentRate
+
+        check, order_id = self.buy_order(**params)
+
         if check:
             self.operID = order_id
-            self.placedPrice = self.currentRate
-            Noperation = StrategyOperation(
-                strategy=self, operID=order_id, type="sell"
-            )
-            Noperation.save()
+            self.placedPrice = price_to_save
+            StrategyOperation(strategy=self, operID=order_id, type=side).save()
+
         self.save()
         return check
 
