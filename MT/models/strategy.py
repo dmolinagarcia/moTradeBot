@@ -7,7 +7,7 @@ from .lib.moTradeError import MoTradeError
 from .lib.helpers import D as _D
 from .lib.helpers import to_roll_date as _to_roll_date
 from .lib.helpers import compute_atr_wilder as _compute_atr_wilder
-from .lib.api     import get_position, get_indicator
+from .lib.api     import get_position, get_indicator, buy_order
 
 from django.utils import timezone
 from decimal import Decimal
@@ -61,41 +61,6 @@ class Strategy(models.Model):
         return statusUtility + " " + statusOperation + " " + f"{profit:3.2f}" + "%"
 
     # ── INTERFAZ CON EL SERVICIO LOCAL (sin cambios funcionales) ─────────────
-
-    def buy_order(
-        self,
-        instrument_type,
-        instrument_id,
-        instrument_id_bingx,
-        side,
-        amount,
-        leverage,
-        type,
-        limit_price=None,
-        stop_lose_kind=None,
-        stop_lose_value=None,
-        use_trail_stop=None,
-    ):
-        data = {
-            "instrument_type": instrument_type,
-            "instrument_id": instrument_id,
-            "instrument_id_bingx": instrument_id_bingx,
-            "side": side,
-            "amount": amount,
-            "leverage": leverage,
-            "type": type,
-            "limit_price": limit_price,
-            "stop_lose_kind": stop_lose_kind,
-            "stop_lose_value": stop_lose_value,
-            "use_trail_stop": use_trail_stop,
-        }
-
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(
-            "http://127.0.0.1:5000/buy_order", headers=headers, data=json.dumps(data)
-        )
-
-        return response.json()[0], response.json()[1]
 
     def close_position(self, order_id):
         data = {"order_id": order_id, "instrument_id_bingx": self.operSymbolBingx}

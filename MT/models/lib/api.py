@@ -85,3 +85,36 @@ def get_indicator(tick_symbol, crypto_timeframe_di, crypto_timeframe_adx):
     first_d = payload["data"][0]["d"]
 
     return total_count, first_d
+
+# ── ORDERS ────────────────────────────────────────────────────────────────────────────────────────
+def buy_order(
+    instrument_type,
+    instrument_id,
+    instrument_id_bingx,
+    side,
+    amount,
+    leverage,
+    type,
+    limit_price=None,
+    stop_lose_kind=None,
+    stop_lose_value=None,
+    use_trail_stop=None,
+):
+    data = {
+        "instrument_type": instrument_type,
+        "instrument_id": instrument_id,
+        "instrument_id_bingx": instrument_id_bingx,
+        "side": side,
+        "amount": amount,
+        "leverage": leverage,
+        "type": type,
+        "limit_price": limit_price,
+        "stop_lose_kind": stop_lose_kind,
+        "stop_lose_value": stop_lose_value,
+        "use_trail_stop": use_trail_stop,
+    }
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(
+        "http://127.0.0.1:5000/buy_order", headers=headers, data=json.dumps(data)
+    )
+    return response.json()[0], response.json()[1]
