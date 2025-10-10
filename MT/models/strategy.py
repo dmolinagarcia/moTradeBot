@@ -1090,7 +1090,7 @@ class Strategy(models.Model):
         else:
             price_to_save = self.currentRate
 
-        check, order_id = self.buy_order(**params)
+        check, order_id = buy_order(**params)
 
         if check:
             self.operID = order_id
