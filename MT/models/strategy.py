@@ -1126,8 +1126,8 @@ class Strategy(models.Model):
             Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
             Noperation[0].close(
                 float(beneficio),
-                float(position["position"]["buy_amount"]),
-                float(position["position"]["sell_amount"]),
+                buy_amount,
+                sell_amount,
                 reasonClose,
                 orderIDClose,
                 profit,
