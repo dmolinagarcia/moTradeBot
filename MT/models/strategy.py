@@ -1114,12 +1114,13 @@ class Strategy(models.Model):
                 check, position = get_position(self.operID, 
                                                self.operIDclose, 
                                                self.operSymbolBingx)
-                beneficio = (
-                    position["position"]["sell_amount"]
-                    - position["position"]["buy_amount"]
-                )
+                sell_amount= position["position"]["sell_amount"]
+                buy_amount= position["position"]["buy_amount"]  
+                beneficio = (sell_amount - buy_amount)  
             else:
-                beneficio = -self.bet  # pérdida total forzada  
+                beneficio = -self.bet  # pérdida total forzada
+                sell_amount = 0
+                buy_amount = 0
             self.beneficioTotal = (self.beneficioTotal or 0) + beneficio
             profit = beneficio * 100 / self.bet
             Noperation = StrategyOperation.objects.filter(operID__exact=self.operID)
