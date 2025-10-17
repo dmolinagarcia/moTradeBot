@@ -747,196 +747,199 @@ class Strategy(models.Model):
 
                         # BE y trailing por ATR en % (si tenemos ATR)
                         # Ajustes de SL y TP de GPT
-                        logger.debug(
-                            str(self.rateSymbol)
-                            + ":         - Adjusting SL/TP dynamically with ATR..."
-                        )
+                        # Pero, si force=True.... se ha cerrado y todo esto falla. Saltarlo!
+                        if not force:
 
-                        # Mi stop init es 2x ATR. Es mucho!
-                        stop_init = ATR_MULT_SL * _D(self.atr)
-
-                        r_unity = (
-                            stop_init / _D(self.placedPrice) * _D(self.leverage)
-                        )  # riesgo en unidad (1R = riesgo inicial)
-
-                        pnl_r_est = (
-                            _D(self.currentRate - self.placedPrice) / stop_init
-                            if self.accion == "COMPRAR"
-                            else ((_D(self.placedPrice) - _D(self.currentRate)) / stop_init)
-                        )
-                        logger.debug(str(self.rateSymbol) + ":         - Values used in calculation")
-                        logger.debug(str(self.rateSymbol) + ":           > stop_init %s", stop_init)
-                        logger.debug(
-                            str(self.rateSymbol) + ":           > r_unity (es un pct) (%.2f%%)",
-                            r_unity * 100,
-                        )
-                        logger.debug(
-                            str(self.rateSymbol) + ":           > pnl_r_est %s", pnl_r_est
-                        )
-
-                        # --- Break-even unificado (no retrocede SL) ---
-                        if pnl_r_est >= BREAKEVEN_R and (self.stopLossCurrent is not None):
-                            entry_price = float(self.placedPrice)
-                            # dir = +1 para long (COMPRAR), -1 para short (VENDER)
-                            dir_ = 1 if self.accion == "COMPRAR" else -1
-
-                            # ¿Mover a BE mejora la protección?
-                            # Long: mover si SL < entry_price
-                            # Short: mover si SL > entry_price
-                            should_move_to_be = (
-                                (dir_ == 1 and self.stopLossCurrent < entry_price) or
-                                (dir_ == -1 and self.stopLossCurrent > entry_price)
+                            logger.debug(
+                                str(self.rateSymbol)
+                                + ":         - Adjusting SL/TP dynamically with ATR..."
                             )
-
-                            if should_move_to_be:
-                                logger.debug(
-                                    "%s: - - BREAKEVEN reached at %.2f%%, moving SL to entry (0%%)",
-                                    str(self.rateSymbol),
-                                    self.currentProfit,
+    
+                            # Mi stop init es 2x ATR. Es mucho!
+                            stop_init = ATR_MULT_SL * _D(self.atr)
+    
+                            r_unity = (
+                                stop_init / _D(self.placedPrice) * _D(self.leverage)
+                            )  # riesgo en unidad (1R = riesgo inicial)
+    
+                            pnl_r_est = (
+                                _D(self.currentRate - self.placedPrice) / stop_init
+                                if self.accion == "COMPRAR"
+                                else ((_D(self.placedPrice) - _D(self.currentRate)) / stop_init)
+                            )
+                            logger.debug(str(self.rateSymbol) + ":         - Values used in calculation")
+                            logger.debug(str(self.rateSymbol) + ":           > stop_init %s", stop_init)
+                            logger.debug(
+                                str(self.rateSymbol) + ":           > r_unity (es un pct) (%.2f%%)",
+                                r_unity * 100,
+                            )
+                            logger.debug(
+                                str(self.rateSymbol) + ":           > pnl_r_est %s", pnl_r_est
+                            )
+    
+                            # --- Break-even unificado (no retrocede SL) ---
+                            if pnl_r_est >= BREAKEVEN_R and (self.stopLossCurrent is not None):
+                                entry_price = float(self.placedPrice)
+                                # dir = +1 para long (COMPRAR), -1 para short (VENDER)
+                                dir_ = 1 if self.accion == "COMPRAR" else -1
+    
+                                # ¿Mover a BE mejora la protección?
+                                # Long: mover si SL < entry_price
+                                # Short: mover si SL > entry_price
+                                should_move_to_be = (
+                                    (dir_ == 1 and self.stopLossCurrent < entry_price) or
+                                    (dir_ == -1 and self.stopLossCurrent > entry_price)
                                 )
-                                # >>> Cambios: mover SL al PRECIO de entrada (sin retroceder) <<<
-                                self.stopLossCurrent = entry_price
-
-                        # Trailing tipo Chandelier (en PRECIO)
-                        extreme = _D(
-                            self.maxCurrentRate
-                            if self.maxCurrentRate is not None
-                            else self.currentRate
-                        )
-                        if self.accion == "COMPRAR":
-                            new_stop_price = extreme - stop_init
-                            # >>> Actualización en PRECIO (solo hacia arriba)
-                            if (self.stopLossCurrent is None) or (
-                                new_stop_price > _D(self.stopLossCurrent)
-                            ):
-                                self.stopLossCurrent = float(new_stop_price)
-                        else:
-                            new_stop_price = extreme + stop_init
-                            # >>> Actualización en PRECIO (solo hacia abajo)
-                            if (self.stopLossCurrent is None) or (
-                                new_stop_price < _D(self.stopLossCurrent)
-                            ):
-                                self.stopLossCurrent = float(new_stop_price)
-
-
-                        # >>> TP por PRECIO (2R respecto a entrada; ratchet solo a favor)
-                        base_tp = (
-                            _D(self.placedPrice) + (stop_init * Decimal("2"))
-                            if self.accion == "COMPRAR"
-                            else _D(self.placedPrice) - (stop_init * Decimal("2"))
-                        )
-                        if self.takeProfitCurrent is None:
-                            self.takeProfitCurrent = float(base_tp)
-                        else:
+    
+                                if should_move_to_be:
+                                    logger.debug(
+                                        "%s: - - BREAKEVEN reached at %.2f%%, moving SL to entry (0%%)",
+                                        str(self.rateSymbol),
+                                        self.currentProfit,
+                                    )
+                                    # >>> Cambios: mover SL al PRECIO de entrada (sin retroceder) <<<
+                                    self.stopLossCurrent = entry_price
+    
+                            # Trailing tipo Chandelier (en PRECIO)
+                            extreme = _D(
+                                self.maxCurrentRate
+                                if self.maxCurrentRate is not None
+                                else self.currentRate
+                            )
                             if self.accion == "COMPRAR":
-                                if base_tp > _D(self.takeProfitCurrent):
-                                    self.takeProfitCurrent = float(base_tp)
+                                new_stop_price = extreme - stop_init
+                                # >>> Actualización en PRECIO (solo hacia arriba)
+                                if (self.stopLossCurrent is None) or (
+                                    new_stop_price > _D(self.stopLossCurrent)
+                                ):
+                                    self.stopLossCurrent = float(new_stop_price)
                             else:
-                                if base_tp < _D(self.takeProfitCurrent):
-                                    self.takeProfitCurrent = float(base_tp)
-
-                        # Reglas de SL/TP gobernadas por recomendación (como tenías)
-                        if not self.checkRecommend():
-                            # Solo si no es recomendable seguir, evaluamos SL/TP
-                            if self.accion == "COMPRAR":
-                                if (
-                                    self.stopLossCurrent is not None
-                                    and self.currentRate <= self.stopLossCurrent
+                                new_stop_price = extreme + stop_init
+                                # >>> Actualización en PRECIO (solo hacia abajo)
+                                if (self.stopLossCurrent is None) or (
+                                    new_stop_price < _D(self.stopLossCurrent)
                                 ):
-                                    reason.append("stopLoss")
-                                    self.cooldownUntil = (
-                                        timezone.now() + timedelta(days=1)
-                                    )
-                                if (
-                                    self.takeProfitCurrent is not None
-                                    and self.currentRate >= self.takeProfitCurrent
-                                ):
-                                    reason.append("takeProfit")
-                                    self.cooldownUntil = (
-                                        timezone.now() + timedelta(days=1)
-                                    )
+                                    self.stopLossCurrent = float(new_stop_price)
+    
+    
+                            # >>> TP por PRECIO (2R respecto a entrada; ratchet solo a favor)
+                            base_tp = (
+                                _D(self.placedPrice) + (stop_init * Decimal("2"))
+                                if self.accion == "COMPRAR"
+                                else _D(self.placedPrice) - (stop_init * Decimal("2"))
+                            )
+                            if self.takeProfitCurrent is None:
+                                self.takeProfitCurrent = float(base_tp)
                             else:
-                                if (
-                                    self.stopLossCurrent is not None
-                                    and self.currentRate >= self.stopLossCurrent
-                                ):
-                                    reason.append("stopLoss")
-                                    self.cooldownUntil = (
-                                        timezone.now() + timedelta(days=1)
-                                    )
-                                if (
-                                    self.takeProfitCurrent is not None
-                                    and self.currentRate <= self.takeProfitCurrent
-                                ):
-                                    reason.append("takeProfit")
-                                    self.cooldownUntil = (
-                                        timezone.now() + timedelta(days=1)
-                                    )
-
-#                       if (self.stopLossCurrent is not None):
-#                           ### SL Hugging. Deactivated for same reasons as above
-#                           #IF SL is below currentProfit
-#                           # Stop Loss "Hugging"
-#                           # >>> Desactivado en términos de profit%; mantenemos comentarios
-#                           self.stopLossCurrent = self.stopLossCurrent + 
-#                               ((self.currentProfit - self.stopLossCurrent)*0.002)
-#                           pass
-
-#                           # Time-stop condicional por falta de progreso + BE forzado
-#                           try:
-#                               # Parámetros (ajusta si quieres)
-#                               N_DAYS_STAGNATION = 3                            # nº de velas diarias a esperar
-#                               R_BAND = Decimal("0.3")                          # banda [-0.3R, +0.3R]
-#                               R_BE_THRESH = Decimal("0.7")                     # BE si no se alcanzó +0.7R
-#                               ADX_STAGNATION_MAX = _D(self.limitOpen or 0)     # umbral ADX para "falta de tendencia"
-#
-#                                op = StrategyOperation.objects.filter(strategy=self, operID=self.operID).first()
-#                                if op and self.placedPrice and self.atr:
-#                                    entry = _D(self.placedPrice)
-#                                    atr_d = _D(self.atr)
-#                                    lev   = Decimal(str(self.leverage or 1))
-#                                    stop_init = ATR_MULT_SL * atr_d  # distancia stop en precio (k*ATR)
-#
-#                                    if entry and entry > 0 and stop_init and stop_init > 0:
-#                                        # Días en la operación (por vela diaria real)
-#                                        open_day  = _to_roll_date(op.timestampOpen)
-#                                        today_day = _to_roll_date(timezone.now())
-#                                        days_in_trade = (today_day - open_day).days + 1
-#                                        # Guarda para UI si quieres ver días reales en vez de ticks
-#                                        self.bars_in_trade = days_in_trade
-#
-#                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop_init / entry) * Decimal("100") * lev
-#                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
-#
-#                                        # PnL actual en R
-#                                        pnl_R = None
-#                                        if R_pct_on_bet > 0 and self.currentProfit is not None:
-#                                            pnl_R = _D(self.currentProfit) / R_pct_on_bet
-#
-#                                        # Máximo R alcanzado usando el extremo registrado
-#                                        side = "short" if self.accion == "VENDER" else "long"
-#                                        extreme_price = _D(self.maxCurrentRate or self.currentRate or self.placedPrice)
-#                                        if side == "long":
-#                                            delta_ext = max(Decimal("0"), (extreme_price - entry))
-#                                        else:
-#                                            delta_ext = max(Decimal("0"), (entry - extreme_price))
-#                                        max_R = (delta_ext / stop_init) * lev  # R sobre bet
-#
-#                                        if days_in_trade >= N_DAYS_STAGNATION:
-#                                            # (a) Cierre por falta de progreso: |pnl_R| <= 0.3R y ADX bajo
-#                                            adx_ok = (self.adx is not None) and (_D(self.adx) < (ADX_STAGNATION_MAX or Decimal("0")))
-#                                            if (pnl_R is not None) and (-R_BAND <= pnl_R <= R_BAND) and adx_ok:
-#                                                reason.append("timeStopNoProgress")
-#
-#                                            # (b) BE forzado: si no alcanzó +0.7R en N días, sube SL a BE
-#                                            if (max_R is not None) and (max_R < R_BE_THRESH):
-#                                                if (self.stopLossCurrent is None) or (self.stopLossCurrent < 0.0):
-#                                                    self.stopLossCurrent = 0.0  # breakeven
-#                                                    # (opcional) marca el motivo para auditoría
-#                                                    # reason.append("forceBE")
-#                            except Exception:
-#                                # No rompas la operativa si algo falla en este bloque auxiliar
-#                                pass
+                                if self.accion == "COMPRAR":
+                                    if base_tp > _D(self.takeProfitCurrent):
+                                        self.takeProfitCurrent = float(base_tp)
+                                else:
+                                    if base_tp < _D(self.takeProfitCurrent):
+                                        self.takeProfitCurrent = float(base_tp)
+    
+                            # Reglas de SL/TP gobernadas por recomendación (como tenías)
+                            if not self.checkRecommend():
+                                # Solo si no es recomendable seguir, evaluamos SL/TP
+                                if self.accion == "COMPRAR":
+                                    if (
+                                        self.stopLossCurrent is not None
+                                        and self.currentRate <= self.stopLossCurrent
+                                    ):
+                                        reason.append("stopLoss")
+                                        self.cooldownUntil = (
+                                            timezone.now() + timedelta(days=1)
+                                        )
+                                    if (
+                                        self.takeProfitCurrent is not None
+                                        and self.currentRate >= self.takeProfitCurrent
+                                    ):
+                                        reason.append("takeProfit")
+                                        self.cooldownUntil = (
+                                            timezone.now() + timedelta(days=1)
+                                        )
+                                else:
+                                    if (
+                                        self.stopLossCurrent is not None
+                                        and self.currentRate >= self.stopLossCurrent
+                                    ):
+                                        reason.append("stopLoss")
+                                        self.cooldownUntil = (
+                                            timezone.now() + timedelta(days=1)
+                                        )
+                                    if (
+                                        self.takeProfitCurrent is not None
+                                        and self.currentRate <= self.takeProfitCurrent
+                                    ):
+                                        reason.append("takeProfit")
+                                        self.cooldownUntil = (
+                                            timezone.now() + timedelta(days=1)
+                                        )
+    
+    #                       if (self.stopLossCurrent is not None):
+    #                           ### SL Hugging. Deactivated for same reasons as above
+    #                           #IF SL is below currentProfit
+    #                           # Stop Loss "Hugging"
+    #                           # >>> Desactivado en términos de profit%; mantenemos comentarios
+    #                           self.stopLossCurrent = self.stopLossCurrent + 
+    #                               ((self.currentProfit - self.stopLossCurrent)*0.002)
+    #                           pass
+    
+    #                           # Time-stop condicional por falta de progreso + BE forzado
+    #                           try:
+    #                               # Parámetros (ajusta si quieres)
+    #                               N_DAYS_STAGNATION = 3                            # nº de velas diarias a esperar
+    #                               R_BAND = Decimal("0.3")                          # banda [-0.3R, +0.3R]
+    #                               R_BE_THRESH = Decimal("0.7")                     # BE si no se alcanzó +0.7R
+    #                               ADX_STAGNATION_MAX = _D(self.limitOpen or 0)     # umbral ADX para "falta de tendencia"
+    #
+    #                                op = StrategyOperation.objects.filter(strategy=self, operID=self.operID).first()
+    #                                if op and self.placedPrice and self.atr:
+    #                                    entry = _D(self.placedPrice)
+    #                                    atr_d = _D(self.atr)
+    #                                    lev   = Decimal(str(self.leverage or 1))
+    #                                    stop_init = ATR_MULT_SL * atr_d  # distancia stop en precio (k*ATR)
+    #
+    #                                    if entry and entry > 0 and stop_init and stop_init > 0:
+    #                                        # Días en la operación (por vela diaria real)
+    #                                        open_day  = _to_roll_date(op.timestampOpen)
+    #                                        today_day = _to_roll_date(timezone.now())
+    #                                        days_in_trade = (today_day - open_day).days + 1
+    #                                        # Guarda para UI si quieres ver días reales en vez de ticks
+    #                                        self.bars_in_trade = days_in_trade
+    #
+    #                                        # 1R expresado en % sobre el "bet" (margen): R%_bet = (stop_init / entry) * Decimal("100") * lev
+    #                                        R_pct_on_bet = (stop_init / entry) * Decimal("100") * lev
+    #
+    #                                        # PnL actual en R
+    #                                        pnl_R = None
+    #                                        if R_pct_on_bet > 0 and self.currentProfit is not None:
+    #                                            pnl_R = _D(self.currentProfit) / R_pct_on_bet
+    #
+    #                                        # Máximo R alcanzado usando el extremo registrado
+    #                                        side = "short" if self.accion == "VENDER" else "long"
+    #                                        extreme_price = _D(self.maxCurrentRate or self.currentRate or self.placedPrice)
+    #                                        if side == "long":
+    #                                            delta_ext = max(Decimal("0"), (extreme_price - entry))
+    #                                        else:
+    #                                            delta_ext = max(Decimal("0"), (entry - extreme_price))
+    #                                        max_R = (delta_ext / stop_init) * lev  # R sobre bet
+    #
+    #                                        if days_in_trade >= N_DAYS_STAGNATION:
+    #                                            # (a) Cierre por falta de progreso: |pnl_R| <= 0.3R y ADX bajo
+    #                                            adx_ok = (self.adx is not None) and (_D(self.adx) < (ADX_STAGNATION_MAX or Decimal("0")))
+    #                                            if (pnl_R is not None) and (-R_BAND <= pnl_R <= R_BAND) and adx_ok:
+    #                                                reason.append("timeStopNoProgress")
+    #
+    #                                            # (b) BE forzado: si no alcanzó +0.7R en N días, sube SL a BE
+    #                                            if (max_R is not None) and (max_R < R_BE_THRESH):
+    #                                                if (self.stopLossCurrent is None) or (self.stopLossCurrent < 0.0):
+    #                                                    self.stopLossCurrent = 0.0  # breakeven
+    #                                                    # (opcional) marca el motivo para auditoría
+    #                                                    # reason.append("forceBE")
+    #                            except Exception:
+    #                                # No rompas la operativa si algo falla en este bloque auxiliar
+    #                                pass
 
                         # Ejecuta cierre si hay razones
                         if len(reason) > 0:
