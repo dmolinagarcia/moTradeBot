@@ -648,7 +648,10 @@ def processView(request):
         visMarketOpen = isMarketOpen()
         # Check if market is open, pass as parameter to operation
         for strategy in strategyList :
+            startStrategy = time.time()
             strategy.operation(visMarketOpen)
+            endStrategy = time.time()
+            logger.debug ("Strategy %s processed in %s secs.", strategy.operSymbol, (str)(endStrategy - startStrategy))
         end = time.time()
         logger.info("Ending Process in "+(str)(end-start)+" secs.")
     else :

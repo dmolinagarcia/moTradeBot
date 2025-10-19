@@ -945,15 +945,6 @@ class Strategy(models.Model):
                         if len(reason) > 0:
                             check = self.cerrar(" ".join(reason), force)
                             if check:
-                                # payload = {"head": self.__str__(), "body": "Cerrar"}
-                                #send_group_notification(group_name="notificame",
-                                #    payload=payload, ttl=100000)
-                                #telegram_settings = settings.TELEGRAM
-                                #bot = telegram.Bot(token=telegram_settings['bot_token'])
-                                #bot.send_message(chat_id="@%s" %
-                                #    telegram_settings['channel_name'],
-                                #    text=self.__str__()+" Cerrar",
-                                #    parse_mode=telegram.ParseMode.HTML)
                                 self.accion = "CERRAR"
                                 estadoNext = 3
                                 self.bet = 0
@@ -990,13 +981,8 @@ class Strategy(models.Model):
             self.save()
 
         except MoTradeError as e:
-            logger.error(
-                str(self.rateSymbol)
-                + ": Excepcion conocida (%s) en %s: %s",
-                e.code,
-                self.rateSymbol,
-                e.message,
-            )
+            logger.error( str(self.rateSymbol) + ": Excepcion conocida (%s) en %s: %s",
+                e.code, self.rateSymbol, e.message )
             self.inError = True
             self.save()
 
