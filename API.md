@@ -47,6 +47,18 @@ curl -X POST http://127.0.0.1:5001/get_balance
 
 @app.route("/get_balance", methods=['GET','POST'])
 
+### GET KLINES
+
+Candles of a contract, oldest first. The last one may still be open (moTrade drops it).
+Used for the BTC regime filter (daily closes vs SMA200).
+
+curl -H 'Content-Type: application/json' -d '{"instrument_id_bingx": "BTC-USDT", "interval": "1d", "limit": 205}' -X POST http://127.0.0.1:5000/get_klines
+
+[true, [{"open": "83460.6", "close": "84373.2", "high": "84462.9", "low": "82729.2", "volume": "4198.8160", "time": 1790640000000}, ...]]
+[false, []] on error
+
+@app.route("/get_klines", methods=['POST'])
+
 ### CLOSE POSITION
 @app.route("/close_position", methods=['POST'])
 

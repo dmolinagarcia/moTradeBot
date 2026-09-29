@@ -10,3 +10,4 @@ BINGXCFG.py
 db.sqlite3
 temp.changelog
 
+backtest/data/

@@ -29,6 +29,23 @@ def get_position(position_id, order_id_close, instrument_id_bingx):
 
     return salida[0], salida[1]
 
+def get_klines(instrument_id_bingx, interval="1d", limit=250):
+    """Gets candles from the local API, oldest first (the last one may still be open)"""
+    data = {
+        "instrument_id_bingx": instrument_id_bingx,
+        "interval": interval,
+        "limit": limit,
+    }
+
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(
+        "http://127.0.0.1:5000/get_klines", headers=headers, data=json.dumps(data)
+    )
+
+    salida = response.json()
+
+    return salida[0], salida[1]
+
 def get_indicator(tick_symbol, crypto_timeframe_di, crypto_timeframe_adx):
     """Gets indicators from Trading View"""
 

@@ -21,6 +21,14 @@ def to_roll_date(dttm, offset_minutes=0):
     dttm_utc = dttm.astimezone(timezone.utc) + timedelta(minutes=offset_minutes)
     return dttm_utc.date()
 
+def sma_regime(closes, n):
+    """+1 si el último cierre está por encima de la media de los n últimos, -1 si está por debajo, 0 sin datos."""
+    if n <= 0 or len(closes) < n:
+        return 0
+    sma = sum(closes[-n:]) / n
+    last = closes[-1]
+    return 1 if last > sma else (-1 if last < sma else 0)
+
 def compute_atr_wilder(candles, period=14):
     """
     Añade 'atr' in-place a la lista de velas (orden ascendente).

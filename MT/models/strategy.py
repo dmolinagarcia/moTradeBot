@@ -7,7 +7,8 @@ from .lib.moTradeError import MoTradeError
 from .lib.helpers import D as _D
 from .lib.helpers import to_roll_date as _to_roll_date
 from .lib.helpers import compute_atr_wilder as _compute_atr_wilder
-from .lib.api     import get_position, get_indicator, buy_order
+from .lib.helpers import sma_regime as _sma_regime
+from .lib.api     import get_position, get_indicator, buy_order, get_klines
 
 from django.utils import timezone
 from decimal import Decimal
@@ -36,6 +37,23 @@ MAX_BARS_IN_TRADE = 240             # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")      # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("2.0")        # Volatilidad mínima (ATR% del precio) para operar
 RISK_PCT = Decimal("0.0150")        # Riesgo por operación (0.75% del equity)
+BTC_REGIME_SMA = 200                # Largos sólo con BTC sobre su SMA diaria, cortos sólo
+                                    # por debajo (0 = sin filtro). Ver backtest/research.py
+BTC_REGIME_SYMBOL = "BTC-USDT"
+
+
+def get_btc_regime():
+    """
+    Régimen de mercado: +1 si el último cierre diario de BTC está por encima de su
+    SMA de BTC_REGIME_SMA días, -1 si está por debajo y 0 si no hay datos. Sólo usa
+    velas cerradas, así que no cambia durante el día.
+    """
+    check, klines = get_klines(BTC_REGIME_SYMBOL, "1d", BTC_REGIME_SMA + 5)
+    if not check:
+        return 0
+    now_ms = time.time() * 1000
+    closes = [float(k["close"]) for k in klines if int(k["time"]) + 86400000 <= now_ms]
+    return _sma_regime(closes, BTC_REGIME_SMA)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STRATEGY
@@ -357,7 +375,7 @@ class Strategy(models.Model):
         self.save()
 
     # ── LÓGICA PRINCIPAL ─────────────────────────────────────────────────────
-    def operation(self, isMarketOpen):
+    def operation(self, isMarketOpen, btcRegime=0):
         logger.debug(str(self.rateSymbol) + ": Entering operation")
 
         try:
@@ -537,6 +555,19 @@ class Strategy(models.Model):
                                 self.checkRecommend(),
                                 isMarketOpen,
                             )
+
+                            # Régimen de BTC: largos sólo en tendencia alcista de BTC y
+                            # cortos sólo en bajista. Sin dato (0) no se abre nada.
+                            if BTC_REGIME_SMA and side:
+                                wanted = 1 if side == "buy" else -1
+                                if btcRegime != wanted:
+                                    logger.debug(
+                                        str(self.rateSymbol)
+                                        + ":         - %s blocked by BTC regime (%s)",
+                                        side,
+                                        btcRegime,
+                                    )
+                                    side = None
 
                             # Volatilidad mínima (ATR% del precio)
                             vol_ok = False
@@ -1104,7 +1135,13 @@ class Strategy(models.Model):
                 buy_amount= position["position"]["buy_amount"]  
                 beneficio = (sell_amount - buy_amount)  
             else:
-                beneficio = -self.bet  # pérdida total forzada
+                # La posición ya no existe en el exchange (cierre manual allí o
+                # liquidación): usamos el último beneficio conocido de la posición.
+                # Sin dato previo, asumimos liquidación (pérdida total).
+                if self.currentProfit is not None:
+                    beneficio = self.bet * self.currentProfit / 100
+                else:
+                    beneficio = -self.bet
                 sell_amount = 0
                 buy_amount = 0
             self.beneficioTotal = (self.beneficioTotal or 0) + beneficio

@@ -86,6 +86,31 @@ def get_price():
     
 
 
+@app.route("/get_klines", methods=['POST'])
+def get_klines():
+    # Velas del contrato, de la más antigua a la más reciente. La última puede
+    # estar aún en curso: moTrade descarta las que no han cerrado.
+
+    payload = {}
+    path = '/openApi/swap/v3/quote/klines'
+    method = "GET"
+    paramsMap = {
+        "symbol"   : request.json['instrument_id_bingx'],
+        "interval" : request.json.get('interval', '1d'),
+        "limit"    : request.json.get('limit', 250)
+    }
+    paramsStr = parseParam(paramsMap)
+    response = send_request(method, path, paramsStr, payload)
+
+    try :
+        klines = sorted(json.loads(response)['data'], key=lambda k: k['time'])
+        return json.dumps([True, klines])
+    except :
+        app.logger.error("Error al obtener las velas de " + request.json['instrument_id_bingx'])
+        app.logger.error(response)
+        return '[false,[]]'
+
+
 @app.route("/buy_order", methods=['POST'])
 def buy_order():
  

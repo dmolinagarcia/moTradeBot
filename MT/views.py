@@ -13,6 +13,7 @@ import requests
 import time
 
 from .models import *
+from .models.strategy import get_btc_regime
 from .forms import *
 
 ## Para las notificaciones con django-push
@@ -646,10 +647,17 @@ def processView(request):
         logger.info("Starting Process of " + (str)(strategyList.count()) + " strategies")
         start = time.time()
         visMarketOpen = isMarketOpen()
+        # BTC regime, computed once per run. Without it no new positions are opened
+        try :
+            vBtcRegime = get_btc_regime()
+        except Exception :
+            logger.exception("Error al calcular el régimen de BTC")
+            vBtcRegime = 0
+        logger.info("BTC regime: " + str(vBtcRegime))
         # Check if market is open, pass as parameter to operation
         for strategy in strategyList :
             startStrategy = time.time()
-            strategy.operation(visMarketOpen)
+            strategy.operation(visMarketOpen, vBtcRegime)
             endStrategy = time.time()
             logger.debug ("Strategy %s processed in %s secs.", strategy.operSymbol, (str)(endStrategy - startStrategy))
         end = time.time()
