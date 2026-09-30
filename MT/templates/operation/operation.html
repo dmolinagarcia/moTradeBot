@@ -1,18 +1,31 @@
 {% include "header.html" %}
-  
+
 <script>
 $(document).ready(function(){
       $("#graph").load("/strategy/graph/{{ strategy_id }}/{{ operation_id }}/");
       $("#list").load("/operation/detail/{{ operation_id }}/");
 });
 </script>
-  <div id="graph" class="box">
-      <h2>Loading...</h2>
+
+  <div class="page-title">
+    <a class="back-link" href="/strategy/{{ strategy_id }}/0">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Strategy
+    </a>
+    <h1>{{ title }}</h1>
   </div>
-	{% if request.user.is_staff %} 
-     <div id="list" class="box">
-         <h2>Loading...</h2>
-     </div>
+
+  <section class="box">
+    <div id="graph" class="chart-body">
+      <div class="loading">Loading...</div>
+    </div>
+  </section>
+
+	{% if request.user.is_staff %}
+  <section class="box">
+    <div id="list" class="box-scroll">
+      <div class="loading">Loading...</div>
+    </div>
+  </section>
   {% endif %}
 
 {% include "footer.html" %}

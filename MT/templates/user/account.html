@@ -1,14 +1,10 @@
-<div class="accountInfo">
 <ul class="accountInfo">
-  <li class="accountInfo"> Balance: {{ account.data.balance.balance |floatformat:2  }} </li>
-  <li class="accountInfo"> Equity: {{ account.data.balance.equity |floatformat:2  }} </li>
-  <li class="accountInfo"> Potential Profit: {{ account.data.balance.unrealizedProfit |floatformat:2 }} </li>
-  <li class="accountInfo"> Operations: {{ operations.totalOperations }} </li>
-  <li class="accountInfo"> WL Ratio: {{ operations.winsLossRatio |floatformat:2 }} </li>
-  <li class="accountInfo"> Win PCT: {{ operations.averageWinsPct |floatformat:2 }} </li>
-  <li class="accountInfo"> Loss PCT: {{ operations.averageLossPct |floatformat:2 }} </li>
-  <li class="accountInfo"> Average PCT: {{ operations.averageProfit |floatformat:2 }} </li>
+  <li class="accountInfo"><span class="kpi-label">Balance</span><span class="kpi-value">{{ account.data.balance.balance |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Equity</span><span class="kpi-value">{{ account.data.balance.equity |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Potential Profit</span><span class="kpi-value {% if account.data.balance.unrealizedProfit|floatformat:2|slice:":1" == "-" %}down{% else %}up{% endif %}">{{ account.data.balance.unrealizedProfit |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Operations</span><span class="kpi-value">{{ operations.totalOperations }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">WL Ratio</span><span class="kpi-value">{{ operations.winsLossRatio |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Win PCT</span><span class="kpi-value up">{{ operations.averageWinsPct |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Loss PCT</span><span class="kpi-value down">{{ operations.averageLossPct |floatformat:2 }}</span></li>
+  <li class="accountInfo"><span class="kpi-label">Average PCT</span><span class="kpi-value">{{ operations.averageProfit |floatformat:2 }}</span></li>
 </ul>
-</div>
-
-

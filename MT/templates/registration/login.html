@@ -2,23 +2,31 @@
 
 {% block content %}
 
-<div class="box centerDiv">
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
+<div class="auth-page">
+
+<a class="brand" href="/" aria-label="moTrade home">
+  <svg width="40" height="40" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" stroke="#3ecf8e" stroke-width="2"/><path d="M7 21l6-7 5 4 7-9" stroke="#3ecf8e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span>moTrade</span>
+</a>
+
+<div class="centerDiv">
 
 <h1>moTrade login</h1>
+
+{% if form.errors %}
+<p class="form-error">Your username and password didn't match. Please try again.</p>
+{% endif %}
 
 <form method="post" action="{% url 'login' %}">
 {% csrf_token %}
 
 <div class="field">
-  <td>{{ form.username.label_tag }}</td>
-  <td>{{ form.username }}</td>
+  {{ form.username.label_tag }}
+  {{ form.username }}
 </div>
 <div class="field">
-  <td>{{ form.password.label_tag }}</td>
-  <td>{{ form.password }}</td>
+  {{ form.password.label_tag }}
+  {{ form.password }}
 </div>
 
 <div>
@@ -29,7 +37,12 @@
 
 </div>
 
+<span class="version">v0.1.18</span>
+
+</div>
+
 {% endblock %}
 
+</main>
 </body>
 </html>

@@ -2,102 +2,100 @@
 {% load tz %}
 
 <table summary="Strategies" id="strategies">
+	<thead>
 	<tr>
 		<th>Strategy</th>
-		{% if request.user.is_staff %} 
+		{% if request.user.is_staff %}
 		    <th>Unlock</th>
-		    <th>ADX</th>
-		    <th>diff</th>
-		    <th>Limit B/S</th>		
+		    <th>ADX · ±DI</th>
+		    <th>Diff</th>
+		    <th>Limit B/S</th>
 		{% endif %}
 		<th>Rates</th>
-                <th>PR/SL</th>
-		{% if request.user.is_staff %} 
-			<th>nextUpdate</th>
-			<th>View</th>
-			<th>Close</th>
+		<th>TP · PR · SL</th>
+		{% if request.user.is_staff %}
+			<th>Next update · Cooldown</th>
+			<th>Actions</th>
 		{% endif %}
-		<th>Bet</th>
-		<th>Profit</th>
-
+		<th class="num">Bet</th>
+		<th class="num">Profit</th>
 	</tr>
+	</thead>
+	<tbody>
 	{% for strategy in strategy_list %}
 		<tr
         	{% if strategy.inError %}
             	class="rowError"
             {% else %}
 		   		{% if strategy.accion == "VENDER" %}
-		       		class="rowShort"	
+		       		class="rowShort"
 		   		{% endif %}
 		   		{% if strategy.accion == "COMPRAR" %}
-                	class="rowLong" 
+                	class="rowLong"
                 {% endif%}
 		   		{% if strategy.accion == "COOLDOWN" %}
-                    class="rowCooldown" 
+                    class="rowCooldown"
                 {% endif %}
         	{% endif %}
             >
 	        <td>
-                          {% if request.user.is_staff %}  <a href="/toggle/{{ strategy.id }}">   {% endif %}
-                              {% if strategy.isRunning %}
-                                <img src="{% static 'icons/stop.png' %}" class="toggle"></img>
-                              {% else %}
-                                <img src="{% static 'icons/play.png' %}" class="toggle"></img>
-                              {% endif %}
-                          {% if request.user.is_staff %}  </a>   {% endif %}
+	          <div class="strategy-cell">
+                  {% if request.user.is_staff %}<a class="toggle" href="/toggle/{{ strategy.id }}" aria-label="{% if strategy.isRunning %}Stop{% else %}Start{% endif %} {{ strategy }}">{% else %}<span class="toggle" aria-label="{% if strategy.isRunning %}Running{% else %}Stopped{% endif %}">{% endif %}
+                      {% if strategy.isRunning %}
+                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+                      {% else %}
+                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10.2 6z" fill="currentColor"/></svg>
+                      {% endif %}
+                  {% if request.user.is_staff %}</a>{% else %}</span>{% endif %}
 
-
-	          <a href="/strategy/{{ strategy.id }}/0">{{ strategy }}</a>
-   <!--
-	          {% if strategy.accion == "VENDER" %}
-			    <img src="{% static 'icons/sell.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endif %}
-                  {% if strategy.accion == "COMPRAR" %}
-			    <img src="{% static 'icons/buy.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endif %}
-		  {% if strategy.accion == "COOLDOWN" %}
-			    <img src="{% static 'icons/pause.png' %}" width="16" height="16" style="float:right"></img>
-                  {% endif %}
-   --!>
+                  <div class="strategy-name">
+	                <a href="/strategy/{{ strategy.id }}/0">{{ strategy }}</a>
+	                {% if strategy.inError %}
+	                  <span class="pill pill-error">Error</span>
+	                {% elif strategy.accion == "COMPRAR" %}
+	                  <span class="pill pill-long">Long</span>
+	                {% elif strategy.accion == "VENDER" %}
+	                  <span class="pill pill-short">Short</span>
+	                {% elif strategy.accion == "COOLDOWN" %}
+	                  <span class="pill pill-cooldown">Cooldown</span>
+	                {% endif %}
+                  </div>
+	          </div>
 			</td>
-			{% if request.user.is_staff %} 
-				<td><a onclick="return confirm('Desbloquear {{ strategy}}?')" href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
-				<td>{{ strategy.adx|floatformat:2}} <br/> +{{ strategy.plusDI|floatformat:2 }} <br/> -{{ strategy.minusDI|floatformat:2 }}</td>
-				<td>{{ strategy.diffDI|floatformat:2 }}</td>
-				<td>{{ strategy.limitBuy|floatformat:0 }}/{{ strategy.limitSell|floatformat:0 }}</td>
- 			{% endif %}				
-			<td> 
-                             C: {{ strategy.currentRate|floatformat:4 }} <br/>
-                             P: {{ strategy.placedPrice|floatformat:4 }} <br/>
-                             H: {{ strategy.maxCurrentRate|floatformat:4 }} <br/>
-                        </td>
-                        <td> {{ strategy.takeProfitCurrent|floatformat:2 }} <br/>
-							 {{ strategy.currentProfit|floatformat:2 }} <br/>
-                             {{ strategy.stopLossCurrent|floatformat:2 }} </td>
-			{% if request.user.is_staff %} 
-				<td>{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }} <br/>
-                                    {{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }} </td>
-				<td><a href="/strategy/{{ strategy.id }}/{{ strategy.operID }}">VIEW</a></td>
-				<td><a onclick="return confirm('Cierre manual {{ strategy}}?')" href="/manualClose/{{ strategy.id }}">CLOSE</a></td>
+			{% if request.user.is_staff %}
+				<td><a class="action-link" onclick="return confirm('Desbloquear {{ strategy}}?')" href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
+				<td class="mono">{{ strategy.adx|floatformat:2}}<br/><span class="up">+{{ strategy.plusDI|floatformat:2 }}</span><br/><span class="down">-{{ strategy.minusDI|floatformat:2 }}</span></td>
+				<td class="mono">{{ strategy.diffDI|floatformat:2 }}</td>
+				<td class="mono">{{ strategy.limitBuy|floatformat:0 }}/{{ strategy.limitSell|floatformat:0 }}</td>
+ 			{% endif %}
+			<td class="mono">
+                <span class="muted">C</span> {{ strategy.currentRate|floatformat:4 }}<br/>
+                <span class="muted">P</span> {{ strategy.placedPrice|floatformat:4 }}<br/>
+                <span class="muted">H</span> {{ strategy.maxCurrentRate|floatformat:4 }}
+            </td>
+            <td class="mono">
+                <span class="muted">{{ strategy.takeProfitCurrent|floatformat:2 }}</span><br/>
+                <span class="strong">{{ strategy.currentProfit|floatformat:2 }}</span><br/>
+                <span class="muted">{{ strategy.stopLossCurrent|floatformat:2 }}</span>
+            </td>
+			{% if request.user.is_staff %}
+				<td class="mono">{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }}<br/>
+                    <span class="muted">{{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }}</span></td>
+				<td>
+				  <div class="row-actions">
+				    <a class="action-link" href="/strategy/{{ strategy.id }}/{{ strategy.operID }}">VIEW</a>
+				    <a class="action-link danger" onclick="return confirm('Cierre manual {{ strategy}}?')" href="/manualClose/{{ strategy.id }}">CLOSE</a>
+				  </div>
+				</td>
 			{% endif %}
-			<td>{{ strategy.bet|floatformat:2 }}</td>
-			<td>{{ strategy.beneficioTotal|floatformat:2 }}</td>
+			<td class="num">{{ strategy.bet|floatformat:2 }}</td>
+			<td class="num strong {% if strategy.beneficioTotal < 0 %}down{% else %}up{% endif %}">{{ strategy.beneficioTotal|floatformat:2 }}</td>
 		</tr>
 	{% endfor %}
 
-<td></td>
-			{% if request.user.is_staff %} 
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-			{% endif %}
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>{{ beneficio|floatformat:2 }}</td>
-
+		<tr class="total">
+			<td class="total-label" colspan="{% if request.user.is_staff %}10{% else %}4{% endif %}">Total profit</td>
+			<td class="num total-value {% if beneficio < 0 %}down{% else %}up{% endif %}">{{ beneficio|floatformat:2 }}</td>
+		</tr>
+	</tbody>
 </table>

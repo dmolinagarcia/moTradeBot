@@ -14,6 +14,20 @@
 
     var gs = [];
 
+    // Shared dark theme for all dygraphs
+    var darkTheme = {
+      gridLineColor: '#1d242e',
+      axisLineColor: '#2c3542',
+      axisLabelFontSize: 11,
+      strokeWidth: 2.0,
+      colors: ['#e6e9ee', '#7cc4ff', '#e8b74a', '#b39bff', '#5fd49a', '#ff7a85'],
+      rangeSelectorPlotFillColor: 'rgba(62, 207, 142, 0.15)',
+      rangeSelectorPlotStrokeColor: '#3ecf8e',
+      rangeSelectorBackgroundStrokeColor: '#2c3542',
+      rangeSelectorForegroundStrokeColor: '#9aa4b2',
+      rangeSelectorForegroundLineWidth: 1,
+    };
+
     var data = google.visualization.arrayToDataTable(
       {{ data|safe }},
     );
@@ -31,21 +45,25 @@
       fillGraph: true,
       series: {
         Rate:      { fillAlpha: 0.0, 
-                     strokeWidth: 3.0, },
+                     color: '#e6e9ee',
+                     strokeWidth: 2.4, },
         EMA:       { fillAlpha: 0.0,
-                     strokeWidth: 3.0, },
+                     color: '#b39bff',
+                     strokeWidth: 2.0, },
         COMPRAR:   { fillAlpha: 0.2, 
-                     color: '#7fa664', 
+                     color: '#3ecf8e', 
                      axis:'y2',
                      strokeWidth: 0.0, },
         VENDER:    { fillAlpha: 0.2, 
-                     color: '#f2532e', 
+                     color: '#ff7a85', 
                      axis:'y2',
                      strokeWidth: 0.0, },
         EMA20:     { fillAlpha: 0.0,
-                     strokeWidth: 3.0, },
+                     color: '#7cc4ff',
+                     strokeWidth: 2.0, },
         EMA100:    { fillAlpha: 0.0,
-                     strokeWidth: 3.0, },
+                     color: '#e8b74a',
+                     strokeWidth: 2.0, },
       },
       axes: { y2: { valueRange: [0, 1], },
               x:  { drawAxis: false }, },
@@ -56,8 +74,8 @@
   //    },
     }
         
-    // g = new Dygraph(document.getElementById("chart"), data, options );
-    gs.push(new Dygraph(document.getElementById("chart"), data, options ));
+    // g = new Dygraph(document.getElementById("chart"), data, Object.assign({}, darkTheme, options));
+    gs.push(new Dygraph(document.getElementById("chart"), data, Object.assign({}, darkTheme, options)));
 
     var data1 = google.visualization.arrayToDataTable(
       {{ data1|safe }},
@@ -76,23 +94,23 @@
       fillGraph: true,
       series: {
         ADX:       { fillAlpha: 0.2, 
-                     color: '#f1ca3a', 
-                     strokeWidth: 3.0, },
+                     color: '#b39bff', 
+                     strokeWidth: 2.0, },
         '+DI':     { fillAlpha: 0.0, 
-                     color: '#6f9654', 
-                     strokeWidth: 3.0, },
+                     color: '#5fd49a', 
+                     strokeWidth: 2.0, },
         '-DI':     { fillAlpha: 0.0, 
-                     color: '#e2431e', 
-                     strokeWidth: 3.0, },
+                     color: '#ff7a85', 
+                     strokeWidth: 2.0, },
         DIFF:      { fillAlpha: 0.0, 
-                     color: '#00532e', 
-                     strokeWidth: 3.0, },
+                     color: '#9aa4b2', 
+                     strokeWidth: 2.0, },
         COMPRAR:   { fillAlpha: 0.2, 
-                     color: '#7fa664', 
+                     color: '#3ecf8e', 
                      axis:'y2',
                      strokeWidth: 0.0, },
         VENDER:    { fillAlpha: 0.2, 
-                     color: '#f2532e', 
+                     color: '#ff7a85', 
                      axis:'y2',
                      strokeWidth: 0.0, },
       },
@@ -100,7 +118,7 @@
               x:  { drawAxis: false }, },
     }
         
-    gs.push(new Dygraph(document.getElementById("chart1"), data1, options1 ));
+    gs.push(new Dygraph(document.getElementById("chart1"), data1, Object.assign({}, darkTheme, options1)));
 
     var data2 = google.visualization.arrayToDataTable(
       {{ data2|safe }},
@@ -118,24 +136,27 @@
       fillGraph: true,
       series: {
         PROFIT:    { fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     color: '#5fd49a',
+                     strokeWidth: 2.0, },
         STOPLOSS:  { fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     color: '#ff7a85',
+                     strokeWidth: 2.0, },
         TAKEPROFIT:{ fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     color: '#7cc4ff',
+                     strokeWidth: 2.0, },
         COMPRAR:   { fillAlpha: 0.2, 
-                     color: '#7fa664', 
+                     color: '#3ecf8e', 
                      axis:'y2',
                      strokeWidth: 0.0, },
         VENDER:    { fillAlpha: 0.2, 
-                     color: '#f2532e', 
+                     color: '#ff7a85', 
                      axis:'y2',
                      strokeWidth: 0.0, },
       },
       axes: { y2: { valueRange: [0, 1], }, x:  { drawAxis: false }, },
     }
         
-    gs.push(new Dygraph(document.getElementById("chart2"), data2, options2 ));
+    gs.push(new Dygraph(document.getElementById("chart2"), data2, Object.assign({}, darkTheme, options2)));
 
     var data3 = google.visualization.arrayToDataTable(
       {{ data3|safe }},
@@ -153,22 +174,22 @@
       fillGraph: true,
       series: {
         RECOMMEND: { fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     strokeWidth: 2.0, },
         RECOMMEND: { fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     strokeWidth: 2.0, },
         COMPRAR:   { fillAlpha: 0.2, 
-                     color: '#7fa664', 
+                     color: '#3ecf8e', 
                      axis:'y2',
                      strokeWidth: 0.0, },
         VENDER:    { fillAlpha: 0.2, 
-                     color: '#f2532e', 
+                     color: '#ff7a85', 
                      axis:'y2',
                      strokeWidth: 0.0, },
       },
 	    axes: { y1: { valueRange: [-1, 1], }, y2: { valueRange: [0, 1], }, x:  { drawAxis: false }, } ,
     }
         
-    gs.push(new Dygraph(document.getElementById("chart3"), data3, options3 ));
+    gs.push(new Dygraph(document.getElementById("chart3"), data3, Object.assign({}, darkTheme, options3)));
 
     var data4  = google.visualization.arrayToDataTable(
       {{ data4 |safe }},
@@ -193,20 +214,21 @@
       rangeSelectorHeight: 30,
       series: {
         ATRPCT:    { fillAlpha: 0.2, 
-                     strokeWidth: 3.0, },
+                     color: '#e8b74a',
+                     strokeWidth: 2.0, },
         COMPRAR:   { fillAlpha: 0.2,
-                     color: '#7fa664',
+                     color: '#3ecf8e',
                      axis:'y2',
                      strokeWidth: 0.0, },
         VENDER:    { fillAlpha: 0.2,
-                     color: '#f2532e',
+                     color: '#ff7a85',
                      axis:'y2',
                      strokeWidth: 0.0, },
       },
           axes: { y2: { valueRange: [0, 1], }, },
     }
 
-	gs.push(new Dygraph(document.getElementById("chart4"), data4 , options4 ));
+	gs.push(new Dygraph(document.getElementById("chart4"), data4, Object.assign({}, darkTheme, options4)));
 
 
     var sync = Dygraph.synchronize(gs, {range: false} );
