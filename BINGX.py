@@ -19,6 +19,7 @@ app = Flask(__name__)
 
 pricesData = None
 pricesTS = 0
+PRICES_TTL = 300  # segundos que se reutilizan los precios antes de volver a pedirlos
 
 @app.before_request
 def logging_before():
@@ -42,8 +43,8 @@ def get_price():
     global pricesTS
     global pricesData
 
-    # If pricesTS is older than 10 minuts, refresh pricesData
-    if time.time() > pricesTS + 1200 :
+    # If pricesTS is older than PRICES_TTL, refresh pricesData
+    if time.time() > pricesTS + PRICES_TTL :
         app.logger.error("Updating pricesData at " + (str)(time.time()))
         pricesTS = time.time()
  

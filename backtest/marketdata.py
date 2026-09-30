@@ -10,6 +10,7 @@ pero su API pública ofrece mucho menos historia.
 
     python backtest/marketdata.py                  # descarga/actualiza backtest/data
     python backtest/marketdata.py --extended       # añade el universo ampliado
+    python backtest/marketdata.py --m15 BTC,ETH,SOL  # velas de 15 min (sltp.py)
 
 Los ficheros se actualizan de forma incremental: sólo se piden las velas nuevas.
 """
@@ -27,7 +28,7 @@ from datetime import datetime, timezone
 BASE = "https://fapi.binance.com"
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 START = "2019-09-01"
-INTERVAL_MS = {"1d": 86_400_000, "4h": 14_400_000, "1h": 3_600_000}
+INTERVAL_MS = {"1d": 86_400_000, "4h": 14_400_000, "1h": 3_600_000, "15m": 900_000}
 
 # Símbolos del bot → contrato de Binance
 CORE = {
@@ -131,8 +132,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--extended", action="store_true", help="incluir el universo ampliado")
     ap.add_argument("--hourly", action="store_true", help="velas de 1h del universo principal")
+    ap.add_argument("--m15", help="sólo velas de 15 min de estos símbolos (separados por comas)")
     args = ap.parse_args()
     os.makedirs(DATA_DIR, exist_ok=True)
+    if args.m15:
+        for name in args.m15.split(","):
+            rows = update_klines(CORE[name], "15m")
+            print(f"{name:6} {CORE[name]:14} {len(rows)} velas de 15 min")
+        return
     universe = {**CORE, **(EXTENDED if args.extended else {})}
     for name, symbol in universe.items():
         daily = update_klines(symbol, "1d")

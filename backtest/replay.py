@@ -17,7 +17,7 @@ lectura, así que puede usarse con una copia de la BD de producción.
 
 Todas las variantes se dimensionan con el mismo capital fijo (--equity) para que
 sean comparables. Limitaciones:
-  - El precio registrado es el de la caché de BINGX.py (se refresca cada ~20 min),
+  - El precio registrado es el de la caché de BINGX.py (~20 min; 5 min desde 2026-09-30),
     pero las órdenes reales se ejecutan al precio del momento. Por defecto se
     ejecutan al siguiente refresco (--fill next), que es lo que mejor reproduce
     el P&L de las operaciones reales; conviene comprobar que las conclusiones se
@@ -60,6 +60,11 @@ class Params:
     vol_min_pct: float = 2.0      # VOL_MIN_PCT
     risk_pct: float = 0.015       # RISK_PCT
     cooldown_days: float = 1.0    # cooldown tras stopLoss / takeProfit
+    sizing_sl: float = None       # múltiplo de ATR para dimensionar (None = atr_mult_sl)
+    tp_order: bool = False        # TP como orden en el exchange: se ejecuta al nivel en
+                                  # cuanto el máximo/mínimo lo toca (requiere filas con
+                                  # el máximo y el mínimo desde el ciclo anterior en las
+                                  # posiciones 15 y 16)
 
 
 @dataclass(frozen=True)
@@ -231,7 +236,8 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
                     side = 0
                 if side and atr and px and atr * 100.0 / px >= p.vol_min_pct:
                     stop_dist = p.atr_mult_sl * atr
-                    amount = int(max(equity * p.risk_pct * px / stop_dist / lev, 0))
+                    size_dist = (p.sizing_sl or p.atr_mult_sl) * atr
+                    amount = int(max(equity * p.risk_pct * px / size_dist / lev, 0))
                     if amount > 0:
                         pos = Position()
                         pos.side, pos.entry, pos.bet, pos.t_open = side, px, amount, t
@@ -255,6 +261,12 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
                 # Liquidación: en vivo se detecta como notOpen (cooldown de 2 días)
                 close(t, fills[i], "liquidation", pnl=-pos.bet)
                 cooldown_until = t + 2 * DAY
+                pos, nxt = None, 3
+            elif (p.tp_order and pos.tp is not None and len(extra) >= 3
+                  and ((extra[1] if pos.side == 1 else extra[2]) - pos.tp) * pos.side >= 0):
+                # La orden tiene el TP fijado en el ciclo anterior
+                close(t, pos.tp, "takeProfit")
+                cooldown_until = t + p.cooldown_days * DAY
                 pos, nxt = None, 3
             else:
                 reasons = []

@@ -31,6 +31,21 @@ diaria en curso, como TradingView) y lo simula con `replay.simulate`, con y sin 
 filtro de régimen de BTC. `indicators.py` replica los indicadores de TradingView
 (DI/ADX, ATR, Recommend.MA), también con la vela en curso.
 
+# sltp.py
+
+Rejilla de stop loss / take profit del bot sobre BTC, ETH y SOL (con el filtro de
+régimen de BTC): niveles de SL y TP en múltiplos del R actual y TP condicionado a
+checkRecommend(), forzado por el bot u orden TP en el exchange. Un ciclo por vela
+de 15 min, que es lo que veía el bot con la caché de precios de ~20 min (su ATR
+coincide con el registrado en `MT_strategystate`). Selección con 2020-2022 y
+validación con 2023 en adelante, comparando también a igual volatilidad.
+
+    python3 backtest/marketdata.py --m15 BTC,ETH,SOL,XRP,DOGE,BNB,ADA
+    python3 backtest/sltp.py                              # BTC, ETH y SOL
+    python3 backtest/sltp.py --symbols XRP,DOGE,BNB,ADA   # contraste con otros símbolos
+    python3 backtest/sltp.py --slippage 0.002             # sensibilidad a costes
+    python3 backtest/sltp.py --every 4                    # el bot decide cada 60 min
+
 # backtest.py / notebook
 
 windows
