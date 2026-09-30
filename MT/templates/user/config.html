@@ -1,19 +1,37 @@
+
 <form action="" method="post" id="configForm" onChange="submitConfigForm()">
   {% csrf_token %}
-  Enter Max Margin {{ form.configMaxBet }} 
-  <label class="switch">
-    {{ form.configProcessEnabled }}
-    <span class="slider round"></span>
+  <div class="form-field">
+    <label for="{{ form.configMaxBet.id_for_label }}">Max Margin</label>
+    {{ form.configMaxBet }}
+  </div>
+  <label class="switch-field">
+    <span class="switch">
+      {{ form.configProcessEnabled }}
+      <span class="slider round"></span>
+    </span>
+    Enable Bot
   </label>
-  Enable Bot <br/>
-  <label class="switch">
-    {{ form.configGlobalTPEnabled }}
-    <span class="slider round"></span>
+  <div class="form-divider"></div>
+  <label class="switch-field">
+    <span class="switch">
+      {{ form.configGlobalTPEnabled }}
+      <span class="slider round"></span>
+    </span>
+    Enable Global TP
   </label>
-  Enable Global TP
-    {{ form.configGlobalTPThreshold}}
-    {{ form.configGlobalTPSleepdown}}
-    {{ form.configGlobalTPWakeUp}}
+  <div class="form-field">
+    <label for="{{ form.configGlobalTPThreshold.id_for_label }}">Threshold</label>
+    {{ form.configGlobalTPThreshold }}
+  </div>
+  <div class="form-field">
+    <label for="{{ form.configGlobalTPSleepdown.id_for_label }}">Sleepdown</label>
+    {{ form.configGlobalTPSleepdown }}
+  </div>
+  <div class="form-field">
+    <label for="{{ form.configGlobalTPWakeUp.id_for_label }}">Wake up</label>
+    {{ form.configGlobalTPWakeUp }}
+  </div>
 </form>
 
 <script language="javascript" type="text/javascript">

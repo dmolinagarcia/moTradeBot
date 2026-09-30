@@ -1,5 +1,14 @@
-{% block content %}
-<p>Logged out!</p>
+{% include "header.html" with title="moTrade" %}
 
-<a href="{% url 'login'%}">Click here to login again.</a>
+{% block content %}
+<div class="auth-page">
+  <div class="centerDiv">
+    <h1>Logged out!</h1>
+    <a class="button" href="{% url 'login'%}">Click here to login again.</a>
+  </div>
+</div>
 {% endblock %}
+
+</main>
+</body>
+</html>

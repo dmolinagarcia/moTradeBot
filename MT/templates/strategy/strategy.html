@@ -7,20 +7,45 @@ $(document).ready(function(){
       $("#comments").load("/strategy/comments/{{ strategy_id }}/");
 });
 </script>
-  <div id="graph" class="box">
-      <h2>Loading...</h2>
+
+  <div class="page-head">
+    <div class="page-title">
+      <a class="back-link" href="/">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Strategies
+      </a>
+      <h1>{{ title }}</h1>
+    </div>
+	{% if request.user.is_staff %}
+    <div id="actions" class="actions">
+      <a class="button danger" onclick="return confirm('Reiniciar   {{ strategy_id}}?')" href="/strategy/clear/{{ strategy_id }}">CLEAR</a>
+    </div>
+    {% endif %}
   </div>
-  <div id="list" class="box">
-      <h2>Loading...</h2>
+
+  <section class="box">
+    <div id="graph" class="chart-body">
+      <div class="loading">Loading...</div>
+    </div>
+  </section>
+
+  <div class="detail-grid">
+    <section class="box {% if request.user.is_staff %}span-2{% else %}span-all{% endif %}">
+      <div class="box-header"><h2>Operations</h2></div>
+      <div id="list" class="box-scroll">
+        <div class="loading">Loading...</div>
+      </div>
+    </section>
+
+	{% if request.user.is_staff %}
+    <section class="box">
+      <div class="box-header"><h2>Comments</h2></div>
+      <div class="box-body">
+        <div id="comments">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
   </div>
-	{% if request.user.is_staff %} 
-    <div id="comments" class="box">
-      <h2>Loading...</h2>
-    </div>    
-  <div id="actions" class="box">
-    <a class="button" onclick="return confirm('Reiniciar   {{ strategy_id}}?')" href="/strategy/clear/{{ strategy_id }}">CLEAR</a>  
-  </div>
-  {% endif %}
-  
-  
+
 {% include "footer.html" %}

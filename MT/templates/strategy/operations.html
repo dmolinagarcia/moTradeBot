@@ -1,4 +1,5 @@
-<table summary="Strategies" id="strategies">
+<table summary="Operations" id="strategies">
+	<thead>
 	<tr>
 		<th>Strategy</th>
 		<th>Order ID</th>
@@ -8,24 +9,28 @@
 		<th>Tipo</th>
 		<th>Open</th>
 		<th>Close</th>
-		<th>Beneficio</th>
-		<th>Beneficio %</th>
+		<th class="num">Beneficio</th>
+		<th class="num">Beneficio %</th>
 		<th>Reason</th>
 	</tr>
+	</thead>
+	<tbody>
 	{% for operation in operations %}
 		<tr>
-	        <td><a href="/strategy/{{ operation.strategy.id }}/0">{{ operation.strategy }}</a></td>
-			<td><a href="/strategy/{{ operation.strategy.id }}/{{ operation.operID }}">VIEW</td>
+	        <td><div class="strategy-name"><a href="/strategy/{{ operation.strategy.id }}/0">{{ operation.strategy }}</a></div></td>
+			<td><a class="action-link" href="/strategy/{{ operation.strategy.id }}/{{ operation.operID }}">VIEW</a></td>
             {% if request.user.is_staff %}
-  				<td><a onclick="return confirm('Eliminar {{ operation.operID }}?')" href="/operation/clear/{{ operation.operID }}">DELETE</td>
+  				<td><a class="action-link danger" onclick="return confirm('Eliminar {{ operation.operID }}?')" href="/operation/clear/{{ operation.operID }}">DELETE</a></td>
   			{% endif %}
-			<td>{{ operation.type }}</td>
-			<td>{{ operation.timestampOpen|date:'Y-m-d H:i:s' }}</td>
-			<td>{{ operation.timestampClose|date:'Y-m-d H:i:s' }}</td>
-			<td>{{ operation.beneficio|floatformat:2 }}</td>
-			<td>{{ operation.profit|floatformat:2 }}</td>
-			<td>{{ operation.reasonClose }}</td>
+			<td><span class="op-type op-type-{{ operation.type|lower }}">{{ operation.type }}</span></td>
+			<td class="mono">{{ operation.timestampOpen|date:'Y-m-d H:i:s' }}</td>
+			<td class="mono">{{ operation.timestampClose|date:'Y-m-d H:i:s' }}</td>
+			<td class="num strong {% if operation.beneficio < 0 %}down{% elif operation.beneficio %}up{% endif %}">{{ operation.beneficio|floatformat:2 }}</td>
+			<td class="num {% if operation.profit < 0 %}down{% elif operation.profit %}up{% endif %}">{{ operation.profit|floatformat:2 }}</td>
+			<td class="muted">{{ operation.reasonClose|default_if_none:"" }}</td>
 		</tr>
+	{% empty %}
+		<tr><td colspan="{% if request.user.is_staff %}9{% else %}8{% endif %}" class="muted">No operations</td></tr>
 	{% endfor %}
+	</tbody>
 </table>
-
