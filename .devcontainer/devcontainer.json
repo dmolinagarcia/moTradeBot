@@ -1,0 +1,12 @@
+{
+  "name": "motrade",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode",
+      "installZsh": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "remoteUser": "vscode"
+}
