@@ -85,6 +85,10 @@ h1, h2, h3 {
   color: var(--short);
 }
 
+.cooldown {
+  color: var(--cooldown);
+}
+
 /* Header */
 
 #header {
@@ -747,10 +751,20 @@ a.toggle:hover {
   border-radius: 6px;
 }
 
+#tzBox {
+  min-width: 0;
+  max-width: 100%;
+}
+
 #timezoneForm {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+#timezoneForm select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 #timezoneForm label {
@@ -894,7 +908,83 @@ div.field input {
   }
 }
 
+/* Operations tables: rows become stacked blocks on narrow screens */
+
+@media screen and (max-width: 900px) {
+  .ops-table thead {
+    display: none;
+  }
+
+  .ops-table, .ops-table tbody {
+    display: block;
+  }
+
+  .ops-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    padding: 16px;
+    border-top: 1px solid var(--row-border);
+  }
+
+  .ops-table tbody tr:first-child {
+    border-top: 0;
+  }
+
+  #strategies.ops-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #strategies.ops-table td.num {
+    text-align: left;
+  }
+
+  .ops-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .ops-table td:empty {
+    display: none !important;
+  }
+
+  .ops-table .cell-strategy  { grid-column: 1 / -1; order: 0; }
+  .ops-table .cell-profit    { order: 1; }
+  .ops-table .cell-profit-pct { order: 2; }
+  .ops-table .cell-open      { order: 3; }
+  .ops-table .cell-close     { order: 4; }
+  .ops-table .cell-type      { order: 5; }
+  .ops-table .cell-reason    { order: 6; }
+  .ops-table .cell-action    { order: 7; }
+  .ops-table .cell-empty     { grid-column: 1 / -1; }
+}
+
 @media screen and (max-width: 720px) {
+  #tzBox {
+    width: 100%;
+  }
+
+  #timezoneForm {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  #timezoneForm select {
+    width: 100%;
+  }
+
   #header, #footer {
     padding-left: 16px;
     padding-right: 16px;

@@ -79,8 +79,8 @@
                 <span class="muted">{{ strategy.stopLossCurrent|floatformat:2 }}</span>
             </td>
 			{% if request.user.is_staff %}
-				<td class="mono">{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }}<br/>
-                    <span class="muted">{{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }}</span></td>
+				<td class="mono">{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }}
+                    {% if strategy.accion == "COOLDOWN" %}<br/><span class="cooldown">{{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }}</span>{% endif %}</td>
 				<td>
 				  <div class="row-actions">
 				    <a class="action-link" href="/strategy/{{ strategy.id }}/{{ strategy.operID }}">VIEW</a>
