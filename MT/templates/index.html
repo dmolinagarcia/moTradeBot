@@ -3,18 +3,27 @@
 
 
 <script>
+var closedPage = 1;
+function loadClosedOperations () {
+    $("#box3").load("/strategyOperations/?page=" + closedPage);
+}
 $(document).ready(function(){
     $("#accountInfo").load("/account");
     $("#box").load("/strategy/list");
     $("#box2").load("/strategyOpen");
-    $("#box3").load("/strategyOperations");
+    loadClosedOperations();
+    $("#box3").on("click", ".pager a[data-page]", function (e) {
+        e.preventDefault();
+        closedPage = $(this).data("page");
+        loadClosedOperations();
+    });
 });
 setInterval(reloadStrategy, 60000);
 function reloadStrategy () {
     $("#accountInfo").load("/account");
     $("#box").load("/strategy/list");
     $("#box2").load("/strategyOpen");
-    $("#box3").load("/strategyOperations");
+    loadClosedOperations();
 }
 </script>
 

@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.template import loader
+from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -104,9 +105,11 @@ def strategyListView(request):
 @login_required
 def strategyLastOperationView (request) :
     timezone.activate(pytz.timezone(request.user.profile.timezone))
-    operations=StrategyOperation.objects.filter(timestampClose__isnull=False).order_by('-timestampClose')[:10000]
+    operations=StrategyOperation.objects.filter(timestampClose__isnull=False).order_by('-timestampClose', '-id')
+    page_obj = Paginator(operations, 25).get_page(request.GET.get('page'))
     context = {
-        'operations': operations,
+        'operations': page_obj,
+        'page_obj': page_obj,
     }
     template = loader.get_template('strategy/operations.html')
     return HttpResponse(template.render(context, request))

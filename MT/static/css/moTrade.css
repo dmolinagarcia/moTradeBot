@@ -659,6 +659,58 @@ a.toggle:hover {
 .rowLong     { background-color: rgba(95, 212, 154, 0.06) !important;  box-shadow: inset 3px 0 0 var(--long); }
 .rowCooldown { background-color: rgba(232, 183, 74, 0.06) !important;  box-shadow: inset 3px 0 0 var(--cooldown); }
 
+/* Pagination */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-bar);
+  font-size: 13px;
+}
+
+.pager-info {
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.pager-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pager-links a, .pager-links span {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
+.pager-links a:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.pager-links .current {
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.pager-links .disabled {
+  color: var(--border-strong);
+}
+
 /* Comments form */
 
 #commentsForm {
@@ -1099,6 +1151,10 @@ div.field input {
 }
 
 @media screen and (max-width: 720px) {
+  .pager {
+    padding: 12px 16px;
+  }
+
   .footer-settings,
   .config-card {
     width: 100%;
