@@ -13,10 +13,24 @@
 <script>
 $(document).ready(function(){
     $("#tzBox").load("/registration/timezone/");
+    {% if show_config %}$("#cfgBox").load("/user/config/");{% endif %}
 });
 </script>
 
-            <div id="tzBox"></div>
+            <div class="footer-settings">
+              {% if show_config %}
+              <section class="config-card" aria-label="Configuration">
+                <div id="cfgBox"></div>
+                {% if request.user.is_staff %}
+                <div id="box4" class="actions">
+                  <a href="/balance/" class="button secondary">BALANCE</a>
+                  <a href="/process/" class="button">PROCESS</a>
+                </div>
+                {% endif %}
+              </section>
+              {% endif %}
+              <div id="tzBox"></div>
+            </div>
           </footer>
 
 </body>

@@ -360,15 +360,15 @@ ul.accountInfo {
 
 li.accountInfo {
   background: var(--surface);
-  padding: 18px 20px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
 }
 
 .kpi-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -380,28 +380,26 @@ li.accountInfo {
 
 .kpi-value {
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
 }
 
-/* Config card */
+/* Config card (footer, index only) */
 
 .config-card {
-  padding: 20px 24px;
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 12px 16px;
 }
 
 #configForm {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 24px 32px;
+  gap: 12px 16px;
 }
 
 .form-field {
@@ -455,10 +453,10 @@ input[type=datetime-local], input:not([type]), select, textarea {
   font-family: var(--font-mono);
 }
 
-#id_configMaxBet { width: 140px; }
-#id_configGlobalTPThreshold { width: 110px; }
-#id_configGlobalTPSleepdown { width: 90px; }
-#id_configGlobalTPWakeUp { width: 200px; }
+#id_configMaxBet { width: 100px; }
+#id_configGlobalTPThreshold { width: 80px; }
+#id_configGlobalTPSleepdown { width: 70px; }
+#id_configGlobalTPWakeUp { width: 190px; }
 
 textarea {
   width: 100%;
@@ -717,10 +715,9 @@ a.toggle:hover {
 /* Footer */
 
 #footer {
-  min-height: 96px;
   padding: 16px 40px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
@@ -751,6 +748,56 @@ a.toggle:hover {
   border-radius: 6px;
 }
 
+.footer-settings {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  min-width: 0;
+}
+
+#footer .form-field {
+  gap: 4px;
+}
+
+#footer .form-field > label,
+#timezoneForm label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+#footer input[type=text], #footer input[type=number], #footer input[type=datetime-local],
+#footer input:not([type]), #footer select {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+#footer .switch-field {
+  height: 34px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+#footer .form-divider {
+  height: 34px;
+}
+
+#footer .button {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+#footer .actions {
+  gap: 8px;
+}
+
 #tzBox {
   min-width: 0;
   max-width: 100%;
@@ -758,19 +805,13 @@ a.toggle:hover {
 
 #timezoneForm {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 #timezoneForm select {
   min-width: 0;
   max-width: 100%;
-}
-
-#timezoneForm label {
-  font-size: 13px;
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 /* Login form */
@@ -970,15 +1011,118 @@ div.field input {
   .ops-table .cell-empty     { grid-column: 1 / -1; }
 }
 
+/* Strategies table: compact wrapped rows on narrow screens */
+
+@media screen and (max-width: 900px) {
+  .strat-table thead {
+    display: none;
+  }
+
+  .strat-table, .strat-table tbody {
+    display: block;
+  }
+
+  .strat-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--row-border);
+  }
+
+  .strat-table tbody tr:first-child {
+    border-top: 0;
+  }
+
+  #strategies.strat-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .strat-table td br {
+    display: none;
+  }
+
+  .strat-table td[data-label]::before {
+    content: attr(data-label);
+    margin-right: 6px;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .strat-table .cell-rates .muted:not(:first-child),
+  .strat-table .cell-tp span + span,
+  .strat-table .cell-adx span,
+  .strat-table .cell-next .cooldown {
+    margin-left: 6px;
+  }
+
+  .strat-table .cell-name    { order: 0; flex: 1 1 auto; min-width: 0; }
+  #strategies.strat-table .cell-profit { order: 1; margin-left: auto; font-size: 15px; }
+  .strat-table .cell-rates   { order: 2; flex-basis: 100%; }
+  .strat-table .cell-tp      { order: 3; }
+  .strat-table .cell-bet     { order: 4; }
+  .strat-table .cell-adx     { order: 5; }
+  .strat-table .cell-diff    { order: 6; }
+  .strat-table .cell-limit   { order: 7; }
+  .strat-table .cell-next    { order: 8; }
+  .strat-table .cell-unlock  { order: 9; }
+  .strat-table .cell-actions { order: 10; }
+
+  .strat-table .strategy-cell {
+    gap: 10px;
+  }
+
+  .strat-table .strategy-name {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .strat-table .toggle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .strat-table tbody tr.total {
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+}
+
 @media screen and (max-width: 720px) {
-  #tzBox {
+  .footer-settings,
+  .config-card {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #configForm {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 10px 12px;
+  }
+
+  #configForm .form-field input {
     width: 100%;
   }
 
-  #timezoneForm {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+  #footer .actions .button {
+    flex: 1 1 0;
+  }
+
+  #tzBox {
+    width: 100%;
   }
 
   #timezoneForm select {
@@ -999,11 +1143,21 @@ div.field input {
   }
 
   ul.accountInfo {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  li.accountInfo {
+    padding: 8px 10px;
+  }
+
+  .kpi-label {
+    font-size: 9px;
+    white-space: normal;
+    line-height: 1.2;
   }
 
   .kpi-value {
-    font-size: 18px;
+    font-size: clamp(12px, 3.4vw, 15px);
   }
 
   .form-divider {

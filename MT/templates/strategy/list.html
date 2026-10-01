@@ -1,7 +1,7 @@
 {% load static %}
 {% load tz %}
 
-<table summary="Strategies" id="strategies">
+<table summary="Strategies" id="strategies" class="strat-table">
 	<thead>
 	<tr>
 		<th>Strategy</th>
@@ -38,7 +38,7 @@
                 {% endif %}
         	{% endif %}
             >
-	        <td>
+	        <td class="cell-name">
 	          <div class="strategy-cell">
                   {% if request.user.is_staff %}<a class="toggle" href="/toggle/{{ strategy.id }}" aria-label="{% if strategy.isRunning %}Stop{% else %}Start{% endif %} {{ strategy }}">{% else %}<span class="toggle" aria-label="{% if strategy.isRunning %}Running{% else %}Stopped{% endif %}">{% endif %}
                       {% if strategy.isRunning %}
@@ -63,33 +63,33 @@
 	          </div>
 			</td>
 			{% if request.user.is_staff %}
-				<td><a class="action-link" onclick="return confirm('Desbloquear {{ strategy}}?')" href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
-				<td class="mono">{{ strategy.adx|floatformat:2}}<br/><span class="up">+{{ strategy.plusDI|floatformat:2 }}</span><br/><span class="down">-{{ strategy.minusDI|floatformat:2 }}</span></td>
-				<td class="mono">{{ strategy.diffDI|floatformat:2 }}</td>
-				<td class="mono">{{ strategy.limitBuy|floatformat:0 }}/{{ strategy.limitSell|floatformat:0 }}</td>
+				<td class="cell-unlock"><a class="action-link" onclick="return confirm('Desbloquear {{ strategy}}?')" href="/unlock/{{ strategy.id }}">UNLOCK</a></td>
+				<td class="mono cell-adx" data-label="ADX ±DI">{{ strategy.adx|floatformat:2}}<br/><span class="up">+{{ strategy.plusDI|floatformat:2 }}</span><br/><span class="down">-{{ strategy.minusDI|floatformat:2 }}</span></td>
+				<td class="mono cell-diff" data-label="Diff">{{ strategy.diffDI|floatformat:2 }}</td>
+				<td class="mono cell-limit" data-label="Limit">{{ strategy.limitBuy|floatformat:0 }}/{{ strategy.limitSell|floatformat:0 }}</td>
  			{% endif %}
-			<td class="mono">
+			<td class="mono cell-rates">
                 <span class="muted">C</span> {{ strategy.currentRate|floatformat:4 }}<br/>
                 <span class="muted">P</span> {{ strategy.placedPrice|floatformat:4 }}<br/>
                 <span class="muted">H</span> {{ strategy.maxCurrentRate|floatformat:4 }}
             </td>
-            <td class="mono">
+            <td class="mono cell-tp" data-label="TP · PR · SL">
                 <span class="muted">{{ strategy.takeProfitCurrent|floatformat:2 }}</span><br/>
                 <span class="strong">{{ strategy.currentProfit|floatformat:2 }}</span><br/>
                 <span class="muted">{{ strategy.stopLossCurrent|floatformat:2 }}</span>
             </td>
 			{% if request.user.is_staff %}
-				<td class="mono">{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }}
+				<td class="mono cell-next" data-label="Next">{{ strategy.nextUpdate|localtime|date:'Y-m-d H:i:s' }}
                     {% if strategy.accion == "COOLDOWN" %}<br/><span class="cooldown">{{ strategy.cooldownUntil|localtime|date:'Y-m-d H:i:s' }}</span>{% endif %}</td>
-				<td>
+				<td class="cell-actions">
 				  <div class="row-actions">
 				    <a class="action-link" href="/strategy/{{ strategy.id }}/{{ strategy.operID }}">VIEW</a>
 				    <a class="action-link danger" onclick="return confirm('Cierre manual {{ strategy}}?')" href="/manualClose/{{ strategy.id }}">CLOSE</a>
 				  </div>
 				</td>
 			{% endif %}
-			<td class="num">{{ strategy.bet|floatformat:2 }}</td>
-			<td class="num strong {% if strategy.beneficioTotal < 0 %}down{% else %}up{% endif %}">{{ strategy.beneficioTotal|floatformat:2 }}</td>
+			<td class="num cell-bet" data-label="Bet">{{ strategy.bet|floatformat:2 }}</td>
+			<td class="num strong cell-profit {% if strategy.beneficioTotal < 0 %}down{% else %}up{% endif %}">{{ strategy.beneficioTotal|floatformat:2 }}</td>
 		</tr>
 	{% endfor %}
 
