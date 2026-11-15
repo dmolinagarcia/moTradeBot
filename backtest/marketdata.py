@@ -11,21 +11,31 @@ pero su API pública ofrece mucho menos historia.
     python backtest/marketdata.py                  # descarga/actualiza backtest/data
     python backtest/marketdata.py --extended       # añade el universo ampliado
     python backtest/marketdata.py --m15 BTC,ETH,SOL  # velas de 15 min (sltp.py)
+    python backtest/marketdata.py --vision ...     # desde el archivo público
 
 Los ficheros se actualizan de forma incremental: sólo se piden las velas nuevas.
+
+La API responde 451 desde algunas regiones (p. ej. servidores en EE. UU.). Con
+--vision se descargan los mismos datos de data.binance.vision, el archivo público
+de Binance (un zip por mes, y uno por día para el mes en curso; el funding del
+mes en curso no está publicado y se toma como cero).
 """
 
 import argparse
 import csv
+import io
 import json
 import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 
 BASE = "https://fapi.binance.com"
+VISION = "https://data.binance.vision/data/futures/um"
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 START = "2019-09-01"
 INTERVAL_MS = {"1d": 86_400_000, "4h": 14_400_000, "1h": 3_600_000, "15m": 900_000}
@@ -128,13 +138,96 @@ def update_funding(symbol):
     return rows
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Archivo público (data.binance.vision)
+# ──────────────────────────────────────────────────────────────────────────────
+def vision_rows(path):
+    """Filas del CSV de un zip del archivo, o [] si no existe."""
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(f"{VISION}/{path}", timeout=60) as response:
+                data = response.read()
+            with zipfile.ZipFile(io.BytesIO(data)) as z:
+                text = z.read(z.namelist()[0]).decode()
+            # Los ficheros recientes llevan cabecera
+            return [r for r in csv.reader(io.StringIO(text)) if r and r[0][:1].isdigit()]
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return []
+            if attempt == 4:
+                raise
+        except (urllib.error.URLError, TimeoutError, zipfile.BadZipFile, ConnectionError):
+            if attempt == 4:
+                raise
+        time.sleep(2 * (attempt + 1))
+
+
+def vision_periods(start_ms):
+    """Meses completos desde start_ms y días del mes en curso: ([YYYY-MM], [YYYY-MM-DD])."""
+    today = datetime.now(timezone.utc).date()
+    d = datetime.fromtimestamp(start_ms / 1000, timezone.utc).date().replace(day=1)
+    months = []
+    while (d.year, d.month) < (today.year, today.month):
+        months.append(d.strftime("%Y-%m"))
+        d = (d + timedelta(days=32)).replace(day=1)
+    days = [today.replace(day=k).isoformat() for k in range(1, today.day)]
+    # El zip mensual tarda unos días en publicarse: el mes anterior también por días
+    if months:
+        prev = datetime.strptime(months[-1], "%Y-%m").date()
+        while prev.month == int(months[-1][5:]):
+            days.append(prev.isoformat())
+            prev += timedelta(days=1)
+    return months, sorted(days)
+
+
+def vision_klines(symbol, interval, pool):
+    path = os.path.join(DATA_DIR, f"{symbol}_{interval}.csv")
+    rows = {int(r[0]): r for r in read_csv(path)}
+    start = max(rows) + INTERVAL_MS[interval] if rows else to_ms(START)
+    months, days = vision_periods(start)
+    files = [f"monthly/klines/{symbol}/{interval}/{symbol}-{interval}-{m}.zip" for m in months]
+    got = list(pool.map(vision_rows, files))
+    missing = {m for m, g in zip(months, got) if not g}
+    files = [f"daily/klines/{symbol}/{interval}/{symbol}-{interval}-{d}.zip"
+             for d in days if d[:7] in missing or d[:7] not in months]
+    got += list(pool.map(vision_rows, files))
+    for batch in got:
+        for k in batch:
+            t = int(k[0])
+            rows[t] = (t, float(k[1]), float(k[2]), float(k[3]), float(k[4]), float(k[7]))
+    out = [rows[t] for t in sorted(rows)]
+    if out:
+        write_csv(path, out)
+    return out
+
+
+def vision_funding(symbol, pool):
+    path = os.path.join(DATA_DIR, f"{symbol}_funding.csv")
+    rows = {int(r[0]): r for r in read_csv(path)}
+    months, _ = vision_periods(max(rows) + 1 if rows else to_ms(START))
+    files = [f"monthly/fundingRate/{symbol}/{symbol}-fundingRate-{m}.zip" for m in months]
+    for batch in pool.map(vision_rows, files):
+        for f in batch:
+            rows[int(f[0])] = (int(f[0]), float(f[2]))
+    out = [rows[t] for t in sorted(rows)]
+    write_csv(path, out)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--extended", action="store_true", help="incluir el universo ampliado")
     ap.add_argument("--hourly", action="store_true", help="velas de 1h del universo principal")
     ap.add_argument("--m15", help="sólo velas de 15 min de estos símbolos (separados por comas)")
+    ap.add_argument("--vision", action="store_true",
+                    help="descargar de data.binance.vision (si la API está bloqueada por región)")
     args = ap.parse_args()
     os.makedirs(DATA_DIR, exist_ok=True)
+    global update_klines, update_funding
+    if args.vision:
+        pool = ThreadPoolExecutor(16)
+        update_klines = lambda symbol, interval: vision_klines(symbol, interval, pool)
+        update_funding = lambda symbol: vision_funding(symbol, pool)
     if args.m15:
         for name in args.m15.split(","):
             rows = update_klines(CORE[name], "15m")

@@ -29,14 +29,19 @@ logger = logging.getLogger("MT.models")
 # Parámetros mejorados de gestión (seguros por defecteo)
 # ──────────────────────────────────────────────────────────────────────────────
 # TODO. Esto deben ser opciones!
-ATR_MULT_SL = Decimal("2.0")        # Stop inicial: 2xATR
+ATR_MULT_SL = Decimal("4.0")        # Stop inicial y trailing: 4xATR desde el extremo
+ATR_MULT_SIZING = Decimal("2.0")    # El tamaño se calcula como si el stop fuera 2xATR: ensanchar
+                                    # el stop no cambia el tamaño de la posición
 ATR_MULT_TSL = Decimal("2.5")       # Trailing: 2.5xATR desde el extremo
 TP1_R_MULT = Decimal("1.0")         # (lógico) Toma parcial en 1R (marcado por flag)
 BREAKEVEN_R = Decimal("0.7")        # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240             # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")      # Conserva tu filtro existente via limitOpen
-VOL_MIN_PCT = Decimal("2.0")        # Volatilidad mínima (ATR% del precio) para operar
-RISK_PCT = Decimal("0.0150")        # Riesgo por operación (0.75% del equity)
+VOL_MIN_PCT = Decimal("0")          # Volatilidad mínima (ATR% del precio) para operar (0 = sin filtro)
+RISK_PCT = Decimal("0.0150")        # Pérdida (fracción del equity) si el precio recorre
+                                    # ATR_MULT_SIZING x ATR en contra
+LONG_ONLY = True                    # Sin cortos nuevos (los ya abiertos se siguen gestionando).
+                                    # Ver backtest/ablation.py
 BTC_REGIME_SMA = 200                # Largos sólo con BTC sobre su SMA diaria, cortos sólo
                                     # por debajo (0 = sin filtro). Ver backtest/research.py
 BTC_REGIME_SYMBOL = "BTC-USDT"
@@ -536,7 +541,8 @@ class Strategy(models.Model):
                             ):
                                 side = "buy"
                             if (
-                                (( self.plusDI - self.minusDI ) < self.limitSell)
+                                not LONG_ONLY
+                                and (( self.plusDI - self.minusDI ) < self.limitSell)
                                 and self.checkRecommend()
                                 and isMarketOpen
                             ):
@@ -607,12 +613,12 @@ class Strategy(models.Model):
                                     str(self.rateSymbol)
                                     + ":             - Entering amount calculation..."
                                 )
-                                # Distancia de stop por ATR (en precio)
+                                # Distancia de dimensionamiento por ATR (en precio)
                                 amount_calc = 0
                                 if self.atr and self.currentRate and self.atr > 0:
                                     atr_d = _D(self.atr)
                                     entry = _D(self.currentRate)
-                                    stop_dist = ATR_MULT_SL * atr_d
+                                    stop_dist = ATR_MULT_SIZING * atr_d
                                     logger.debug(
                                         str(self.rateSymbol)
                                         + ":               - ATR=%s, entry=%s, stop_dist=%s",
@@ -786,7 +792,6 @@ class Strategy(models.Model):
                                 + ":         - Adjusting SL/TP dynamically with ATR..."
                             )
     
-                            # Mi stop init es 2x ATR. Es mucho!
                             stop_init = ATR_MULT_SL * _D(self.atr)
     
                             r_unity = (
@@ -869,43 +874,22 @@ class Strategy(models.Model):
                                     if base_tp < _D(self.takeProfitCurrent):
                                         self.takeProfitCurrent = float(base_tp)
     
-                            # Reglas de SL/TP gobernadas por recomendación (como tenías)
-                            if not self.checkRecommend():
-                                # Solo si no es recomendable seguir, evaluamos SL/TP
-                                if self.accion == "COMPRAR":
-                                    if (
-                                        self.stopLossCurrent is not None
-                                        and self.currentRate <= self.stopLossCurrent
-                                    ):
-                                        reason.append("stopLoss")
-                                        self.cooldownUntil = (
-                                            timezone.now() + timedelta(days=1)
-                                        )
-                                    if (
-                                        self.takeProfitCurrent is not None
-                                        and self.currentRate >= self.takeProfitCurrent
-                                    ):
-                                        reason.append("takeProfit")
-                                        self.cooldownUntil = (
-                                            timezone.now() + timedelta(days=1)
-                                        )
-                                else:
-                                    if (
-                                        self.stopLossCurrent is not None
-                                        and self.currentRate >= self.stopLossCurrent
-                                    ):
-                                        reason.append("stopLoss")
-                                        self.cooldownUntil = (
-                                            timezone.now() + timedelta(days=1)
-                                        )
-                                    if (
-                                        self.takeProfitCurrent is not None
-                                        and self.currentRate <= self.takeProfitCurrent
-                                    ):
-                                        reason.append("takeProfit")
-                                        self.cooldownUntil = (
-                                            timezone.now() + timedelta(days=1)
-                                        )
+                            # El SL se evalúa siempre; el TP sólo cuando la
+                            # recomendación deja de acompañar
+                            dir_ = 1 if self.accion == "COMPRAR" else -1
+                            if (
+                                self.stopLossCurrent is not None
+                                and (self.currentRate - self.stopLossCurrent) * dir_ <= 0
+                            ):
+                                reason.append("stopLoss")
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
+                            if (
+                                not self.checkRecommend()
+                                and self.takeProfitCurrent is not None
+                                and (self.currentRate - self.takeProfitCurrent) * dir_ >= 0
+                            ):
+                                reason.append("takeProfit")
+                                self.cooldownUntil = timezone.now() + timedelta(days=1)
     
     #                       if (self.stopLossCurrent is not None):
     #                           ### SL Hugging. Deactivated for same reasons as above

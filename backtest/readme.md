@@ -46,6 +46,33 @@ validación con 2023 en adelante, comparando también a igual volatilidad.
     python3 backtest/sltp.py --slippage 0.002             # sensibilidad a costes
     python3 backtest/sltp.py --every 4                    # el bot decide cada 60 min
 
+# ablation.py
+
+Qué regla de `Strategy.operation()` aporta y cuál resta: cambia una cada vez
+(stops, salida por DI, filtros de entrada, límites DI, régimen, cartera) y la
+compara con el bot actual, con el simulador de `replay.py` sobre la reconstrucción
+horaria del bot (23 símbolos y las 7 activas). Selección hasta 2023, evaluación
+desde 2024. `--combo` acumula las reglas elegidas en selección (la propuesta) y
+`--neighbors` comprueba que no dependen de un valor exacto.
+
+    python3 backtest/marketdata.py --extended --hourly
+    python3 backtest/ablation.py                             # una regla cada vez
+    python3 backtest/ablation.py --group trailing
+    python3 backtest/ablation.py --combo                     # propuesta, regla a regla
+    python3 backtest/ablation.py --neighbors
+    python3 backtest/ablation.py --combo --universe extended # monedas no usadas al elegir
+    python3 backtest/ablation.py --combo --m15               # 7 activas, ciclos de 15 min
+
+Sin `db.sqlite3` usa los límites DI y el apalancamiento de `db.sqlite3.source`.
+
+# marketdata.py --vision
+
+La API de Binance responde 451 desde algunas regiones (servidores en EE. UU.).
+`--vision` descarga los mismos datos de su archivo público, data.binance.vision:
+
+    python3 backtest/marketdata.py --vision --extended --hourly
+    python3 backtest/marketdata.py --vision --m15 BTC,ETH,SOL,XRP,DOGE,BNB,ADA
+
 # backtest.py / notebook
 
 windows
