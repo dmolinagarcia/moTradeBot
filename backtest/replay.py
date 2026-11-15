@@ -65,6 +65,19 @@ class Params:
                                   # cuanto el máximo/mínimo lo toca (requiere filas con
                                   # el máximo y el mínimo desde el ciclo anterior en las
                                   # posiciones 15 y 16)
+    di_exit_mult: float = 0.85    # la salida por DI salta al cruzar limitBuy/limitSell × este factor
+    cooldown_di_days: float = 0.0 # cooldown tras un cierre por DI / ADX (el código actual no espera)
+    adx_min: float = None         # ADX mínimo para abrir (None = limitOpen de la fila)
+    rec_min: float = 1.5          # umbral de checkRecommend()
+    long_only: bool = False       # sin cortos
+    limits: tuple = None          # (limitBuy, limitSell) en lugar de los de la fila
+    daily_entry: bool = False     # abrir sólo en el ciclo que cierra la vela diaria (00:00 UTC)
+    daily_exit: bool = False      # salida por DI / ADX sólo en ese ciclo (los stops, siempre)
+    max_days: float = None        # time-stop: cierre a los N días si la operación no va ganando
+    rec_gate: float = None        # umbral de checkRecommend() para condicionar SL/TP (None = rec_min)
+    trail_mult: float = None      # múltiplo de ATR del trailing (None = atr_mult_sl)
+    regime_idx: int = 0           # columna extra de la fila con el régimen (0 = BTC > SMA200)
+    short_risk: float = 1.0       # tamaño de los cortos respecto a los largos
 
 
 @dataclass(frozen=True)
@@ -198,6 +211,20 @@ class Trade:
 
 def simulate(rows, sym, lev, p, c, equity, respect_running=False):
     """Replay de Strategy.operation() en modo normal. Devuelve (trades, curva horaria)."""
+    it = simulate_iter(rows, sym, lev, p, c, equity, respect_running)
+    try:
+        while True:
+            next(it)
+    except StopIteration as done:
+        return done.value
+
+
+def simulate_iter(rows, sym, lev, p, c, equity, respect_running=False, gate=None):
+    """
+    simulate() ciclo a ciclo: tras cada ciclo cede (t, margen de la posición abierta o 0),
+    para intercalar varias estrategias en el tiempo. gate(sym, lado, t, margen) puede
+    vetar una apertura (límites de cartera). Al terminar devuelve (trades, curva horaria).
+    """
     trades, curve = [], []
     fills = fill_prices(rows, c)
     estado, pos = 0, None
@@ -219,26 +246,32 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
     for i, (t, px, adx, pdi, mdi, rma, rma240, atr, lo, lc, lb, ls, running, _, *extra) in enumerate(rows):
         if respect_running and not running:
             continue
+        if p.limits:
+            lb, ls = p.limits
         diff = pdi - mdi
         # checkRecommend(): dirección según los DI, no según la posición abierta
         d = 1 if pdi > mdi else (-1 if mdi > pdi else 0)
-        rec = d != 0 and (rma + rma240) * d > 1.5
+        rec = d != 0 and (rma + rma240) * d > p.rec_min
+        # SL/TP sólo cuentan cuando la recomendación no acompaña
+        held = rec if p.rec_gate is None else d != 0 and (rma + rma240) * d > p.rec_gate
+        daily = t % DAY == 0
         nxt = estado
 
         if estado == 0:  # HOLD
-            if adx > lo:
+            if adx > (lo if p.adx_min is None else p.adx_min) and (daily or not p.daily_entry):
                 side = 0
                 if diff > lb and rec:
                     side = 1
-                if diff < ls and rec:
+                if diff < ls and rec and not p.long_only:
                     side = -1
-                if p.btc_regime and side * (extra[0] if extra else 0) <= 0:
+                if p.btc_regime and side * (extra[p.regime_idx] if extra else 0) <= 0:
                     side = 0
                 if side and atr and px and atr * 100.0 / px >= p.vol_min_pct:
                     stop_dist = p.atr_mult_sl * atr
                     size_dist = (p.sizing_sl or p.atr_mult_sl) * atr
-                    amount = int(max(equity * p.risk_pct * px / size_dist / lev, 0))
-                    if amount > 0:
+                    risk = p.risk_pct * (p.short_risk if side < 0 else 1.0)
+                    amount = int(max(equity * risk * px / size_dist / lev, 0))
+                    if amount > 0 and (gate is None or gate(sym, side, t, amount)):
                         pos = Position()
                         pos.side, pos.entry, pos.bet, pos.t_open = side, px, amount, t
                         pos.fill = fills[i] * (1 + side * c.slippage)
@@ -270,22 +303,28 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
                 pos, nxt = None, 3
             else:
                 reasons = []
+                signal_exit = daily or not p.daily_exit
                 if adx * 0.85 > pos.adx_close:
                     pos.adx_close = adx * 0.85
                 if lc == 0:
                     pos.adx_close = 0
-                if adx < pos.adx_close:
+                if adx < pos.adx_close and signal_exit:
                     reasons.append("limitClose")
                 if pos.side == -1:
                     if px < pos.extreme:
                         pos.extreme = px
-                    if p.di_exit and diff > ls * 0.85:
+                    if p.di_exit and signal_exit and diff > ls * p.di_exit_mult:
                         reasons.append("limitSell")
                 else:
                     if px > pos.extreme:
                         pos.extreme = px
-                    if p.di_exit and diff < lb * 0.85:
+                    if p.di_exit and signal_exit and diff < lb * p.di_exit_mult:
                         reasons.append("limitBuy")
+                if reasons and p.cooldown_di_days:
+                    cooldown_until = t + p.cooldown_di_days * DAY
+                if (p.max_days and signal_exit and t - pos.t_open >= p.max_days * DAY
+                        and upnl <= 0):
+                    reasons.append("timeStop")
 
                 stop_init = p.atr_mult_sl * atr
                 if stop_init > 0:
@@ -295,7 +334,7 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
                             and (pos.sl - entry) * side < 0):
                         pos.sl = entry
                     # Trailing tipo Chandelier desde el extremo
-                    dist = stop_init
+                    dist = (p.trail_mult or p.atr_mult_sl) * atr
                     max_r = (pos.extreme - entry) * side / stop_init
                     for r_min, mult in p.trail_steps:
                         if max_r >= r_min:
@@ -308,11 +347,11 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
                         base_tp = entry + side * stop_init * p.tp_r
                         if pos.tp is None or (base_tp - pos.tp) * side > 0:
                             pos.tp = base_tp
-                    if (((not p.sl_gated or not rec) and (px - pos.sl) * side <= 0)
+                    if (((not p.sl_gated or not held) and (px - pos.sl) * side <= 0)
                             or (p.hard_sl_always and (px - pos.hard_sl) * side <= 0)):
                         reasons.append("stopLoss")
                         cooldown_until = t + p.cooldown_days * DAY
-                    if (pos.tp is not None and (not p.tp_gated or not rec)
+                    if (pos.tp is not None and (not p.tp_gated or not held)
                             and (px - pos.tp) * side >= 0):
                         reasons.append("takeProfit")
                         cooldown_until = t + p.cooldown_days * DAY
@@ -331,6 +370,7 @@ def simulate(rows, sym, lev, p, c, equity, respect_running=False):
             upnl = pos.units * (px - pos.fill) * pos.side if pos else 0.0
             curve.append((hour, realized + upnl))
             last_hour = hour
+        yield t, (pos.bet if pos else 0)
 
     if pos is not None:
         close(rows[-1][0], fills[-1], "abierta")
