@@ -33,12 +33,13 @@ ATR_MULT_SL = Decimal("4.0")        # Stop inicial y trailing: 4xATR desde el ex
 ATR_MULT_SIZING = Decimal("2.0")    # El tamaño se calcula como si el stop fuera 2xATR: ensanchar
                                     # el stop no cambia el tamaño de la posición
 ATR_MULT_TSL = Decimal("2.5")       # Trailing: 2.5xATR desde el extremo
+TP_R_MULT = Decimal("1.0")          # TP a 1R desde la entrada (= ATR_MULT_SL x ATR)
 TP1_R_MULT = Decimal("1.0")         # (lógico) Toma parcial en 1R (marcado por flag)
 BREAKEVEN_R = Decimal("0.7")        # Mover a BE a partir de 0.7R
 MAX_BARS_IN_TRADE = 240             # Time-stop en nº de velas
 ADX_MIN_DEFAULT = Decimal("0")      # Conserva tu filtro existente via limitOpen
 VOL_MIN_PCT = Decimal("0")          # Volatilidad mínima (ATR% del precio) para operar (0 = sin filtro)
-RISK_PCT = Decimal("0.0150")        # Pérdida (fracción del equity) si el precio recorre
+RISK_PCT = Decimal("0.0200")        # Pérdida (fracción del equity) si el precio recorre
                                     # ATR_MULT_SIZING x ATR en contra
 LONG_ONLY = True                    # Sin cortos nuevos (los ya abiertos se siguen gestionando).
                                     # Ver backtest/ablation.py
@@ -691,10 +692,10 @@ class Strategy(models.Model):
                                             # >>> Cambios: SL/TP por PRECIO <<<
                                             if self.accion == "COMPRAR":
                                                 sl_price = entry - stop_init
-                                                tp_price = entry + ( stop_init * Decimal("2")  )
+                                                tp_price = entry + ( stop_init * TP_R_MULT  )
                                             else:
                                                 sl_price = entry + stop_init
-                                                tp_price = entry - ( stop_init * Decimal("2")  )
+                                                tp_price = entry - ( stop_init * TP_R_MULT  )
                                             self.stopLossCurrent = float(sl_price)
                                             self.takeProfitCurrent = float(tp_price)
                                             # conservar valor inicial (no usado en
@@ -860,9 +861,9 @@ class Strategy(models.Model):
     
                             # >>> TP por PRECIO (2R respecto a entrada; ratchet solo a favor)
                             base_tp = (
-                                _D(self.placedPrice) + (stop_init * Decimal("2"))
+                                _D(self.placedPrice) + (stop_init * TP_R_MULT)
                                 if self.accion == "COMPRAR"
-                                else _D(self.placedPrice) - (stop_init * Decimal("2"))
+                                else _D(self.placedPrice) - (stop_init * TP_R_MULT)
                             )
                             if self.takeProfitCurrent is None:
                                 self.takeProfitCurrent = float(base_tp)
